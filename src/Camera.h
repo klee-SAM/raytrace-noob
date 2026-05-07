@@ -1,13 +1,16 @@
 #include "stn.h"
 
+#include "Image.h"
+#include "MatrixStack.h"
 #include "Scene.h"
 
 class Camera {
 public:
-    Camera() : FOVY{90.0}, width{1}, height{1} {
-        this->aspectRatio = (double)width/(double)height;
+    Camera() : fovy{glm::radians(90.0)}, width{1}, height{1} {
+        this->aspectRatio = 1.0;
     }
-    Camera(uint w, uint h, double fov) : FOVY{fov}, width{w}, height{h} {
+    // fov is in degrees
+    Camera(uint w, uint h, double fov) : fovy{glm::radians(fov)}, width{w}, height{h} {
         this->aspectRatio = (double)width/(double)height;
     }
     Camera(uint resolution, double aspect) : Camera() {
@@ -18,15 +21,17 @@ public:
         this->height = std::sqrt(resolution*(1.0/aspect));
     }
 
-    void applyCameraMatrix() {
+    void applyProjection(shared_ptr<MatrixStack>);
+    void applyView(shared_ptr<MatrixStack>);
 
-    }
+    std::shared_ptr<Image> render(std::shared_ptr<Scene>, const glm::mat4&, const glm::mat4&);
 
 private:
     glm::vec3 translation;
     glm::vec3 rotation;
 
     double aspectRatio;
-    double FOVY;
+    double fovy; // radians
+    double znear, zfar;
     uint width, height;
 };

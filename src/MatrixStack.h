@@ -1,3 +1,4 @@
+#pragma once
 #include "stn.h"
 #include <stack>
 
