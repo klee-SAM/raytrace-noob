@@ -15,7 +15,7 @@ public:
     void rotate(float angleDeg, const glm::vec3& axis);
     void scale(float s);
     void scale(const glm::vec3& s);
-    void shear(float a, const glm::vec3& d, const glm::vec3& n);
+    void shear(float a, const glm::vec3& d);
     
     void mult(const glm::mat4&);
 

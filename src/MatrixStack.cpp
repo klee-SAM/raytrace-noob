@@ -41,29 +41,21 @@ void MatrixStack::scale(const glm::vec3& s) {
     stack.top() = glm::scale(stack.top(), s);
 }
 
-/* Shears the top matrix given a shear factor k, direction vector d,
- * and normal vector n (that represents the plane).
+/* Shears the top matrix given a shear factor k, direction vector d.
+ * I + k(d)(n^T), where n is (vec(1) - d)
  * https://math.stackexchange.com/questions/2229844/
  */
-void MatrixStack::shear(float k, const glm::vec3& d, const glm::vec3& n) {
+void MatrixStack::shear(float k, const glm::vec3& d) {
     // Matrices in GLM are in column-major order.
     // M[3][0] -> 4rd column, 1st row.
     glm::mat4 m(1.0f);
+    glm::vec3 n = glm::vec3(1.0f) - d;
     // For each coordinate vector
     for (int col = 0; col < 3; ++col) {
-        
         // For each component
         for (int row = 0; row < 3; ++col) {
-            if (row == col) continue;
-            // The idea is that the dir vector is
-            // perpendicular to the plane to shear,
-            // for example, if shearing in the x direction,
-            // dir = (1, 0, 0), and only m[1][0] and m[2][0]
-            // are equal to sh.
-            // Of course, this calculation is extremely naive
-            // and incorrect if dir has more than 1 non-zero 
-            // component.
-            m[col][row] = (1.0f - d[col]);
+            // implicit inner product
+            m[col][row] += k*d[row]*n[col];
         }
     }
     this->mult(m);
