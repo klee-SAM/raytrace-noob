@@ -23,15 +23,16 @@ shared_ptr<Image> Camera::render(
     cameraPos = C[3]; cameraPos.w = 1.0f;
 
     // Calculate dy and dx for putting the ray at the center of the pixel
-    double dy = 1.0f/((double)height);
-    double dx = 1.0f/((double)width);
+    // double dy = 1.0f/((double)height);
+    // double dx = 1.0f/((double)width);
 
     shared_ptr<Image> image = make_shared<Image>(width, height);
 
     for (int y = 0; y < height; ++y) {
-        double ndc_y = 2*((double)y)/((double)height) - 1.0 + dy;
+        // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
+        double ndc_y = 2*((double)y + 0.5)/((double)height) - 1.0;
         for (int x = 0; x < width; ++x) {
-            double ndc_x = 2*((double)x)/((double)width) - 1.0 + dx;
+            double ndc_x = 2*((double)x + 0.5)/((double)width) - 1.0;
 
             glm::vec4 coord((float)ndc_x, (float)ndc_y, -1.0f, 1.0f); // px coord
             coord = invP*coord; // eye coord
