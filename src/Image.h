@@ -35,10 +35,11 @@ public:
         data.at(3*index + 2) = b;
     }
 
+    // Automatically clamps the color components from [0.0, 1.0].
     void setPixel(uint x, uint y, const glm::vec3& clr) {
-        u_char r = ((u_char)std::clamp(clr.r, 0.0f, 1.0f))*255;
-        u_char g = ((u_char)std::clamp(clr.g, 0.0f, 1.0f))*255;
-        u_char b = ((u_char)std::clamp(clr.b, 0.0f, 1.0f))*255;
+        u_char r = (u_char)(std::clamp(clr.r, 0.0f, 1.0f)*255);
+        u_char g = (u_char)(std::clamp(clr.g, 0.0f, 1.0f)*255);
+        u_char b = (u_char)(std::clamp(clr.b, 0.0f, 1.0f)*255);
         setPixel(x, y, r, g, b);
     }
 
@@ -47,12 +48,8 @@ public:
         // first byte of the next row of pixels
         int stride_in_bytes = width*comp*sizeof(unsigned char);
         int ret = stbi_write_png(filename.c_str(), width, height, comp, &data[0], stride_in_bytes);
-        if(ret) {
-            std::clog << "Wrote to " << filename << '\n';
-        } else {
-            std::cerr << "Failed write to " << filename << '\n';
-        }
-
+        if (ret) std::clog << "Wrote to " << filename << '\n';
+        else std::cerr << "Failed write to " << filename << '\n';
     }
     
 private:

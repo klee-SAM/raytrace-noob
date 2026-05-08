@@ -1,5 +1,11 @@
 #include "stn.h"
 
+#include "Camera.h"
+#include "Image.h"
+#include "Material.h"
+#include "Scene.h"
+#include "Texture.h"
+
 using namespace std;
 
 const string RESOURCE_DIR = "../data/";

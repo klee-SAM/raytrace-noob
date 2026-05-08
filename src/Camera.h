@@ -1,11 +1,18 @@
+#pragma once
 #include "stn.h"
 
 #include "Image.h"
 #include "MatrixStack.h"
 #include "Scene.h"
+#include "Ray.h"
 
 class Camera {
 public:
+    static const double EPSILION = 1E-3;
+    static const double MAX_DIST = std::numeric_limits<float>::max();
+    static const uint MAX_RECURSIONS = 7;
+    static const float MINIMUM_REFL_COEFF = 0.005f;
+
     Camera() : fovy{glm::radians(90.0)}, width{1}, height{1} {
         this->aspectRatio = 1.0;
     }
@@ -34,4 +41,12 @@ private:
     double fovy; // radians
     double znear, zfar;
     uint width, height;
+
+    glm::vec4 cameraPos; // computed in render(), contains world-space position of camera
+
+    glm::vec3 Camera::getRayColor(
+        std::shared_ptr<Scene> scene, 
+        const Ray& ray, 
+        float min, float max, 
+        int recursiveDepth = 0);
 };

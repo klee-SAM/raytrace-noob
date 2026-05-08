@@ -26,19 +26,19 @@ void MatrixStack::translate(const glm::vec3& t) {
 }
 
 void MatrixStack::translate(float x, float y, float z) {
-    stack.top() = glm::translate(stack.top(), glm::vec3(x, y, z));
+    stack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
 }
 
 void MatrixStack::rotate(float angleDeg, const glm::vec3& axis) {
-    stack.top() = glm::rotate(stack.top(), glm::radians(angleDeg), axis);
+    stack.top() *= glm::rotate(glm::mat4(1.0f), glm::radians(angleDeg), axis);
 }
 
 void MatrixStack::scale(float s) {
-    stack.top() = glm::scale(stack.top(), glm::vec3(s));
+    stack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(s));
 }
 
 void MatrixStack::scale(const glm::vec3& s) {
-    stack.top() = glm::scale(stack.top(), s);
+    stack.top() *= glm::scale(glm::mat4(1.0f), s);
 }
 
 /* Shears the top matrix given a shear factor k, direction vector d.

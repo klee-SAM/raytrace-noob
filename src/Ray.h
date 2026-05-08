@@ -9,10 +9,10 @@ struct Ray {
 };
 
 struct Hit {
-    float x; // hit location
-    float n; // hit normal
+    glm::vec3 x; // hit location
+    glm::vec3 n; // hit normal
     float t; // dist from origin to hit
-    float u; // texture coords
-    float v; // above
+    float u; // texture u coord
+    float v; // texture v coord
     std::shared_ptr<Material> m;
 };
