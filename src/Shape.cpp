@@ -17,19 +17,6 @@ Shape::Shape() {
 Shape::~Shape() {
 }
 
-// void Shape::transform() {
-// 	MatrixStack MV;
-// 	MV.pushMatrix();
-// 	MV.translate(position);
-// 	MV.rotate(rotation.z, vec3(0.0f,0.0f,1.0f));
-// 	MV.rotate(rotation.y, vec3(0.0f,1.0f,0.0f));
-// 	MV.rotate(rotation.x, vec3(1.0f,0.0f,0.0f));
-// 	MV.scale(scale);
-// 	modelMat = MV.topMatrix();
-// 	inv_modelMat = inverse(MV.topMatrix());
-// 	invT_modelMat = inverse(transpose(MV.topMatrix()));
-// }
-
 void Shape::setModelMatrix(const mat4& m) {
 	modelMat = m;
 	inv_modelMat = inverse(m);

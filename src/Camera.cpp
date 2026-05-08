@@ -12,15 +12,32 @@ void Camera::applyView(shared_ptr<MatrixStack> MS) {
     MS->rotate(rotation.x, vec3(0.0f, 1.0f, 0.0f));
 }
 
+Ray Camera::castPrimaryRay(int idx, int idy, double offset = 0.5) {
+    // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
+
+    double ndc_y = 2*((double)idy + offset)/((double)height) - 1.0;
+    double ndc_x = 2*((double)idx + offset)/((double)width) - 1.0;
+
+    glm::vec4 coord((float)ndc_x, (float)ndc_y, -1.0f, 1.0f); // px coord
+    coord = invP*coord; // eye coord
+    coord.w = 1.0f;
+    coord = glm::normalize(C*coord - cameraPos); // n_pw
+
+    Ray cray; 
+    cray.pos = vec3(cameraPos);
+    cray.dir = vec3(coord);
+}
+
 shared_ptr<Image> Camera::render(
     shared_ptr<Scene> scene, 
     const mat4& P,
     const mat4& V) 
 {
     // Precompute as much as possible before loops
-    mat4 C = inverse(V);
-    auto invP = glm::inverse(P);
-    cameraPos = C[3]; cameraPos.w = 1.0f;
+    C = inverse(V);
+    invP = glm::inverse(P);
+    cameraPos = C[3]; 
+    cameraPos.w = 1.0f;
 
     // Calculate dy and dx for putting the ray at the center of the pixel
     // double dy = 1.0f/((double)height);
@@ -29,20 +46,8 @@ shared_ptr<Image> Camera::render(
     shared_ptr<Image> image = make_shared<Image>(width, height);
 
     for (int y = 0; y < height; ++y) {
-        // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
-        double ndc_y = 2*((double)y + 0.5)/((double)height) - 1.0;
         for (int x = 0; x < width; ++x) {
-            double ndc_x = 2*((double)x + 0.5)/((double)width) - 1.0;
-
-            glm::vec4 coord((float)ndc_x, (float)ndc_y, -1.0f, 1.0f); // px coord
-            coord = invP*coord; // eye coord
-			coord.w = 1.0f;
-			coord = glm::normalize(C*coord - cameraPos); // n_pw
-
-			Ray cray; 
-            cray.pos = vec3(cameraPos);
-            cray.dir = vec3(coord);
-
+            Ray cray = castPrimaryRay(x, y);
             vec3 color = getRayColor(scene, cray);
             image->setPixel(x, y, color);
         }

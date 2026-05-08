@@ -42,11 +42,16 @@ private:
     double znear, zfar;
     uint width, height;
 
-    glm::vec4 cameraPos; // computed in render(), contains world-space position of camera
+    // variables computed in render()
+    glm::vec4 cameraPos; //contains world-space position of camera
+    glm::mat4 C; // Camera Matrix
+    glm::mat4 invP; // inverse of projection mat
 
     glm::vec3 Camera::getRayColor(
         std::shared_ptr<Scene> scene, 
         const Ray& ray, 
         float min, float max, 
         int recursiveDepth = 0);
+    
+    Ray castPrimaryRay(int idx, int idy, double offset = 0.5);
 };
