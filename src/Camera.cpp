@@ -41,11 +41,7 @@ shared_ptr<Image> Camera::render(
     cameraPos = C[3]; 
     cameraPos.w = 1.0f;
 
-    float cont = 1.0/samples;
-
-    // Calculate dy and dx for putting the ray at the center of the pixel
-    // double dy = 1.0f/((double)height);
-    // double dx = 1.0f/((double)width);
+    float sample_scale = 1.0/samples;
 
     shared_ptr<Image> image = make_shared<Image>(width, height);
 
@@ -59,8 +55,9 @@ shared_ptr<Image> Camera::render(
             } else {
                 for (uint i = 0; i < samples; ++i) {
                     Ray cray = castPrimaryRay(x, y, linearRand(.01f, 0.99f));
-                    color += cont*getRayColor(scene, cray);
+                    color += getRayColor(scene, cray);
                 }
+                color *= sample_scale;
             }
             
             image->setPixel(x, y, color);

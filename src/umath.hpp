@@ -22,9 +22,9 @@ public:
     }
     void clear();
 private:
-    glm::vec3 position; // position in world coordinates
-	glm::vec3 scale; // scales for each axis
-	glm::vec3 rotation; // contains the Euler angles for each axis
+    glm::vec3 position = glm::vec3(0.0f); // position in world coordinates
+	glm::vec3 scale    = glm::vec3(1.0f); // scales for each axis
+	glm::vec3 rotation = glm::vec3(0.0f); // contains the Euler angles for each axis
 };
 
 const double PI = 3.14159265358979323846;

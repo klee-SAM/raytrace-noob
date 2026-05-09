@@ -13,10 +13,6 @@ using namespace glm;
 
 const string RESOURCE_DIR = "../data/";
 
-void parseSceneFile(const string& inputFile) {
-
-}
-
 shared_ptr<Scene> createTestScene0() {
     shared_ptr<Material> redMat = make_shared<Material>(
         vec3(0.1f, 0.1f, 0.1f),
@@ -84,13 +80,17 @@ int main(int argc, char** argv) {
     MatrixStack P = MatrixStack();
     MatrixStack MV = MatrixStack();
     shared_ptr<Camera> camera = make_shared<Camera>(256U, 256U, 45.0f);
-    camera->setInitDistance(5.0);
-    camera->applyProjection(P);
-    camera->applyView(MV);
 
-    shared_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
-    image->setFilename("output.png");
-    image->write();
+    // parseSceneFile("scene0.txt", camera, target_scene);
+
+    // camera->setInitDistance(5.0);
+    // camera->setAntialiasSamples(1);
+    // camera->applyProjection(P);
+    // camera->applyView(MV);
+
+    // shared_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
+    // image->setFilename("output.png");
+    // image->write();
 
     return 0;
 }

@@ -13,7 +13,7 @@ public:
     static constexpr uint MAX_RECURSIONS = 7;
     static constexpr float MINIMUM_REFL_COEFF = 0.005f;
 
-    Camera() : fovy(glm::radians(45.0)), width(1), height(1), aspectRatio(1.0) { }
+    Camera() : aspectRatio(1.0), fovy(glm::radians(45.0)), width(1), height(1) { }
     Camera(uint w, uint h) : fovy{glm::radians(45.0)}, width{w}, height{h} {
         this->aspectRatio = (double)width/(double)height;
     }
@@ -36,6 +36,8 @@ public:
     void setAspect(double a) { aspectRatio = a; }
     void setFOV(double FOVdeg) { fovy = glm::radians(FOVdeg); }
     void setInitDistance(double dist) { translation.z = -std::abs(dist); }
+    void setTranslation(const glm::vec3& pos) { translation = pos; }
+    void setRotation(const glm::vec3& rot) { rotation = rot; }
 
     // Setting samples to 1 disables antialiasing.
     void setAntialiasSamples(uint count) { samples = count > 1 ? count : 1; }
@@ -46,13 +48,13 @@ private:
     glm::vec3 translation; // Relative translation, which is indirectly used in computing cameraPos
     glm::vec3 rotation;    // Relative rotation
 
-    uint samples = 1;
-
     double aspectRatio;
     double fovy; // radians
     double znear = 1.0f; 
     double zfar = 1000.0f;
     uint width, height;
+
+    uint samples = 1;
 
     // variables computed in render()
     glm::vec4 cameraPos; // contains world-space position of camera
