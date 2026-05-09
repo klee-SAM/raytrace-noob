@@ -13,14 +13,13 @@ public:
     static constexpr uint MAX_RECURSIONS = 7;
     static constexpr float MINIMUM_REFL_COEFF = 0.005f;
 
-    Camera() : fovy{glm::radians(45.0)}, width{1}, height{1} {
-        this->aspectRatio = 1.0;
-    }
+    Camera() : fovy(glm::radians(45.0)), width(1), height(1), aspectRatio(1.0) { }
     Camera(uint w, uint h) : fovy{glm::radians(45.0)}, width{w}, height{h} {
         this->aspectRatio = (double)width/(double)height;
     }
     // fov is in degrees
-    Camera(uint w, uint h, double fov) : fovy{glm::radians(fov)}, width{w}, height{h} {
+    Camera(uint w, uint h, double fov) : Camera(w, h) {
+        this->fovy = glm::radians(fov);
         this->aspectRatio = (double)width/(double)height;
     }
     Camera(uint totalPixels, double aspect) : Camera() {
@@ -38,11 +37,16 @@ public:
     void setFOV(double FOVdeg) { fovy = glm::radians(FOVdeg); }
     void setInitDistance(double dist) { translation.z = -std::abs(dist); }
 
+    // Setting samples to 1 disables antialiasing.
+    void setAntialiasSamples(uint count) { samples = count > 1 ? count : 1; }
+
     std::shared_ptr<Image> render(std::shared_ptr<Scene>, const glm::mat4&, const glm::mat4&);
 
 private:
     glm::vec3 translation; // Relative translation, which is indirectly used in computing cameraPos
-    glm::vec3 rotation; // Relative rotation
+    glm::vec3 rotation;    // Relative rotation
+
+    uint samples = 1;
 
     double aspectRatio;
     double fovy; // radians
