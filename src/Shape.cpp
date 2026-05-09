@@ -4,8 +4,6 @@
 // #define TINYOBJLOADER_IMPLEMENTATION
 // #include "tiny_obj_loader.h"
 
-#include "MatrixStack.hpp"
-
 #include "Shape.hpp"
 // #include "raytri.c"
 

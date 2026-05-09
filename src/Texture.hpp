@@ -1,9 +1,6 @@
 #pragma once
 #include "stn.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 class Texture {
 public:
     // glm::mat3 T; // Texture transformation matrix, should be per shape

@@ -1,44 +1,48 @@
 #include "MatrixStack.hpp"
 
 MatrixStack::MatrixStack() {
-    stack.push(glm::mat4(1.0f));
+    stack = std::make_shared< std::stack<glm::mat4> >();
+    stack->push(glm::mat4(1.0f));
 }
 
 MatrixStack::~MatrixStack() {
 }
 
 void MatrixStack::push() {
-    stack.push(stack.top());
+    stack->push(stack->top());
 }
 
 void MatrixStack::pop() {
-    stack.pop();
+    assert(!stack->empty());
+    stack->pop();
+    // Stack cannot be empty after popping.
+    assert(!stack->empty());
 }
 
 glm::mat4& MatrixStack::top() {
-    return stack.top(); 
+    return stack->top(); 
 } 
 
 // TODO: unit test matrix stack operations
 
 void MatrixStack::translate(const glm::vec3& t) {
-    stack.top() = glm::translate(stack.top(), t);
+    stack->top() = glm::translate(stack->top(), t);
 }
 
 void MatrixStack::translate(float x, float y, float z) {
-    stack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
+    stack->top() *= glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
 }
 
 void MatrixStack::rotate(float angleDeg, const glm::vec3& axis) {
-    stack.top() *= glm::rotate(glm::mat4(1.0f), glm::radians(angleDeg), axis);
+    stack->top() *= glm::rotate(glm::mat4(1.0f), glm::radians(angleDeg), axis);
 }
 
 void MatrixStack::scale(float s) {
-    stack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(s));
+    stack->top() *= glm::scale(glm::mat4(1.0f), glm::vec3(s));
 }
 
 void MatrixStack::scale(const glm::vec3& s) {
-    stack.top() *= glm::scale(glm::mat4(1.0f), s);
+    stack->top() *= glm::scale(glm::mat4(1.0f), s);
 }
 
 /* Shears the top matrix given a shear factor k, direction vector d.
@@ -62,10 +66,10 @@ void MatrixStack::shear(float k, const glm::vec3& d) {
 }
 
 void MatrixStack::mult(const glm::mat4& oth) {
-    stack.top() *= oth;
+    stack->top() *= oth;
 }
 
 void MatrixStack::reset() {
-    while (!stack.empty()) stack.pop();
-    stack.push(glm::mat4(1.0f));
+    while (!stack->empty()) stack->pop();
+    stack->push(glm::mat4(1.0f));
 }

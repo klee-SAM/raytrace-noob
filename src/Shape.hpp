@@ -57,7 +57,7 @@ public:
 private:
     glm::vec3 uvec, vvec;
     bool computedUVvectors = false;
-    void Plane::computeUVvectors(const glm::vec3& n);
+    void computeUVvectors(const glm::vec3& n);
 };
 
 // class Mesh : public Shape {

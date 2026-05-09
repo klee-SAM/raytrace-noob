@@ -3,16 +3,16 @@
 using namespace std;
 using namespace glm;
 
-void Camera::applyProjection(shared_ptr<MatrixStack> MS) {
-    MS->mult(perspective(fovy, aspectRatio, znear, zfar));
+void Camera::applyProjection(MatrixStack& MS) {
+    MS.mult(perspective(fovy, aspectRatio, znear, zfar));
 }
-void Camera::applyView(shared_ptr<MatrixStack> MS) {
-    MS->translate(translation);
-    MS->rotate(rotation.y, vec3(1.0f, 0.0f, 0.0f));
-    MS->rotate(rotation.x, vec3(0.0f, 1.0f, 0.0f));
+void Camera::applyView(MatrixStack& MS) {
+    MS.translate(translation);
+    MS.rotate(rotation.y, vec3(1.0f, 0.0f, 0.0f));
+    MS.rotate(rotation.x, vec3(0.0f, 1.0f, 0.0f));
 }
 
-Ray Camera::castPrimaryRay(int idx, int idy, double offset = 0.5) {
+Ray Camera::castPrimaryRay(uint idx, uint idy, double offset) {
     // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
 
     double ndc_y = 2*((double)idy + offset)/((double)height) - 1.0;
@@ -26,6 +26,8 @@ Ray Camera::castPrimaryRay(int idx, int idy, double offset = 0.5) {
     Ray cray; 
     cray.pos = vec3(cameraPos);
     cray.dir = vec3(coord);
+
+    return cray;
 }
 
 shared_ptr<Image> Camera::render(
@@ -45,14 +47,13 @@ shared_ptr<Image> Camera::render(
 
     shared_ptr<Image> image = make_shared<Image>(width, height);
 
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
+    for (uint y = 0; y < height; ++y) {
+        for (uint x = 0; x < width; ++x) {
             Ray cray = castPrimaryRay(x, y);
             vec3 color = getRayColor(scene, cray);
             image->setPixel(x, y, color);
         }
     }
-
     return image;
 }
 
@@ -88,14 +89,14 @@ bool hit(
     return intersected;
 }
 
-const bool SHOW_NORMALS = true;
+const bool SHOW_NORMALS = false;
+
 
 vec3 Camera::getRayColor(
     shared_ptr<Scene> scene, 
     const Ray& ray, 
-    float min = Camera::EPSILION, 
-    float max = Camera::MAX_DIST, 
-    int recursiveDepth = 0) 
+    float min, float max, 
+    uint recursiveDepth) 
 {
     Hit rec;
     vec3 clr = vec3(0.0);
@@ -122,8 +123,9 @@ vec3 Camera::getRayColor(
     // The eye vector does not point to the camera when reflecting
     vec3 ev = recursiveDepth > 0 ? normalize(-ray.dir) : normalize(vec3(cameraPos) - rec.x);
 
-    // Determine if the ray is inside or outside the sphere
+    // Determine if the ray is inside or outside the object
     bool back_face = dot(ray.dir, rec.n) > 0.0f; // true if inside
+    if (back_face) rec.n = -rec.n;
 
     vec3 bp_clr = rec.m->ambient;
     for (auto& light : scene->lights) {

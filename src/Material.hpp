@@ -23,5 +23,7 @@ public:
     // (just check if texture loaded)
 
     Material();
+    Material(glm::vec3 amb, glm::vec3 dif, glm::vec3 spe, float exp)
+    : ambient{amb}, diffuse{dif}, specular{spe}, exponent(exp) {}
     virtual ~Material();
 };

@@ -24,5 +24,5 @@ public:
     void reset();
 
 private:
-    std::stack<glm::mat4> stack;
+    std::shared_ptr<std::stack<glm::mat4>> stack;
 };
