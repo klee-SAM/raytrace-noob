@@ -83,14 +83,14 @@ int main(int argc, char** argv) {
 
     // parseSceneFile("scene0.txt", camera, target_scene);
 
-    // camera->setInitDistance(5.0);
-    // camera->setAntialiasSamples(1);
-    // camera->applyProjection(P);
-    // camera->applyView(MV);
+    camera->setInitDistance(5.0);
+    camera->setAntialiasSamples(1);
+    camera->applyProjection(P);
+    camera->applyView(MV);
 
-    // shared_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
-    // image->setFilename("output.png");
-    // image->write();
+    shared_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
+    image->setFilename("output.png");
+    image->write();
 
     return 0;
 }
