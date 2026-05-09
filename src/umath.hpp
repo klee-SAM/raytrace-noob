@@ -1,5 +1,5 @@
 #pragma once
-#include "stn.h"
+#include "stn.hpp"
 
 // Utility math functions and classes
 
@@ -9,12 +9,16 @@ public:
     void setScale(const float r) { scale = glm::vec3(r); }
 	void setPosition(const glm::vec3& p) { position = p; }
 	void setRotation(const glm::vec3& r) { rotation = r; }
-    glm::mat4 getMatrix() { /* evil */
-        glm::mat4 modMat(1.0f); modMat[3] = glm::vec4(position, 1.0f);
+    glm::mat4 getMatrix() {
+        glm::mat4 modMat(1.0f); 
+        modMat[3] = glm::vec4(position, 1.0f);
         modMat *= glm::rotate(glm::mat4(1.0f), rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
         modMat *= glm::rotate(glm::mat4(1.0f), rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
         modMat *= glm::rotate(glm::mat4(1.0f), rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        modMat[0][0] *= scale.x; modMat[1][1] *= scale.y; modMat[2][2] *= scale.z;
+        modMat[0][0] *= scale.x; 
+        modMat[1][1] *= scale.y; 
+        modMat[2][2] *= scale.z;
+        return modMat;
     }
     void clear();
 private:
@@ -27,13 +31,3 @@ const double PI = 3.14159265358979323846;
 const double R_PI = 1.0/PI;
 
 const double INF = std::numeric_limits<double>::infinity();
-
-class Interval {
-public:
-    double min, max;
-    
-    Interval() : min(-INF), max(INF) {}
-    Interval(double min, double max) : min(min), max(max) {}    
-
-    double contains(double min, double max);
-};

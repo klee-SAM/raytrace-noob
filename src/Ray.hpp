@@ -1,6 +1,6 @@
 #pragma once
-#include "stn.h"
-#include "Material.h"
+#include "stn.hpp"
+#include "Material.hpp"
 
 struct Ray {
     glm::vec3 pos;

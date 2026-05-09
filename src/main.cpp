@@ -1,10 +1,10 @@
-#include "stn.h"
+#include "stn.hpp"
 
-#include "Camera.h"
-#include "Image.h"
-#include "Material.h"
-#include "Scene.h"
-#include "Texture.h"
+#include "Camera.hpp"
+#include "Image.hpp"
+#include "Material.hpp"
+#include "Scene.hpp"
+#include "Texture.hpp"
 
 using namespace std;
 

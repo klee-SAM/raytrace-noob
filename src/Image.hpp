@@ -1,5 +1,5 @@
 #pragma once
-#include "stn.h"
+#include "stn.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"

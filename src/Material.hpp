@@ -1,6 +1,6 @@
 #pragma once
-#include "stn.h"
-#include "Texture.h"
+#include "stn.hpp"
+#include "Texture.hpp"
 
 class Material {
 public:
@@ -24,11 +24,4 @@ public:
 
     Material();
     virtual ~Material();
-
-    glm::vec3 getLightContrib(
-        const glm::vec3& eye, 
-        const glm::vec3& normal, 
-        const glm::vec3& lv, 
-        float u, float v);
-
 };

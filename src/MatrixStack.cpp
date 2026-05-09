@@ -1,4 +1,4 @@
-#include "MatrixStack.h"
+#include "MatrixStack.hpp"
 
 MatrixStack::MatrixStack() {
     stack.push(glm::mat4(1.0f));

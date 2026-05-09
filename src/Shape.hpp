@@ -1,7 +1,7 @@
 #pragma once
-#include "stn.h"
-#include "Material.h"
-#include "Ray.h"
+#include "stn.hpp"
+#include "Material.hpp"
+#include "Ray.hpp"
 
 class Shape {
 public:
@@ -50,10 +50,10 @@ public:
 	virtual ~Plane();
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 	void setNormal(const glm::vec3& r) { 
-        modelMat[1] = vec4(r, 0.0f);
+        modelMat[1] = glm::vec4(r, 0.0f);
         computeUVvectors(r); 
     }
-    void setPosition(const glm::vec3& r) { modelMat[3] = vec4(r, 1.0f); }
+    void setPosition(const glm::vec3& r) { modelMat[3] = glm::vec4(r, 1.0f); }
 private:
     glm::vec3 uvec, vvec;
     bool computedUVvectors = false;

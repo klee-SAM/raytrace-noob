@@ -1,6 +1,6 @@
-#include "stn.h"
-#include "Shape.h"
-#include "Material.h"
+#include "stn.hpp"
+#include "Shape.hpp"
+#include "Material.hpp"
 
 struct Light {
     glm::vec3 pos;

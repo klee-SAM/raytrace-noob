@@ -1,17 +1,17 @@
 #pragma once
-#include "stn.h"
+#include "stn.hpp"
 
-#include "Image.h"
-#include "MatrixStack.h"
-#include "Scene.h"
-#include "Ray.h"
+#include "Image.hpp"
+#include "MatrixStack.hpp"
+#include "Scene.hpp"
+#include "Ray.hpp"
 
 class Camera {
 public:
-    static const double EPSILION = 1E-3;
-    static const double MAX_DIST = std::numeric_limits<float>::max();
-    static const uint MAX_RECURSIONS = 7;
-    static const float MINIMUM_REFL_COEFF = 0.005f;
+    static constexpr double EPSILION = 1E-3;
+    static constexpr double MAX_DIST = std::numeric_limits<float>::max();
+    static constexpr uint MAX_RECURSIONS = 7;
+    static constexpr float MINIMUM_REFL_COEFF = 0.005f;
 
     Camera() : fovy{glm::radians(90.0)}, width{1}, height{1} {
         this->aspectRatio = 1.0;
@@ -28,8 +28,8 @@ public:
         this->height = std::sqrt(resolution*(1.0/aspect));
     }
 
-    void applyProjection(shared_ptr<MatrixStack>);
-    void applyView(shared_ptr<MatrixStack>);
+    void applyProjection(std::shared_ptr<MatrixStack>);
+    void applyView(std::shared_ptr<MatrixStack>);
 
     std::shared_ptr<Image> render(std::shared_ptr<Scene>, const glm::mat4&, const glm::mat4&);
 

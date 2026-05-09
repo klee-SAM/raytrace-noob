@@ -1,4 +1,4 @@
-#include "Material.h"
+#include "Material.hpp"
 
 using namespace std;
 using namespace glm;
@@ -14,9 +14,4 @@ Material::Material() :
 
 Material::~Material() 
 {
-}
-
-
-// All vectors should be in camera-space.
-vec3 Material::getLightContrib(const vec3& e, const vec3& n, const vec3& l, float u, float v) {
 }

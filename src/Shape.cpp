@@ -1,12 +1,12 @@
-#include "stn.h"
-#include "umath.h"
+#include "stn.hpp"
+#include "umath.hpp"
 
 // #define TINYOBJLOADER_IMPLEMENTATION
 // #include "tiny_obj_loader.h"
 
-#include "MatrixStack.h"
+#include "MatrixStack.hpp"
 
-#include "Shape.h"
+#include "Shape.hpp"
 // #include "raytri.c"
 
 using namespace std;
