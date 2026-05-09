@@ -122,6 +122,9 @@ vec3 Camera::getRayColor(
     // The eye vector does not point to the camera when reflecting
     vec3 ev = recursiveDepth > 0 ? normalize(-ray.dir) : normalize(vec3(cameraPos) - rec.x);
 
+    // Determine if the ray is inside or outside the sphere
+    bool back_face = dot(ray.dir, rec.n) > 0.0f; // true if inside
+
     vec3 bp_clr = rec.m->ambient;
     for (auto& light : scene->lights) {
         // Construct a shadow ray for each light, using

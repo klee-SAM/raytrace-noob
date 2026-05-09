@@ -26,4 +26,14 @@ private:
 const double PI = 3.14159265358979323846;
 const double R_PI = 1.0/PI;
 
-// TODO: interval class from raytracing one weekend
+const double INF = std::numeric_limits<double>::infinity();
+
+class Interval {
+public:
+    double min, max;
+    
+    Interval() : min(-INF), max(INF) {}
+    Interval(double min, double max) : min(min), max(max) {}    
+
+    double contains(double min, double max);
+};
