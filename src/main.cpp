@@ -6,6 +6,7 @@
 #include "Material.hpp"
 #include "MatrixStack.hpp"
 #include "Scene.hpp"
+#include "SceneLoader.hpp"
 #include "Texture.hpp"
 
 using namespace std;
@@ -81,16 +82,17 @@ int main(int argc, char** argv) {
     MatrixStack MV = MatrixStack();
     shared_ptr<Camera> camera = make_shared<Camera>(256U, 256U, 45.0f);
 
-    // parseSceneFile("scene0.txt", camera, target_scene);
+    SceneLoader sl(RESOURCE_DIR+"scene0.json");
+    sl.loadSceneFile(camera, target_scene);
 
-    camera->setInitDistance(5.0);
-    camera->setAntialiasSamples(1);
-    camera->applyProjection(P);
-    camera->applyView(MV);
+    // camera->setInitDistance(5.0);
+    // camera->setAntialiasSamples(1);
+    // camera->applyProjection(P);
+    // camera->applyView(MV);
 
-    shared_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
-    image->setFilename("output.png");
-    image->write();
+    // shared_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
+    // image->setFilename("output.png");
+    // image->write();
 
     return 0;
 }
