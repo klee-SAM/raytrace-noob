@@ -28,3 +28,5 @@ public:
     : ambient{amb}, diffuse{dif}, specular{spe}, exponent(exp) {}
     virtual ~Material() = default;
 };
+
+static const std::shared_ptr<Material> defaultMaterial = std::make_shared<Material>();

@@ -8,17 +8,20 @@
         "red" : {
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [1.0, 0.0, 0.0],
-            "specular" : [1.0, 1.0, 0.5]
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
         },
         "green" : {
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [0.0, 1.0, 0.0],
-            "specular" : [1.0, 1.0, 0.5]
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
         },
         "blue" : {
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [0.0, 0.0, 1.0],
-            "specular" : [1.0, 1.0, 0.5]
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
         }
     },
     "lights" : [
