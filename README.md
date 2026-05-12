@@ -1,6 +1,27 @@
 # raytrace-noob
 Adding more features as a learning exercise
 
+## todo:
+
+- [ ] Infinite cylinders
+- [ ] Boxes
+- [ ] CSG
+- [ ] Object/Regional Light Attentuation
+
+- [ ] Texture mapping
+- [ ] Refraction
+
+- [ ] Ambient occulusion
+- [ ] Motion blur
+- [ ] SDF and sphere tracing
+
+- [ ] Antialiasing (to be finished)
+- [ ] Multithreading
+- [ ] GPU acceleration
+
+- [ ] Monte Carlo path tracing
+
+
 
 ## Dependencies
 - GLM (OpenGL Mathematics): https://github.com/g-truc/glm
