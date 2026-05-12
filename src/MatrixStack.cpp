@@ -23,8 +23,6 @@ glm::mat4& MatrixStack::top() {
     return stack->top(); 
 } 
 
-// TODO: unit test matrix stack operations
-
 void MatrixStack::translate(const glm::vec3& t) {
     stack->top() = glm::translate(stack->top(), t);
 }

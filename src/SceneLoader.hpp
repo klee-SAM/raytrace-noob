@@ -136,6 +136,7 @@ private:
             j += offsetToNextKey(obj_tok + j);
         }
         // offset to next object (camera, materials, etc.)
+        // pls
         return j;
     }
 
