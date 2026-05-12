@@ -212,7 +212,7 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>
             prop_ind += 1 + offsetToNextKey(value); 
         }
         scene->writeMaterial(stringFromToken(mat_name_tok), material);
-        j += prop_ind + 1; // add 1 to go from last value to next mat key
+        j += prop_ind + 1; // add 1 to account for mat name 
     }
     return j;
 }
@@ -252,6 +252,7 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
 
             prop_ind += 1 + offsetToNextKey(value);
         }
+
         if (shape != nullptr) {
             modelMat.setPosition(pos);
             modelMat.setRotation(rot);
@@ -263,7 +264,7 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
             std::cerr << "Shape not created.\n";
         }
 
-        j += prop_ind + 1;
+        j += prop_ind;
     }
     return j;
 }
