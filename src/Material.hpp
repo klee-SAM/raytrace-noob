@@ -22,8 +22,9 @@ public:
     // we just have a simple boolean check
     // (just check if texture loaded)
 
-    Material();
+    Material() : ambient{glm::vec3(0.0f)}, diffuse{glm::vec3(0.0f)}, 
+        specular{glm::vec3(0.0f)}, exponent{1.0f}, reflCoeff{0.0f} {};
     Material(glm::vec3 amb, glm::vec3 dif, glm::vec3 spe, float exp)
     : ambient{amb}, diffuse{dif}, specular{spe}, exponent(exp) {}
-    virtual ~Material();
+    virtual ~Material() = default;
 };

@@ -3,7 +3,6 @@
 
 #include <fstream>
 #include <sstream>
-#include <unordered_map>
 
 #include "Camera.hpp"
 
@@ -86,6 +85,7 @@ public:
             } else if (jsonstreq(&tokens[i], "materials")) {
             //     printf("\"materials\": %.*s\n", tokens[i + 1].end - tokens[i + 1].start, 
             //            jsonData.c_str() + tokens[i + 1].start);
+
             } else if (jsonstreq(&tokens[i], "lights")) {
                 if (tokens[++i].type != JSMN_ARRAY) continue;
                 i += parseLights(&tokens[i], scene);
@@ -94,8 +94,9 @@ public:
             //     printf("\"shapes\": %.*s\n", tokens[i + 1].end - tokens[i + 1].start, 
             //            jsonData.c_str() + tokens[i + 1].start);
             } else {
-                // printf("\"man\": %.*s\n", tokens[i].end - tokens[i].start, 
-                    //    jsonData.c_str() + tokens[i].start);
+                printf("\"Unrecognized property\": %.*s\n", 
+                       tokens[i].end - tokens[i].start, 
+                       jsonData.c_str() + tokens[i].start);
             }
         }
     }
@@ -105,10 +106,7 @@ private:
     std::ifstream file;
 
     std::string jsonData;
-    std::unordered_map< 
-        std::string, 
-        std::shared_ptr<Material> 
-    > materials;
+    
 
     int offsetToNextKey(const jsmntok_t* tok) { return 1 + tok->size; }
 
@@ -136,7 +134,6 @@ private:
             j += offsetToNextKey(obj_tok + j);
         }
         // offset to next object (camera, materials, etc.)
-        // pls
         return j;
     }
 
@@ -151,7 +148,7 @@ private:
             }
 
             std::shared_ptr<Light> light = std::make_shared<Light>();
-            int k = 1;
+            int k = 1; // start after the object token
             for (int prop = 0; prop < (arr_tok+j)->size; ++prop) {
                 const jsmntok_t *key = l_tok+k, *value = l_tok+k+1;
                 if (jsonstreq(key, "position") && value->type == JSMN_ARRAY) {
@@ -168,11 +165,15 @@ private:
                 k += 1 + offsetToNextKey(value);
             }
             j += k;    
+            scene->pushLight(light);
         }
         return j;
     }
 
-    int parseMaterials() {
+    int parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>& scene) {
+        int j = 1;
+        for (int item = 0;;) {}
+
         return 0;
     }
 

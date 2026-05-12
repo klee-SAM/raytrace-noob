@@ -17,7 +17,17 @@ class Scene {
 public:
     std::vector<std::shared_ptr<Shape>> shapes;
     std::vector<std::shared_ptr<Light>> lights;
+    std::unordered_map<std::string, std::shared_ptr<Material>> materials;
 
     void pushShape(std::shared_ptr<Shape> s) { shapes.push_back(s); }
     void pushLight(std::shared_ptr<Light> l) { lights.push_back(l); }
+    void writeMaterial(const std::string& name, std::shared_ptr<Material> m) {
+        materials[name] = m;
+    } 
+    // Creates a new default material with the given name if it does not 
+    // exist beforehand (i.e, when parsing shapes data before material data)
+    std::shared_ptr<Material> getMaterial(const std::string& name) {
+        auto placed = materials.try_emplace(name, std::make_shared<Material>());
+        return placed.first->second; // return the material from the key-value pair
+    }
 };

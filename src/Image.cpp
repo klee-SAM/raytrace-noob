@@ -26,9 +26,12 @@ void Image::setPixel(uint x, uint y, u_char r, u_char g, u_char b) {
 
 // Automatically clamps the color components from [0.0, 1.0].
 void Image::setPixel(uint x, uint y, const glm::vec3& clr) {
-    u_char r = (u_char)(std::clamp(clr.r, 0.0f, 1.0f)*255);
-    u_char g = (u_char)(std::clamp(clr.g, 0.0f, 1.0f)*255);
-    u_char b = (u_char)(std::clamp(clr.b, 0.0f, 1.0f)*255);
+    // multiply by under 256 so that truncation ensures that 
+    // the comp does not exceed 256 but also does not need to
+    // be exactly 1.0 to get to 255
+    u_char r = (u_char)(std::clamp(clr.r, 0.0f, 1.0f)*255.99f);
+    u_char g = (u_char)(std::clamp(clr.g, 0.0f, 1.0f)*255.99f);
+    u_char b = (u_char)(std::clamp(clr.b, 0.0f, 1.0f)*255.99f);
     setPixel(x, y, r, g, b);
 }
 
