@@ -27,6 +27,8 @@ public:
     Material(glm::vec3 amb, glm::vec3 dif, glm::vec3 spe, float exp)
     : ambient{amb}, diffuse{dif}, specular{spe}, exponent(exp) {}
     virtual ~Material() = default;
+
+    void copy(Material& oth) { *this = oth; }
 };
 
 static const std::shared_ptr<Material> defaultMaterial = std::make_shared<Material>();

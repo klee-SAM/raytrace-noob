@@ -5,12 +5,19 @@
 using namespace std;
 using namespace glm;
 
+/*
+ * TODO: documentation
+ */
+
 const bool VERBOSE = false;
 
 std::shared_ptr<Shape> shapeFromString(const std::string& type);
 
 void SceneLoader::loadSceneFile(std::shared_ptr<Camera>& cam, std::shared_ptr<Scene>& scene) 
 {
+    if (scene == nullptr || cam == nullptr) {
+        throw std::logic_error("loadSceneFile: One or more arguments are null pointers");
+    }
     if (location.empty()) { 
         std::cerr << "No input file given\n"; 
         return; 
@@ -141,7 +148,7 @@ int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::shared_ptr
 }
 
 int SceneLoader::parseLights(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& scene)
- {
+{
     int j = 1;
     for (int item = 0; item < arr_tok->size; ++item) {
         // skip any items that do not contain light properties
@@ -169,16 +176,11 @@ int SceneLoader::parseLights(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
         j += k;    
         scene->pushLight(light);
     }
+
+
+
     return j;
 }
-
-// if shapes are declared before materials, then
-// reference to materials must be emplaced in the map
-// this means that parseMaterials modifies the
-// material associated with a name if it alr exists,
-// and inserts it if it does not
-// or should storing material references be the 
-// scene's responsibility? prob scene 
 
 int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>& scene) 
 {
@@ -207,6 +209,8 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>
                 material->specular = float3FromToken(value);
             } else if (jsonstreq(key, "exponent")) {
                 material->exponent = doubleFromToken(value);
+            } else if (jsonstreq(key, "reflCoeff")) {
+                material->reflCoeff = doubleFromToken(value);
             }
             
             prop_ind += 1 + offsetToNextKey(value); 
@@ -243,6 +247,8 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
                 pos = float3FromToken(value);
             } else if (jsonstreq(key, "scale")) {
                 scl = float3FromToken(value);
+            } else if (jsonstreq(key, "rotation")) {
+                rot = float3FromToken(value);
             } else if (jsonstreq(key, "material")) {
                 smat = scene->getMaterial(stringFromToken(value));
             } else {
@@ -271,13 +277,19 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
 
 // Misc. helper functions
 
+SceneLoader::PRIM SceneLoader::typeOfPrimitiveAt(int offset) 
+{
+    // to be determined
+    return PRIM::NONE;
+}
+
 bool SceneLoader::charIsNumeric(int offset)
 {
     // Relies on ASCII orderings of characters
+    if (jsonData.at(offset) == '-') return true;
     for (char c = '0'; c <= '9'; c++) {
         if (jsonData.at(offset) == c) return true;
     }
-    if (jsonData.at(offset) == '-') return true;
     return false;
 }
 
@@ -343,6 +355,16 @@ int SceneLoader::intFromToken(const jsmntok_t* tok)
         return (int) std::strtol(&jsonData.at(tok->start), nullptr, 10);
     }
     return 0;
+}
+
+bool SceneLoader::boolFromToken(const jsmntok_t* tok)
+{
+    if (tok->type == JSMN_PRIMITIVE) {
+        if (jsonData.at(tok->start) == 't') return true;
+        if (jsonData.at(tok->start) == 'f') return false;
+    }
+    std::cerr << "boolFromToken: unrecognized value, returning false";
+    return false;
 }
 
 std::string SceneLoader::stringFromToken(const jsmntok_t* tok)

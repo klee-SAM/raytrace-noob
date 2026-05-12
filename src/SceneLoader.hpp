@@ -43,9 +43,14 @@ private:
     int parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& scene);
 
     bool jsonstreq(const jsmntok_t* tok, const std::string& str);
+
+    enum class PRIMITIVE_TYPE {BOOL, NUL, NUM, NONE};
+    using PRIM = SceneLoader::PRIMITIVE_TYPE;
+    PRIMITIVE_TYPE typeOfPrimitiveAt(int offset);
     bool charIsNumeric(int offset);
 
     int intFromToken(const jsmntok_t* tok);
+    bool boolFromToken(const jsmntok_t* tok);
     double doubleFromToken(const jsmntok_t* tok);
     glm::vec3 float3FromToken(const jsmntok_t* tok);
     std::string stringFromToken(const jsmntok_t* tok);

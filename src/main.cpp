@@ -71,28 +71,36 @@ shared_ptr<Scene> createTestScene0() {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 5) {
-        clog << "Usage: ./prog sceneFile width height outputFile\n";
+    if (argc < 3) {
+        clog << "Usage: ./prog sceneFile outputFile\n";
         return 0;
     }
 
-    shared_ptr<Scene> target_scene = createTestScene0();
+    // argument handling should be rewritten to be more flexible
+    // (using flags like -width, for example)
+
+    string filename = argv[1];
+    string outputname = argv[2];
+
+    // fix the width and height for debugging, for now
+    uint width = 256U;
+    uint height = width;
+
+    shared_ptr<Scene> target_scene = make_shared<Scene>();
 
     MatrixStack P = MatrixStack();
     MatrixStack MV = MatrixStack();
-    shared_ptr<Camera> camera = make_shared<Camera>(256U, 256U, 45.0f);
+    shared_ptr<Camera> camera = make_shared<Camera>(width, height, 45.0f);
 
-    SceneLoader sl(RESOURCE_DIR+"scene0.json");
+    SceneLoader sl(RESOURCE_DIR+filename);
     sl.loadSceneFile(camera, target_scene);
+    
+    camera->applyProjection(P);
+    camera->applyView(MV);
 
-    // camera->setInitDistance(5.0);
-    // camera->setAntialiasSamples(1);
-    // camera->applyProjection(P);
-    // camera->applyView(MV);
-
-    // shared_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
-    // image->setFilename("output.png");
-    // image->write();
+    shared_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
+    image->setFilename(outputname);
+    image->write();
 
     return 0;
 }

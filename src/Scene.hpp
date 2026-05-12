@@ -22,11 +22,17 @@ public:
     void pushShape(std::shared_ptr<Shape> s) { shapes.push_back(s); }
     void pushLight(std::shared_ptr<Light> l) { lights.push_back(l); }
     void writeMaterial(const std::string& name, std::shared_ptr<Material> m) {
-        materials[name] = m;
+        // have to modify the object pointed to, rather than the pointer itself
+        auto placed = materials.emplace(name, m);
+        if (!placed.second) {
+            // this is bad. need to emulate a copy constructor somehow
+            std::shared_ptr<Material> oth = placed.first->second;
+            oth->copy(*m);
+        }
     } 
     // Creates a new default material with the given name if it does not 
     // exist beforehand (i.e, when parsing shapes data before material data)
-    std::shared_ptr<Material> getMaterial(const std::string& name) {
+    std::shared_ptr<Material>& getMaterial(const std::string& name) {
         auto placed = materials.try_emplace(name, std::make_shared<Material>());
         return placed.first->second; // return the material from the key-value pair
     }
