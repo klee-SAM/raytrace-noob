@@ -103,6 +103,12 @@ bool hit(
 
 const bool SHOW_NORMALS = false;
 
+vec3 Camera::getSkyColor(const Ray& ray) {
+    float cx = .5*(ray.dir.x)+.5;
+    float cy = .5*(ray.dir.y)+.5;
+    float cz = .5*(ray.dir.z)+.5;
+    return vec3(cx, cz, cy);
+}
 
 vec3 Camera::getRayColor(
     shared_ptr<Scene> scene, 

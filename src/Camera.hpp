@@ -67,5 +67,7 @@ private:
         const Interval& interval = Interval(EPSILION, MAX_DIST), 
         uint recursiveDepth = 0);
     
+    glm::vec3 getSkyColor(const Ray& ray);
+    
     Ray castPrimaryRay(uint idx, uint idy, double offsetx = 0.5, double offsety = 0.5);
 };
