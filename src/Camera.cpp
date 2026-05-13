@@ -73,33 +73,30 @@ shared_ptr<Image> Camera::render(
 bool hit(
     vector<shared_ptr<Shape>>& shapes, 
     const Ray& ray, 
-    float min, 
-    float max, 
+    const Interval& interval,
     Hit& closestHit) 
 {
-    float minDist = max;
-    bool intersected = false;
+    float minDist = interval.max;
+    bool intersected_any = false;
 
-    vector<Hit> hits; // maintain a list of hits for csg
-    hits.reserve(16); // magic number
+    vector<Hit> temp_hits; // maintain a list of hits for csg
+    temp_hits.reserve(16); // magic number
 
     for (shared_ptr<Shape>& shape : shapes) {
-        shape->intersect(ray, hits);
-        if (hits.empty()) continue;
-        for (Hit& hit : hits) {
-            if (hit.t >= min && hit.t <= max) {
-                intersected = true;
-            } else {
-                continue;
-            }
+        shape->intersect(ray, temp_hits);
+        if (temp_hits.empty()) continue;
+        for (Hit& hit : temp_hits) {
+            if (!interval.contains(hit.t)) continue;
+            intersected_any = true;
+            
             if (minDist > hit.t) {
                 minDist = hit.t;
                 closestHit = hit;
             }
         }
-        hits.clear();
+        temp_hits.clear();
     }
-    return intersected;
+    return intersected_any;
 }
 
 const bool SHOW_NORMALS = false;
@@ -108,12 +105,12 @@ const bool SHOW_NORMALS = false;
 vec3 Camera::getRayColor(
     shared_ptr<Scene> scene, 
     const Ray& ray, 
-    float min, float max, 
+    const Interval& interval, 
     uint recursiveDepth) 
 {
     Hit rec;
     vec3 clr = vec3(0.0);
-    if (!hit(scene->shapes, ray, min, max, rec)) return clr;
+    if (!hit(scene->shapes, ray, interval, rec)) return clr;
 
     if (SHOW_NORMALS) {
         clr = rec.n;
@@ -129,8 +126,8 @@ vec3 Camera::getRayColor(
 
         vec3 refl = glm::reflect(ray.dir, rec.n);
         Ray reflRay; reflRay.dir = refl;
-        reflRay.pos = rec.x + rec.n*min;
-        clr += rec.m->reflCoeff*getRayColor(scene, reflRay, min, max, recursiveDepth + 1);
+        reflRay.pos = rec.x + rec.n*(float)interval.min;
+        clr += rec.m->reflCoeff*getRayColor(scene, reflRay, interval, recursiveDepth + 1);
     }
 
     // The eye vector does not point to the camera when reflecting
@@ -149,11 +146,11 @@ vec3 Camera::getRayColor(
         float tl = length(ld);
 
         Ray sray;
-        sray.pos = rec.x + min*rec.n;
+        sray.pos = rec.x + (float)interval.min*rec.n;
         sray.dir = lv;
 
         Hit srec;
-        if (hit(scene->shapes, sray, min, tl, srec)) {
+        if (hit(scene->shapes, sray, Interval(interval.min, tl), srec)) {
             continue;
         }
 

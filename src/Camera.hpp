@@ -5,6 +5,7 @@
 #include "MatrixStack.hpp"
 #include "Scene.hpp"
 #include "Ray.hpp"
+#include "umath.hpp"
 
 class Camera {
 public:
@@ -62,10 +63,8 @@ private:
     glm::mat4 invP;      // inverse of projection mat
 
     glm::vec3 getRayColor(
-        std::shared_ptr<Scene> scene, 
-        const Ray& ray, 
-        float min = EPSILION, 
-        float max = MAX_DIST, 
+        std::shared_ptr<Scene> scene, const Ray& ray, 
+        const Interval& interval = Interval(EPSILION, MAX_DIST), 
         uint recursiveDepth = 0);
     
     Ray castPrimaryRay(uint idx, uint idy, double offset = 0.5);
