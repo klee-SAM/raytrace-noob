@@ -104,10 +104,20 @@ bool hit(
 const bool SHOW_NORMALS = false;
 
 vec3 Camera::getSkyColor(const Ray& ray) {
-    float cx = .5*(ray.dir.x)+.5;
-    float cy = .5*(ray.dir.y)+.5;
-    float cz = .5*(ray.dir.z)+.5;
-    return vec3(cx, cz, cy);
+    float cx, cy, cz;
+    switch(this->sky) {
+    case (Camera::SkyType::Haze):
+        cx = .5*(ray.dir.x)+.5;
+        cy = .5*(ray.dir.y)+.5;
+        cz = .5*(ray.dir.z)+.5;
+        return vec3(cx, cz, cy);
+        break;
+    case (Camera::SkyType::Void):
+    default:
+        return vec3(0.0f);
+        break;
+    }
+    return vec3(0.0f);
 }
 
 vec3 Camera::getRayColor(
@@ -118,7 +128,7 @@ vec3 Camera::getRayColor(
 {
     Hit rec;
     vec3 clr = vec3(0.0);
-    if (!hit(scene->shapes, ray, interval, rec)) return clr;
+    if (!hit(scene->shapes, ray, interval, rec)) return getSkyColor(ray);
 
     if (SHOW_NORMALS) {
         clr = rec.n;

@@ -1,8 +1,9 @@
 {
     "camera" : {
         "distance" : 5.0,
-        "antialias" : 4,
-        "fov" : 45.0
+        "antialias" : 20,
+        "fov" : 45.0,
+        "sky" : "haze"
     },
     "materials" : {
         "red" : {

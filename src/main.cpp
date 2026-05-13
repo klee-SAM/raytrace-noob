@@ -98,7 +98,9 @@ int main(int argc, char** argv) {
     camera->applyProjection(P);
     camera->applyView(MV);
 
+    clock_t start = clock();
     shared_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
+    clog << "Seconds used by render(): " << (double)(clock()-start)/CLOCKS_PER_SEC << '\n';
     image->setFilename(outputname);
     image->write();
 

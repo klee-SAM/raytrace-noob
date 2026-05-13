@@ -43,6 +43,9 @@ public:
     // Setting samples below 2 disables antialiasing.
     void setAntialiasSamples(uint count) { samples = count > 1 ? count : 1; }
 
+    enum class SkyType {Void, Haze};
+    void setSky(SkyType s) { sky = s; }
+
     std::shared_ptr<Image> render(std::shared_ptr<Scene>, const glm::mat4&, const glm::mat4&);
 
 private:
@@ -56,6 +59,7 @@ private:
     uint width, height;
 
     uint samples = 1;
+    SkyType sky = SkyType::Void;
 
     // variables computed in render()
     glm::vec4 cameraPos; // contains world-space position of camera

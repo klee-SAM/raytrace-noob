@@ -14,11 +14,11 @@ Adding more features as a learning exercise
 - [ ] Surface roughness
 - [ ] Area lights
 
+- [x] Antialiasing
 - [ ] Ambient occulusion
 - [ ] Motion blur
 - [ ] SDF and sphere tracing
 
-- [x] Antialiasing
 - [ ] Multithreading
 - [ ] BVH for meshes
 - [ ] BVH for scene

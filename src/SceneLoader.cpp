@@ -125,17 +125,24 @@ int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::shared_ptr
 {
     int j = 1; // the offset to the next key token
     // this pointer arithmetic is not very safe
-    for (int key = 0; key < obj_tok->size; ++key) {
-        if (jsonstreq(obj_tok+j, "distance")) {
-            double initDist = doubleFromToken(obj_tok+j+1);
+    for (int prop = 0; prop < obj_tok->size; ++prop) {
+        auto key = obj_tok+j, value = key+1;
+        if (jsonstreq(key, "distance")) {
+            double initDist = doubleFromToken(value);
             cam->setInitDistance(initDist);  
-        } else if (jsonstreq(obj_tok+j, "antialias")) {
-            int samples = intFromToken(obj_tok+j+1);
+        } else if (jsonstreq(key, "antialias")) {
+            int samples = intFromToken(value);
             samples = samples < 0 ? 0 : samples;
             cam->setAntialiasSamples((uint)samples);
-        } else if (jsonstreq(obj_tok+j, "fov")) {
-            float fov = doubleFromToken(obj_tok+j+1);
+        } else if (jsonstreq(key, "fov")) {
+            float fov = doubleFromToken(value);
             cam->setFOV(fov);
+        } else if (jsonstreq(key, "sky")) {
+            if (jsonstreq(value, "haze")) {
+                cam->setSky(Camera::SkyType::Haze);
+            } else if (!jsonstreq(value, "void")) {
+                std::cerr << "Unknown sky type: " << print_token(value) << '\n';  
+            }
         }
 
         // if the value-token is not a primitive,
