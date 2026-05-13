@@ -1,7 +1,7 @@
 {
     "camera" : {
         "distance" : 5.0,
-        "antialias" : 4,
+        "antialias" : 1,
         "fov" : 45.0
     },
     "lights" : [

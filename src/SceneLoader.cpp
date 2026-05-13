@@ -143,12 +143,16 @@ int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::shared_ptr
             } else if (!jsonstreq(value, "void")) {
                 std::cerr << "Unknown sky type: " << print_token(value) << '\n';  
             }
+        } else if (jsonstreq(key, "rotation")) {
+            // [yaw, pitch, roll]
+            vec3 rot = float3FromToken(value);
+            cam->setRotation(rot);
         }
 
         // if the value-token is not a primitive,
         // increment the current token pointer past the object's
         // or array's tokens
-        j += offsetToNextKey(obj_tok + j);
+        j += 1 + offsetToNextKey(value);
     }
     // offset to next object (camera, materials, etc.)
     return j;

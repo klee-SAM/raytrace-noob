@@ -39,6 +39,7 @@ public:
     void setInitDistance(double dist) { translation.z = -std::abs(dist); }
     void setTranslation(const glm::vec3& pos) { translation = pos; }
     void setRotation(const glm::vec3& rot) { rotation = rot; }
+    void setWorldRotation(const glm::vec3& wld_rot) { world_rotation = wld_rot; }
 
     // Setting samples below 2 disables antialiasing.
     void setAntialiasSamples(uint count) { samples = count > 1 ? count : 1; }
@@ -51,6 +52,9 @@ public:
 private:
     glm::vec3 translation; // Relative translation, which is indirectly used in computing cameraPos
     glm::vec3 rotation;    // Relative rotation
+
+    // Rotate the scene around the origin by angles specified in each axis in radians.
+    glm::vec3 world_rotation; 
 
     double aspectRatio;
     double fovy; // radians

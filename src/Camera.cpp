@@ -8,6 +8,8 @@ void Camera::applyProjection(MatrixStack& MS) {
 }
 void Camera::applyView(MatrixStack& MS) {
     MS.translate(translation);
+    // yaw, pitch, then roll
+    MS.rotate(rotation.z, vec3(0.0f, 0.0f, 1.0f));
     MS.rotate(rotation.y, vec3(1.0f, 0.0f, 0.0f));
     MS.rotate(rotation.x, vec3(0.0f, 1.0f, 0.0f));
 }

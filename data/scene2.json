@@ -1,28 +1,29 @@
 {
     "camera" : {
-        "distance" : 5.0,
-        "antialias" : 20,
-        "fov" : 45.0,
-        "sky" : "haze"
+        "distance" : 3.0,
+        "antialias" : 1,
+        "fov" : 60.0,
+        "sky" : "haze",
+        "rotation" : [90.0, -15.0, 7.5]
     },
     "materials" : {
         "red" : {
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [1.0, 0.0, 0.0],
-            "specular" : [1.0, 1.0, 0.5],
-            "exponent" : 100.0
+            "specular" : [1.0, 0.5, 1.0],
+            "exponent" : 150.0
         },
         "green" : {
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [0.0, 1.0, 0.0],
-            "specular" : [1.0, 1.0, 0.5],
-            "exponent" : 100.0
+            "specular" : [1.0, 0.5, 1.0],
+            "exponent" : 150.0
         },
         "blue" : {
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [0.0, 0.0, 1.0],
-            "specular" : [1.0, 1.0, 0.5],
-            "exponent" : 100.0
+            "specular" : [1.0, 0.5, 1.0],
+            "exponent" : 150.0
         }
     },
     "lights" : [
