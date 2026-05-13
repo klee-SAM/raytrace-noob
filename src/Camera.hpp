@@ -39,7 +39,7 @@ public:
     void setTranslation(const glm::vec3& pos) { translation = pos; }
     void setRotation(const glm::vec3& rot) { rotation = rot; }
 
-    // Setting samples to 1 disables antialiasing.
+    // Setting samples below 2 disables antialiasing.
     void setAntialiasSamples(uint count) { samples = count > 1 ? count : 1; }
 
     std::shared_ptr<Image> render(std::shared_ptr<Scene>, const glm::mat4&, const glm::mat4&);

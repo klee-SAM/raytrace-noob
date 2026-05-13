@@ -43,9 +43,12 @@ shared_ptr<Image> Camera::render(
 
     float sample_scale = 1.0/samples;
 
+    uint totalCasts = height*width;
+
     shared_ptr<Image> image = make_shared<Image>(width, height);
 
     for (uint y = 0; y < height; ++y) {
+        std::clog << '\r' << y*width << '/' << totalCasts << " scans completed " << std::flush;
         for (uint x = 0; x < width; ++x) {
             vec3 color = vec3(0.0f);
 
@@ -63,6 +66,7 @@ shared_ptr<Image> Camera::render(
             image->setPixel(x, y, color);
         }
     }
+    std::clog << "\rDone." << std::string(30, ' ') << '\n';
     return image;
 }
 

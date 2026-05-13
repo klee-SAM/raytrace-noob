@@ -31,3 +31,21 @@ const double PI = 3.14159265358979323846;
 const double R_PI = 1.0/PI;
 
 const double INF = std::numeric_limits<double>::infinity();
+
+
+class Interval {
+public:
+    double min, max;
+
+    Interval() : min(INF), max(-INF) {} // empty
+    Interval(double min, double max) : min(min), max(max) {}
+
+    double size() const { return max - min; }
+    bool contains(double x) const { return (min <= x) && (x <= max); }
+    bool surrounds(double x) const { return (x < min) && (max < x);}    
+
+    static const Interval empty, world;
+};
+
+const Interval Interval::empty = Interval(INF, -INF);
+const Interval Interval::world = Interval(-INF, INF); 
