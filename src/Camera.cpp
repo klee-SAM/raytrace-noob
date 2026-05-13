@@ -12,11 +12,11 @@ void Camera::applyView(MatrixStack& MS) {
     MS.rotate(rotation.x, vec3(0.0f, 1.0f, 0.0f));
 }
 
-Ray Camera::castPrimaryRay(uint idx, uint idy, double offset) {
+Ray Camera::castPrimaryRay(uint idx, uint idy, double offsetx, double offsety) {
     // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
 
-    double ndc_y = 2*((double)idy + offset)/((double)height) - 1.0;
-    double ndc_x = 2*((double)idx + offset)/((double)width) - 1.0;
+    double ndc_y = 2*((double)idy + offsety)/((double)height) - 1.0;
+    double ndc_x = 2*((double)idx + offsetx)/((double)width) - 1.0;
 
     glm::vec4 coord((float)ndc_x, (float)ndc_y, -1.0f, 1.0f); // px coord
     coord = invP*coord; // eye coord
@@ -57,7 +57,9 @@ shared_ptr<Image> Camera::render(
                 color = getRayColor(scene, cray);
             } else {
                 for (uint i = 0; i < samples; ++i) {
-                    Ray cray = castPrimaryRay(x, y, linearRand(.01f, 0.99f));
+                    double dx = linearRand(0.001f, 0.999f);
+                    double dy = linearRand(0.001f, 0.999f);
+                    Ray cray = castPrimaryRay(x, y, dx, dy);
                     color += getRayColor(scene, cray);
                 }
                 color *= sample_scale;

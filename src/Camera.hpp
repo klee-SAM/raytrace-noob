@@ -67,5 +67,5 @@ private:
         const Interval& interval = Interval(EPSILION, MAX_DIST), 
         uint recursiveDepth = 0);
     
-    Ray castPrimaryRay(uint idx, uint idy, double offset = 0.5);
+    Ray castPrimaryRay(uint idx, uint idy, double offsetx = 0.5, double offsety = 0.5);
 };
