@@ -18,7 +18,7 @@ Adding more features as a learning exercise
 - [ ] Motion blur
 - [ ] SDF and sphere tracing
 
-- [ ] Antialiasing (to be finished)
+- [x] Antialiasing
 - [ ] Multithreading
 - [ ] BVH for meshes
 - [ ] BVH for scene
