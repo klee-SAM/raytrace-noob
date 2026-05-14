@@ -7,7 +7,7 @@ Adding more features as a learning exercise
 
 #### shapes/objects
 - [ ] Infinite cylinders
-- [ ] Boxes
+- [x] Boxes
 - [ ] CSG
 - [ ] Object/Regional Light Attentuation
 
