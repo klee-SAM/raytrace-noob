@@ -5,8 +5,8 @@
 
 class Shape {
 public:
-	Shape();
-	virtual ~Shape();
+	Shape() {}
+	virtual ~Shape() = default;
 
 	void setModelMatrix(const glm::mat4& m);
 	glm::mat4 getModelMatrix() { return modelMat; }
@@ -32,8 +32,8 @@ protected:
 */
 class Sphere : public Shape {
 public:
-	Sphere();
-	virtual ~Sphere();
+	Sphere() {}
+	virtual ~Sphere() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 };
 
@@ -46,8 +46,8 @@ public:
  */
 class Plane : public Shape {
 public:
-	Plane();
-	virtual ~Plane();
+	Plane() {}
+	virtual ~Plane() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 	void setNormal(const glm::vec3& r) { 
         modelMat[1] = glm::vec4(r, 0.0f);
@@ -58,6 +58,13 @@ private:
     glm::vec3 uvec, vvec;
     bool computedUVvectors = false;
     void computeUVvectors(const glm::vec3& n);
+};
+
+class Box : public Shape {
+public:
+	Box() {}
+	virtual ~Box() = default;
+	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 };
 
 // class Mesh : public Shape {

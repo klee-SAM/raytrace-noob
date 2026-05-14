@@ -10,20 +10,10 @@
 using namespace std;
 using namespace glm;
 
-Shape::Shape() {
-}
-Shape::~Shape() {
-}
-
 void Shape::setModelMatrix(const mat4& m) {
 	modelMat = m;
 	inv_modelMat = inverse(m);
 	invT_modelMat = inverse(transpose(m));
-}
-
-Sphere::Sphere() {
-}
-Sphere::~Sphere() {
 }
 
 // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
@@ -93,12 +83,6 @@ void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
         h1.v = uv1.y;
 		hits.push_back(h1);
 	}
-}
-
-
-Plane::Plane() {
-}
-Plane::~Plane() {
 }
 
 void Plane::computeUVvectors(const glm::vec3& normal) {
