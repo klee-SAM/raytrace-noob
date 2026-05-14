@@ -131,6 +131,8 @@ void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
 
 struct Pair { double min, max; };	
 
+void swap(float &a, float &b) { float tmp = a; a = b; b = tmp; }
+
 Pair checkAxis(float pos, float dir) {
 	float tmin_num = -1 - pos;
 	float tmax_num = 1 - pos;
@@ -144,9 +146,19 @@ Pair checkAxis(float pos, float dir) {
 		tmin = tmin_num/dir;
 		tmax = tmax_num/dir;
 	}
-	if (tmin > tmax) std::swap(tmin, tmax);
+	if (tmin > tmax) swap(tmin, tmax);
 	Pair p; p.min = tmin; p.max = tmax;
 	return p;
+}
+
+vec4 box_normal_at(const vec3& p) {
+	// Assume values range from [-1, 1]; do reciprocal so that values
+	// close to 1 do not get truncated to 0
+	float r_maxc = 1.0f/std::max(std::max(abs(p.x), abs(p.y)), abs(p.z));
+	float cx = static_cast<int>(p.x*r_maxc);
+	float cy = static_cast<int>(p.y*r_maxc);
+	float cz = static_cast<int>(p.z*r_maxc);
+	return vec4(cx, cy, cz, 1.0f);
 }
 
 // Axis-aligned bounding box intersection
@@ -161,17 +173,19 @@ void Box::intersect(const Ray& ray, vector<Hit>& hits) {
 	Pair ty = checkAxis(pk.y, vk.y);
 	Pair tz = checkAxis(pk.z, vk.z);
 
-	float tmin = std::max(tx.min, ty.min, tz.min);
-	float tmax = std::min(tx.max, ty.max, tz.max);
+	float tmin = std::max(std::max(tx.min, ty.min), tz.min);
+	float tmax = std::min(std::min(tx.max, ty.max), tz.max);
+
+	if (tmin > tmax) return;
 
 	vec3 x0 = pk + tmin*vk;
 	vec3 wld_x0 = vec3(modelMat*vec4(x0, 1.0f));
-	vec3 wld_n0 = normalize(vec3(invT_modelMat*vec4(x0, 0.0f)));
+	vec3 wld_n0 = normalize(vec3(invT_modelMat*box_normal_at(x0)));
 	float wld_t0 = tmin/length(vx);
 
 	vec3 x1 = pk + tmax*vk;
 	vec3 wld_x1 = vec3(modelMat*vec4(x1, 1.0f));
-	vec3 wld_n1 = normalize(vec3(invT_modelMat*vec4(x1, 0.0f)));
+	vec3 wld_n1 = normalize(vec3(invT_modelMat*box_normal_at(x1)));
 	float wld_t1 = tmax/length(vx);
 
 	Hit h0; 
@@ -179,10 +193,18 @@ void Box::intersect(const Ray& ray, vector<Hit>& hits) {
 	h0.n = wld_n0; 
 	h0.t = wld_t0;
 	h0.m = material;
-	vec2 uv0 = sphere_computeUV(x0);
-	h0.u = uv0.x;
-	h0.v = uv0.y;
+	h0.u = 0;
+	h0.v = 0;
 	hits.push_back(h0);
+
+	Hit h1; 
+	h1.x = wld_x1; 
+	h1.n = wld_n1; 
+	h1.t = wld_t1;
+	h1.m = material;
+	h1.u = 0;
+	h1.v = 0;
+	hits.push_back(h1);
 
 	// tbd
 }
