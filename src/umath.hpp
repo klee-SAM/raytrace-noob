@@ -31,6 +31,7 @@ const double PI = 3.14159265358979323846;
 const double R_PI = 1.0/PI;
 
 const double INF = std::numeric_limits<double>::infinity();
+const double EPSILION = 1E-3;
 
 // Create an anonymous namespace so the linker doesn't complain
 // about multiple definitions

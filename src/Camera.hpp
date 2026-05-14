@@ -9,7 +9,8 @@
 
 class Camera {
 public:
-    static constexpr double EPSILION = 1E-3;
+    // I could make these modifible via json files
+    static constexpr double EPSILION = EPSILION;
     static constexpr double MAX_DIST = std::numeric_limits<float>::max();
     static constexpr uint MAX_RECURSIONS = 7;
     static constexpr float MINIMUM_REFL_COEFF = 0.005f;

@@ -16,6 +16,8 @@ void Shape::setModelMatrix(const mat4& m) {
 	invT_modelMat = inverse(transpose(m));
 }
 
+
+
 // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
 vec2 sphere_computeUV(const vec3& p) {
     float u = (1.0 + std::atan2(p.z, p.x)*R_PI)/2;
@@ -23,8 +25,6 @@ vec2 sphere_computeUV(const vec3& p) {
     return vec2(u, v);
 }
 
-// Any issues with unusual normals (placement of specular lights)
-// blame this function 
 void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
 	vec3 pk = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
 	vec3 vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
@@ -85,6 +85,8 @@ void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
 	}
 }
 
+
+
 void Plane::computeUVvectors(const glm::vec3& normal) {
     // https://computergraphics.stackexchange.com/questions/8382
     vec3 a = cross(normal, vec3(1, 0, 0));
@@ -99,7 +101,7 @@ void Plane::computeUVvectors(const glm::vec3& normal) {
 // The rotation of the plane is used as the normal
 void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
 	vec3 n = vec3(modelMat[1]);
-	// Compute the distance of the camera using:
+	// Compute the distance from the ray origin using:
 	float t = dot(n, vec3(modelMat[3])-ray.pos)/dot(n, ray.dir);
 
 	// and the position of intersection by
@@ -126,6 +128,64 @@ void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
 	hits.push_back(hit);
 }
 
+
+struct Pair { double min, max; };	
+
+Pair checkAxis(float pos, float dir) {
+	float tmin_num = -1 - pos;
+	float tmax_num = 1 - pos;
+	float tmin, tmax;
+	if (std::abs(dir) < EPSILION) {
+		// Direction is effectively 0,
+		// but do this to preserve signs
+		tmin = tmin_num*INF;
+		tmax = tmax_num*INF;
+	} else {
+		tmin = tmin_num/dir;
+		tmax = tmax_num/dir;
+	}
+	if (tmin > tmax) std::swap(tmin, tmax);
+	Pair p; p.min = tmin; p.max = tmax;
+	return p;
+}
+
+// Axis-aligned bounding box intersection
+void Box::intersect(const Ray& ray, vector<Hit>& hits) {
+	// Transform the ray back to model space first;
+	// axis tests assume the box is at the origin
+	vec3 pk = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
+	vec3 vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
+	vec3 vk = normalize(vx);
+
+	Pair tx = checkAxis(pk.x, vk.x);
+	Pair ty = checkAxis(pk.y, vk.y);
+	Pair tz = checkAxis(pk.z, vk.z);
+
+	float tmin = std::max(tx.min, ty.min, tz.min);
+	float tmax = std::min(tx.max, ty.max, tz.max);
+
+	vec3 x0 = pk + tmin*vk;
+	vec3 wld_x0 = vec3(modelMat*vec4(x0, 1.0f));
+	vec3 wld_n0 = normalize(vec3(invT_modelMat*vec4(x0, 0.0f)));
+	float wld_t0 = tmin/length(vx);
+
+	vec3 x1 = pk + tmax*vk;
+	vec3 wld_x1 = vec3(modelMat*vec4(x1, 1.0f));
+	vec3 wld_n1 = normalize(vec3(invT_modelMat*vec4(x1, 0.0f)));
+	float wld_t1 = tmax/length(vx);
+
+	Hit h0; 
+	h0.x = wld_x0; 
+	h0.n = wld_n0; 
+	h0.t = wld_t0;
+	h0.m = material;
+	vec2 uv0 = sphere_computeUV(x0);
+	h0.u = uv0.x;
+	h0.v = uv0.y;
+	hits.push_back(h0);
+
+	// tbd
+}
 
 /*
 Mesh::Mesh() {

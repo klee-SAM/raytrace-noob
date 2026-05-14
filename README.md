@@ -4,28 +4,33 @@ Adding more features as a learning exercise
 ## todo:
 
 ### features
+
+#### shapes/objects
 - [ ] Infinite cylinders
 - [ ] Boxes
 - [ ] CSG
 - [ ] Object/Regional Light Attentuation
 
+#### light interactions
 - [ ] Texture mapping
 - [ ] Refraction
 - [ ] Surface roughness
+- [ ] Ambient occulusion
 - [ ] Area lights
 
+#### other effects
 - [x] Antialiasing
-- [ ] Ambient occulusion
 - [ ] Motion blur
 - [ ] SDF and sphere tracing
 
+#### optimizations
 - [ ] Multithreading
 - [ ] BVH for meshes
 - [ ] BVH for scene
 - [ ] GPU acceleration
 
+#### special
 - [ ] Monte Carlo path tracing
-
 
 ### misc.
 - [ ] scene format documentation (json)
@@ -37,9 +42,10 @@ Adding more features as a learning exercise
 
 ## Other libraries used
 - stb_image.h and stb_image_write.h: https://github.com/nothings/stb
-- jsmn.h: https://github.com/zserge/jsmn
+- jsmn.h (JSON parser): https://github.com/zserge/jsmn
 
 
 # Further reading:
+
 - Raytracing in One Weekend series (https://raytracing.github.io/books/RayTracingInOneWeekend.html)
-- Ray Tracer Challenge
+- The Ray Tracer Challenge: (https://pragprog.com/titles/jbtracer/the-ray-tracer-challenge/)
