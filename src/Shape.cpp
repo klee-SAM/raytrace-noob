@@ -1,11 +1,10 @@
 #include "stn.hpp"
 #include "umath.hpp"
 
-// #define TINYOBJLOADER_IMPLEMENTATION
-// #include "tiny_obj_loader.h"
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
 
 #include "Shape.hpp"
-// #include "raytri.c"
 
 using namespace std;
 using namespace glm;
@@ -245,73 +244,69 @@ void Cylinder::intersect(const Ray& ray, vector<Hit>& hits) {
 
 
 
-/*
-Mesh::Mesh() {
-}
-Mesh::~Mesh() {
-}
-
-const float MAX_FLOAT = numeric_limits<float>::max();
-
-void Mesh::loadMesh(const string& meshName, bool printVertices) 
+void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool printVerticesCount) 
 {
     // Load geometry
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	string warnStr, errStr;
-	bool rc = tinyobj::LoadObj(&attrib, &shapes, &materials, &warnStr, &errStr, meshName.c_str());
-	if(!rc) {
-		cerr << errStr << endl;
-	} else {
-		// Some OBJ files have different indices for vertex positions, normals,
-		// and texture coordinates. For example, a cube corner vertex may have
-		// three different normals. Here, we are going to duplicate all such
-		// vertices.
-		// Loop over shapes
-		for(size_t s = 0; s < shapes.size(); s++) {
-			// Loop over faces (polygons)
-			size_t index_offset = 0;
-			for(size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-				size_t fv = shapes[s].mesh.num_face_vertices[f];
-				// Loop over vertices in the face.
-				for(size_t v = 0; v < fv; v++) {
-					// access to vertex
-					tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-					posBuf.push_back(attrib.vertices[3*idx.vertex_index+0]);
-					posBuf.push_back(attrib.vertices[3*idx.vertex_index+1]);
-					posBuf.push_back(attrib.vertices[3*idx.vertex_index+2]);
-					if(!attrib.normals.empty()) {
-						norBuf.push_back(attrib.normals[3*idx.normal_index+0]);
-						norBuf.push_back(attrib.normals[3*idx.normal_index+1]);
-						norBuf.push_back(attrib.normals[3*idx.normal_index+2]);
-					}
-					if(!attrib.texcoords.empty()) {
-						texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+0]);
-						texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+1]);
-					}
+	std::vector<tinyobj::material_t> obj_mats;
+	std::string errMsg;
+
+	std::string meshPath = directoryPath;
+
+	if (directoryPath.back() != '/') 
+		meshPath += '/' + meshName; 
+	else meshPath += meshName; 
+
+	// boolean parameter enables triangulation of faces with 4+ vertices
+	// TODO: add support for .mtl files
+	bool success = tinyobj::LoadObj(&attrib, &shapes, &obj_mats, &errMsg, 
+		meshPath.c_str(), nullptr, true);
+
+	if (!errMsg.empty()) std::cerr << errMsg << '\n';
+	if (!success) return; 
+
+	for (auto& shape : shapes) {
+		size_t index_offset = 0;
+		// Loop over faces. 
+		for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); ++f) {
+			u_char fv = shape.mesh.num_face_vertices.at(f);
+			// Loop over vertices in face.
+			for (u_char v = 0; v < fv; v++) {
+				tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
+				posBuf.push_back(attrib.vertices[3*idx.vertex_index+0]);
+				posBuf.push_back(attrib.vertices[3*idx.vertex_index+1]);
+				posBuf.push_back(attrib.vertices[3*idx.vertex_index+2]);
+
+				if (!attrib.normals.empty()) {
+					norBuf.push_back(attrib.normals[3*idx.normal_index+0]);
+					norBuf.push_back(attrib.normals[3*idx.normal_index+1]);
+					norBuf.push_back(attrib.normals[3*idx.normal_index+2]);
 				}
-				index_offset += fv;
-				// per-face material (IGNORE)
-				// shapes[s].mesh.material_ids[f];
+
+				if (!attrib.texcoords.empty()) {
+					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+0]);
+					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+1]);
+				}
 			}
+			index_offset += fv; // b/c of triangulate, offset is always += 3.
+			// shape.mesh.material_ids[f];
 		}
 	}
 
 	setBoundingRadius();
 
-    if (printVertices)
+    if (printVerticesCount)
 	    cout << "Number of vertices: " << posBuf.size()/3 << endl;
 }
 
 // returned vector contains data in this order:
 // { minX, maxY, minZ, ...}
-// old code so bad I rewrite it to be verbose
-//...
+
 void Mesh::setBoundingRadius() 
 {
-	float minPos = MAX_FLOAT;
-	float maxPos = -MAX_FLOAT;
+	float minPos = INF;
+	float maxPos = -INF;
 	vector<float> bounds = getBoundingBox();
 	for (float& x : bounds) {
 		if (minPos > x) minPos = x;
@@ -326,20 +321,27 @@ void Mesh::setBoundingRadius()
 	this->meshCenter = vec3(cx, cy, cz);
 }
 
+struct Bounds {
+	Interval x;
+	Interval y;
+	Interval z;
+};
+
 // returned vector contains data in this order:
 // { minX, minY, minZ, maxX, maxY, maxZ}
 vector<float> Mesh::getBoundingBox() 
 {
 	vector<float> bounds(6, 0.0f);
+	
 	if (posBuf.size() < 6) return bounds;
 	// initialize
-	bounds.at(0) = MAX_FLOAT;
-	bounds.at(1) = MAX_FLOAT;
-	bounds.at(2) = MAX_FLOAT;
+	bounds.at(0) = INF;
+	bounds.at(1) = INF;
+	bounds.at(2) = INF;
 
-	bounds.at(3) = -MAX_FLOAT;
-	bounds.at(4) = -MAX_FLOAT;
-	bounds.at(5) = -MAX_FLOAT;
+	bounds.at(3) = -INF;
+	bounds.at(4) = -INF;
+	bounds.at(5) = -INF;
 
 	for (size_t i = 0; i < posBuf.size(); i += 6) {
 		// write the minimum of the coord
@@ -354,226 +356,225 @@ vector<float> Mesh::getBoundingBox()
 	return bounds;
 }
 
-void Mesh::fitToUnitBox()
-{
-	// Scale the vertex positions so that they fit within [-1, +1] in all three dimensions.
-	glm::vec3 vmin(posBuf[0], posBuf[1], posBuf[2]);
-	glm::vec3 vmax(posBuf[0], posBuf[1], posBuf[2]);
-	for(int i = 0; i < (int)posBuf.size(); i += 3) {
-		glm::vec3 v(posBuf[i], posBuf[i+1], posBuf[i+2]);
-		vmin.x = std::min(vmin.x, v.x);
-		vmin.y = std::min(vmin.y, v.y);
-		vmin.z = std::min(vmin.z, v.z);
-		vmax.x = std::max(vmax.x, v.x);
-		vmax.y = std::max(vmax.y, v.y);
-		vmax.z = std::max(vmax.z, v.z);
-	}
-	glm::vec3 center = 0.5f*(vmin + vmax);
-	glm::vec3 diff = vmax - vmin;
-	float diffmax = diff.x;
-	diffmax = std::max(diffmax, diff.y);
-	diffmax = std::max(diffmax, diff.z);
-	float scale = 1.0f / diffmax;
-	for(int i = 0; i < (int)posBuf.size(); i += 3) {
-		posBuf[i  ] = (posBuf[i  ] - center.x) * scale;
-		posBuf[i+1] = (posBuf[i+1] - center.y) * scale;
-		posBuf[i+2] = (posBuf[i+2] - center.z) * scale;
-	}
+// void Mesh::fitToUnitBox()
+// {
+// 	// Scale the vertex positions so that they fit within [-1, +1] in all three dimensions.
+// 	glm::vec3 vmin(posBuf[0], posBuf[1], posBuf[2]);
+// 	glm::vec3 vmax(posBuf[0], posBuf[1], posBuf[2]);
+// 	for(int i = 0; i < (int)posBuf.size(); i += 3) {
+// 		glm::vec3 v(posBuf[i], posBuf[i+1], posBuf[i+2]);
+// 		vmin.x = std::min(vmin.x, v.x);
+// 		vmin.y = std::min(vmin.y, v.y);
+// 		vmin.z = std::min(vmin.z, v.z);
+// 		vmax.x = std::max(vmax.x, v.x);
+// 		vmax.y = std::max(vmax.y, v.y);
+// 		vmax.z = std::max(vmax.z, v.z);
+// 	}
+// 	glm::vec3 center = 0.5f*(vmin + vmax);
+// 	glm::vec3 diff = vmax - vmin;
+// 	float diffmax = diff.x;
+// 	diffmax = std::max(diffmax, diff.y);
+// 	diffmax = std::max(diffmax, diff.z);
+// 	float scale = 1.0f / diffmax;
+// 	for(int i = 0; i < (int)posBuf.size(); i += 3) {
+// 		posBuf[i  ] = (posBuf[i  ] - center.x) * scale;
+// 		posBuf[i+1] = (posBuf[i+1] - center.y) * scale;
+// 		posBuf[i+2] = (posBuf[i+2] - center.z) * scale;
+// 	}
 
-	// Readjust the bounding radius to account for changes in posBuf
-	setBoundingRadius();
-}
+// 	// Readjust the bounding radius to account for changes in posBuf
+// 	setBoundingRadius();
+// }
 
-// construct new matrix just for the sphere test
-void Mesh::transform() {
-	MatrixStack MV;
-	MV.pushMatrix();
-	MV.translate(position);
-	MV.rotate(rotation.z, vec3(0,0,1));
-	MV.rotate(rotation.y, vec3(0,1,0));
-	MV.rotate(rotation.x, vec3(1,0,0));
-	MV.scale(scale);
+// // construct new matrix just for the sphere test
+// void Mesh::transform() {
+// 	MatrixStack MV;
+// 	MV.pushMatrix();
+// 	MV.translate(position);
+// 	MV.rotate(rotation.z, vec3(0,0,1));
+// 	MV.rotate(rotation.y, vec3(0,1,0));
+// 	MV.rotate(rotation.x, vec3(1,0,0));
+// 	MV.scale(scale);
 
-	MV.pushMatrix();
-	MV.scale(boundingRadius);
-	sphereMat = MV.topMatrix(); // only useful for debugging
-	inv_sphereMat = inverse(MV.topMatrix());
-	invT_sphereMat = inverse(transpose(MV.topMatrix())); // likewise
-	MV.popMatrix();
+// 	MV.pushMatrix();
+// 	MV.scale(boundingRadius);
+// 	sphereMat = MV.topMatrix(); // only useful for debugging
+// 	inv_sphereMat = inverse(MV.topMatrix());
+// 	invT_sphereMat = inverse(transpose(MV.topMatrix())); // likewise
+// 	MV.popMatrix();
 
-	modelMat = MV.topMatrix();
-	inv_modelMat = inverse(MV.topMatrix());
-	invT_modelMat = inverse(transpose(MV.topMatrix()));
-	// I am lazy.
-}
+// 	modelMat = MV.topMatrix();
+// 	inv_modelMat = inverse(MV.topMatrix());
+// 	invT_modelMat = inverse(transpose(MV.topMatrix()));
+// 	// I am lazy.
+// }
 
-const bool TEST_BOUNDING_SPHERE = false;
+// const bool TEST_BOUNDING_SPHERE = false;
 
-// Some floating-point error possible, or the normals are not normal
-void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
-	// transform ray to local coords
-	vec3 l_rorig = vec3(inv_modelMat*vec4(ray.origin, 1.0f));
+// // Some floating-point error possible, or the normals are not normal
+// void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
+// 	// transform ray to local coords
+// 	vec3 l_rorig = vec3(inv_modelMat*vec4(ray.origin, 1.0f));
 
-	vec3 pk;
-	vec3 vx;
-	if (TEST_BOUNDING_SPHERE) {
-		// here, use inv_sphereMat to accurately represent the bounding sphere
-		pk = vec3(inv_sphereMat*vec4(ray.origin, 1.0f)) - meshCenter;
-		vx = vec3(inv_sphereMat*vec4(ray.direction, 0.0f));
-	} else {
-		pk = l_rorig - meshCenter;
-		vx = vec3(inv_modelMat*vec4(ray.direction, 0.0f));
-	}
-	vec3 vk = normalize(vx);
-	float a, b, c;
-	float d, den;
+// 	vec3 pk;
+// 	vec3 vx;
+// 	if (TEST_BOUNDING_SPHERE) {
+// 		// here, use inv_sphereMat to accurately represent the bounding sphere
+// 		pk = vec3(inv_sphereMat*vec4(ray.origin, 1.0f)) - meshCenter;
+// 		vx = vec3(inv_sphereMat*vec4(ray.direction, 0.0f));
+// 	} else {
+// 		pk = l_rorig - meshCenter;
+// 		vx = vec3(inv_modelMat*vec4(ray.direction, 0.0f));
+// 	}
+// 	vec3 vk = normalize(vx);
+// 	float a, b, c;
+// 	float d, den;
 
-	a = dot(vk, vk);
-	b = 2*dot(vk, pk);
-	c = dot(pk, pk) - 1;
-	d = b*b - 4*a*c;
-	den = 1.0f/(2*a);
+// 	a = dot(vk, vk);
+// 	b = 2*dot(vk, pk);
+// 	c = dot(pk, pk) - 1;
+// 	d = b*b - 4*a*c;
+// 	den = 1.0f/(2*a);
 
-	if (d <= 0.0f) return;
+// 	if (d <= 0.0f) return;
 
-	if (TEST_BOUNDING_SPHERE) {
-		float t0 = (-b - glm::sqrt(d))*den; 
-		float t1 = (-b + glm::sqrt(d))*den;
+// 	if (TEST_BOUNDING_SPHERE) {
+// 		float t0 = (-b - glm::sqrt(d))*den; 
+// 		float t1 = (-b + glm::sqrt(d))*den;
 
-		vec3 x0 = pk + t0*vk;
-		vec3 wld_x0 = vec3(sphereMat*vec4(x0, 1.0f));
-		vec3 wld_n0 = normalize(vec3(invT_sphereMat*vec4(x0, 0.0f)));
-		float wld_t0 = t0/length(vx);
-		hits.push_back(Hit(wld_x0, wld_n0, wld_t0, material));
+// 		vec3 x0 = pk + t0*vk;
+// 		vec3 wld_x0 = vec3(sphereMat*vec4(x0, 1.0f));
+// 		vec3 wld_n0 = normalize(vec3(invT_sphereMat*vec4(x0, 0.0f)));
+// 		float wld_t0 = t0/length(vx);
+// 		hits.push_back(Hit(wld_x0, wld_n0, wld_t0, material));
 
-		vec3 x1 = pk + t1*vk;
-		vec3 wld_x1 = vec3(sphereMat*vec4(x1, 1.0f));
-		vec3 wld_n1 = normalize(vec3(invT_sphereMat*vec4(x1, 0.0f)));
-		float wld_t1 = t1/length(vx);
-		hits.push_back(Hit(wld_x1, wld_n1, wld_t1, material));
-		return;
-	}
+// 		vec3 x1 = pk + t1*vk;
+// 		vec3 wld_x1 = vec3(sphereMat*vec4(x1, 1.0f));
+// 		vec3 wld_n1 = normalize(vec3(invT_sphereMat*vec4(x1, 0.0f)));
+// 		float wld_t1 = t1/length(vx);
+// 		hits.push_back(Hit(wld_x1, wld_n1, wld_t1, material));
+// 		return;
+// 	}
 
-	float rorig[3] = {l_rorig.x, l_rorig.y, l_rorig.z};
-	float rdir[3] = {vk.x, vk.y, vk.z};
+// 	float rorig[3] = {l_rorig.x, l_rorig.y, l_rorig.z};
+// 	float rdir[3] = {vk.x, vk.y, vk.z};
 
-	float t, u, v;
+// 	float t, u, v;
 
-	if (posBuf.size() % 9 != 0) {
-		// Otherwise, a segfault may occur from invalid
-		// memory access (2:57 AM brain thinking).
-		cerr << "posBuf.size() == " 
-			 << posBuf.size() 
-			 << "; unsafe size\n";
-		return;
-	} 
-	for (size_t i = 0; i < posBuf.size(); i += 9) {
-		// float vert0[3], float vert1[3], and float vert2[3] are represented
-		// by respective offsets. Use pointer magic for speed; this gives me a ~2x speedup:
-		if (!intersect_triangle3(&l_rorig.x, &vk.x, &posBuf.at(0+i), &posBuf.at(3+i), &posBuf.at(6+i), &t, &u, &v)) continue;
-		float w = 1.0f - v - u;
-		// Because of branch prediction, I have chosen not to check for t here;
-		// that should be handled in hits, given a positive min value
-		float rx = rorig[0]+t*rdir[0];
-		float ry = rorig[1]+t*rdir[1];
-		float rz = rorig[2]+t*rdir[2];
-		vec3 wld_x = vec3(modelMat*vec4(rx, ry, rz, 1.0f));
-		// assume that hopefully the normals for the 3 vertices are the same
-		// loadmesh ensures a vertex only has 1 normal associated with it
-		float nx = w*norBuf.at(0+i) + u*norBuf.at(3+i) + v*norBuf.at(6+i);
-		float ny = w*norBuf.at(1+i) + u*norBuf.at(4+i) + v*norBuf.at(7+i);
-		float nz = w*norBuf.at(2+i) + u*norBuf.at(5+i) + v*norBuf.at(8+i);
-		// Because of floating-point error, the interpolated normal is no longer
-		// normalized, so explicitly normalize it again. This is why we 
-		// renormalize the attribute normal in fragment shaders.
-		vec3 wld_n = normalize(vec3(invT_modelMat*vec4(nx, ny, nz, 0.0f)));
-		hits.push_back(Hit(wld_x, wld_n, t, this->material));
-	}
-}	
+// 	if (posBuf.size() % 9 != 0) {
+// 		// Otherwise, a segfault may occur from invalid
+// 		// memory access (2:57 AM brain thinking).
+// 		cerr << "posBuf.size() == " 
+// 			 << posBuf.size() 
+// 			 << "; unsafe size\n";
+// 		return;
+// 	} 
+// 	for (size_t i = 0; i < posBuf.size(); i += 9) {
+// 		// float vert0[3], float vert1[3], and float vert2[3] are represented
+// 		// by respective offsets. Use pointer magic for speed; this gives me a ~2x speedup:
+// 		if (!intersect_triangle3(&l_rorig.x, &vk.x, &posBuf.at(0+i), &posBuf.at(3+i), &posBuf.at(6+i), &t, &u, &v)) continue;
+// 		float w = 1.0f - v - u;
+// 		// Because of branch prediction, I have chosen not to check for t here;
+// 		// that should be handled in hits, given a positive min value
+// 		float rx = rorig[0]+t*rdir[0];
+// 		float ry = rorig[1]+t*rdir[1];
+// 		float rz = rorig[2]+t*rdir[2];
+// 		vec3 wld_x = vec3(modelMat*vec4(rx, ry, rz, 1.0f));
+// 		// assume that hopefully the normals for the 3 vertices are the same
+// 		// loadmesh ensures a vertex only has 1 normal associated with it
+// 		float nx = w*norBuf.at(0+i) + u*norBuf.at(3+i) + v*norBuf.at(6+i);
+// 		float ny = w*norBuf.at(1+i) + u*norBuf.at(4+i) + v*norBuf.at(7+i);
+// 		float nz = w*norBuf.at(2+i) + u*norBuf.at(5+i) + v*norBuf.at(8+i);
+// 		// Because of floating-point error, the interpolated normal is no longer
+// 		// normalized, so explicitly normalize it again. This is why we 
+// 		// renormalize the attribute normal in fragment shaders.
+// 		vec3 wld_n = normalize(vec3(invT_modelMat*vec4(nx, ny, nz, 0.0f)));
+// 		hits.push_back(Hit(wld_x, wld_n, t, this->material));
+// 	}
+// }	
 
 
-// --
 
-CSG::CSG() {}
 
-CSG::~CSG() {}
+// CSG::CSG() {}
 
-void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
-	local_intersect(ray, hits);
-}
+// CSG::~CSG() {}
 
-bool cmp(const Hit& a, const Hit& b) { return a.t < b.t; }
+// void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
+// 	local_intersect(ray, hits);
+// }
 
-void CSG::local_intersect(const Ray& ray, std::vector<Hit>& hits) {
-	vector<Hit> leftHits, rightHits;
-	this->left->intersect(ray, leftHits);
-	this->right->intersect(ray, rightHits);
-	float lt_min, lt_max, rt_min, rt_max;
-	// Assume that only primitives are hit, and that 
-	// each primitive returns either 0 or 2 intersections
-	if (leftHits.size() < 2) {
-		lt_min = 0.0f; lt_max = 0.0f;
-	} else {
-		lt_min = leftHits.at(0).t;
-		lt_max = leftHits.at(1).t;
-	}
-	if (rightHits.size() < 2) {
-		rt_min = 0.0f; rt_max = 0.0f;
-	} else {
-		rt_min = rightHits.at(0).t;
-		rt_max = rightHits.at(1).t;
-	}
-	vector<Hit> nhits(std::move(leftHits));
-	for (auto& it : rightHits) {
-		// ensure that faces in difference csgs are properly lit
-		if (operationType == OperationType::Difference) it.n = -it.n;
-		nhits.push_back(std::move(it));
-	}
-	std::sort(nhits.begin(), nhits.end(), cmp);
+// bool cmp(const Hit& a, const Hit& b) { return a.t < b.t; }
 
-	filter_intersections(lt_min, lt_max, rt_min, rt_max, nhits);
-	hits = std::move(nhits);
-}
+// void CSG::local_intersect(const Ray& ray, std::vector<Hit>& hits) {
+// 	vector<Hit> leftHits, rightHits;
+// 	this->left->intersect(ray, leftHits);
+// 	this->right->intersect(ray, rightHits);
+// 	float lt_min, lt_max, rt_min, rt_max;
+// 	// Assume that only primitives are hit, and that 
+// 	// each primitive returns either 0 or 2 intersections
+// 	if (leftHits.size() < 2) {
+// 		lt_min = 0.0f; lt_max = 0.0f;
+// 	} else {
+// 		lt_min = leftHits.at(0).t;
+// 		lt_max = leftHits.at(1).t;
+// 	}
+// 	if (rightHits.size() < 2) {
+// 		rt_min = 0.0f; rt_max = 0.0f;
+// 	} else {
+// 		rt_min = rightHits.at(0).t;
+// 		rt_max = rightHits.at(1).t;
+// 	}
+// 	vector<Hit> nhits(std::move(leftHits));
+// 	for (auto& it : rightHits) {
+// 		// ensure that faces in difference csgs are properly lit
+// 		if (operationType == OperationType::Difference) it.n = -it.n;
+// 		nhits.push_back(std::move(it));
+// 	}
+// 	std::sort(nhits.begin(), nhits.end(), cmp);
 
-bool intersection_allowed(OperationType op, bool inL, bool inR)
-{
-	if (op == OperationType::Union)
-		return (inL && !inR) || (!inL && inR);
-	else if (op == OperationType::Intersection)
-		return (inL && inR);
-	else if (op == OperationType::Difference)
-		return (inL && !inR);
-	return false;
-}
+// 	filter_intersections(lt_min, lt_max, rt_min, rt_max, nhits);
+// 	hits = std::move(nhits);
+// }
 
-const float EPSILION = 0.0000005f;
+// bool intersection_allowed(OperationType op, bool inL, bool inR)
+// {
+// 	if (op == OperationType::Union)
+// 		return (inL && !inR) || (!inL && inR);
+// 	else if (op == OperationType::Intersection)
+// 		return (inL && inR);
+// 	else if (op == OperationType::Difference)
+// 		return (inL && !inR);
+// 	return false;
+// }
 
-void CSG::filter_intersections(
-	const float &lt_min, 
-	const float &lt_max,
-	const float &rt_min,
-	const float &rt_max,   
-	std::vector<Hit>& hits)
-{
-	bool inl = false, inr = false; 
-	// unoptimal way to make difference show right shape's faces
-	float s = this->operationType == OperationType::Difference ? -1.0f : 0.0f;
-	// Note: I will not fall to premature optimization
-	// Note: I will not fall to premature optimization
-	// Note: I will not fall to premature optimization
-	vector<Hit> new_hits;
-	for (auto& hit : hits) {
-		// Dark magic numbers for no speckles on reflected faces :D
-		inl = (lt_min - EPSILION <= hit.t) && (hit.t <= lt_max + s*EPSILION);
-		// this is specifically the way it is to have faces properly show
-		// for difference
-		inr = (rt_min - s*EPSILION <= hit.t) && (hit.t <= rt_max + s*EPSILION);
-		// Assume that the given hits list is sorted in ascending order
-		// of t; that is, the first intersection is outside both shapes
-		if (intersection_allowed(this->operationType, inl, inr)) {
-			new_hits.push_back(hit);
-		}
-	}
-	hits = std::move(new_hits);
-}
-*/
+// const float EPSILION = 0.0000005f;
+
+// void CSG::filter_intersections(
+// 	const float &lt_min, 
+// 	const float &lt_max,
+// 	const float &rt_min,
+// 	const float &rt_max,   
+// 	std::vector<Hit>& hits)
+// {
+// 	bool inl = false, inr = false; 
+// 	// unoptimal way to make difference show right shape's faces
+// 	float s = this->operationType == OperationType::Difference ? -1.0f : 0.0f;
+// 	// Note: I will not fall to premature optimization
+// 	// Note: I will not fall to premature optimization
+// 	// Note: I will not fall to premature optimization
+// 	vector<Hit> new_hits;
+// 	for (auto& hit : hits) {
+// 		// Dark magic numbers for no speckles on reflected faces :D
+// 		inl = (lt_min - EPSILION <= hit.t) && (hit.t <= lt_max + s*EPSILION);
+// 		// this is specifically the way it is to have faces properly show
+// 		// for difference
+// 		inr = (rt_min - s*EPSILION <= hit.t) && (hit.t <= rt_max + s*EPSILION);
+// 		// Assume that the given hits list is sorted in ascending order
+// 		// of t; that is, the first intersection is outside both shapes
+// 		if (intersection_allowed(this->operationType, inl, inr)) {
+// 			new_hits.push_back(hit);
+// 		}
+// 	}
+// 	hits = std::move(new_hits);
+// }

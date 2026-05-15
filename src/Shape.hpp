@@ -97,7 +97,8 @@ class Mesh : public Shape {
 public:
 	Mesh() {};
 	virtual ~Mesh() = default;
-	void loadMesh(const std::string &meshName, bool = false);
+	// Assume that the .obj file and .mtl files are in the same directory.
+	void loadMesh(const std::string &meshName, const std::string &directoryPath, bool = false);
 	void fitToUnitBox();
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 
