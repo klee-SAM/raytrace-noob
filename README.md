@@ -6,7 +6,7 @@ Adding more features as a learning exercise
 ### features
 
 #### shapes/objects
-- [ ] Infinite cylinders
+- [x] Infinite cylinders
 - [x] Boxes
 - [ ] CSG
 - [ ] Object/Regional Light Attentuation
@@ -44,8 +44,8 @@ Adding more features as a learning exercise
 - stb_image.h and stb_image_write.h: https://github.com/nothings/stb
 - jsmn.h (JSON parser): https://github.com/zserge/jsmn
 
-
 # Further reading:
 
 - Raytracing in One Weekend series (https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 - The Ray Tracer Challenge: (https://pragprog.com/titles/jbtracer/the-ray-tracer-challenge/)
+- cpp_multithreading: (https://github.com/wasimusu/cpp_multithreading)
