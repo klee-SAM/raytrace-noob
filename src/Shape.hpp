@@ -93,29 +93,29 @@ protected:
 	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
 };
 
-// class Mesh : public Shape {
-// public:
-// 	Mesh();
-// 	virtual ~Mesh();
-// 	void loadMesh(const std::string &meshName, bool = false);
-// 	void fitToUnitBox();
-// 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+class Mesh : public Shape {
+public:
+	Mesh() {};
+	virtual ~Mesh() = default;
+	void loadMesh(const std::string &meshName, bool = false);
+	void fitToUnitBox();
+	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 
-// private:
-// 	// These buffers are only populated when a mesh is loaded.
-// 	std::vector<float> posBuf;
-// 	std::vector<float> norBuf;
-// 	std::vector<float> texBuf;
+private:
+	// These buffers are only populated when a mesh is loaded.
+	std::vector<float> posBuf;
+	std::vector<float> norBuf;
+	std::vector<float> texBuf;
 
-// 	double boundingRadius;
-// 	glm::vec3 meshCenter; // Defined in model/local space.
-// 	glm::mat4 inv_sphereMat; // matrix used for bounding sphere tests 
-// 	glm::mat4 sphereMat; // only useful for debugging
-// 	glm::mat4 invT_sphereMat; // likewise
+	double boundingRadius;
+	glm::vec3 meshCenter; // Defined in model/local space.
+	glm::mat4 inv_sphereMat; // matrix used for bounding sphere tests 
+	glm::mat4 sphereMat; // only useful for debugging
+	glm::mat4 invT_sphereMat; // likewise
 
-// 	std::vector<float> getBoundingBox();
-// 	void setBoundingRadius();
-// };
+	std::vector<float> getBoundingBox();
+	void setBoundingRadius();
+};
 
 
 // enum class OperationType{Intersection, Union, Difference};
