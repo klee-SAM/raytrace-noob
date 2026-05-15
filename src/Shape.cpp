@@ -300,91 +300,83 @@ void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool pr
 	    cout << "Number of vertices: " << posBuf.size()/3 << endl;
 }
 
-// returned vector contains data in this order:
-// { minX, maxY, minZ, ...}
-
 void Mesh::setBoundingRadius() 
 {
-	float minPos = INF;
-	float maxPos = -INF;
-	vector<float> bounds = getBoundingBox();
-	for (float& x : bounds) {
-		if (minPos > x) minPos = x;
-		if (maxPos < x) maxPos = x;
+	struct {
+		Interval x;
+		Interval y;
+		Interval z;
+	} bounds;
+
+	if (posBuf.size() < 3) {
+		this->boundingRadius = 0;
+		cerr << "Expected posBuf.size() > 3, got " << posBuf.size() << '\n';
+		return;
 	}
-	// if parts of mesh are cut off, blame this
+
+	// initialize
+	bounds.x.min = INF; bounds.x.max = -INF;
+	bounds.y.min = INF; bounds.y.max = -INF;
+	bounds.z.min = INF; bounds.z.max = -INF;
+
+	// Find the minimum and maximum of each component.
+	for (size_t i = 0; i < posBuf.size(); i += 3) {
+		float &x = posBuf.at(i+0);
+		float &y = posBuf.at(i+1);
+		float &z = posBuf.at(i+2);
+
+		bounds.x.min = std::min(x, (float)bounds.x.min);
+		bounds.y.min = std::min(y, (float)bounds.y.min);	
+		bounds.z.min = std::min(z, (float)bounds.z.min);
+		// what was I even thinking?
+		bounds.x.max = std::max(x, (float)bounds.x.max);
+		bounds.y.max = std::max(y, (float)bounds.y.max);	
+		bounds.z.max = std::max(z, (float)bounds.z.max);
+	}
+
+	float minPos = std::min(std::min(bounds.x.min, bounds.y.min), bounds.z.min);
+	float maxPos = std::max(std::max(bounds.x.max, bounds.y.max), bounds.z.max);
+	
 	this->boundingRadius = (maxPos - minPos)/2;
 
-	float cx = (bounds.at(3) + bounds.at(0))/2;
-	float cy = (bounds.at(4) + bounds.at(1))/2;
-	float cz = (bounds.at(5) + bounds.at(2))/2;
+	// center the sphere wrt mesh's vertices
+	float cx = (bounds.x.max + bounds.x.min)/2;
+	float cy = (bounds.y.max + bounds.y.min)/2;
+	float cz = (bounds.z.max + bounds.z.min)/2;
 	this->meshCenter = vec3(cx, cy, cz);
 }
 
-struct Bounds {
-	Interval x;
-	Interval y;
-	Interval z;
-};
 
-// returned vector contains data in this order:
-// { minX, minY, minZ, maxX, maxY, maxZ}
-vector<float> Mesh::getBoundingBox() 
+void Mesh::fitToUnitBox()
 {
-	vector<float> bounds(6, 0.0f);
-	
-	if (posBuf.size() < 6) return bounds;
-	// initialize
-	bounds.at(0) = INF;
-	bounds.at(1) = INF;
-	bounds.at(2) = INF;
-
-	bounds.at(3) = -INF;
-	bounds.at(4) = -INF;
-	bounds.at(5) = -INF;
-
-	for (size_t i = 0; i < posBuf.size(); i += 6) {
-		// write the minimum of the coord
-		bounds.at(0) = posBuf.at(i  ) < bounds.at(0) ? posBuf.at(i  ) : bounds.at(0);
-		bounds.at(1) = posBuf.at(i+1) < bounds.at(1) ? posBuf.at(i+1) : bounds.at(1);	
-		bounds.at(2) = posBuf.at(i+2) < bounds.at(2) ? posBuf.at(i+2) : bounds.at(2);
-		// max
-		bounds.at(3) = posBuf.at(i+3) > bounds.at(3) ? posBuf.at(i+3) : bounds.at(3);
-		bounds.at(4) = posBuf.at(i+4) > bounds.at(4) ? posBuf.at(i+4) : bounds.at(4);	
-		bounds.at(5) = posBuf.at(i+5) > bounds.at(5) ? posBuf.at(i+5) : bounds.at(5);
+	// Scale the vertex positions so that they fit within [-1, +1] in all three dimensions.
+	glm::vec3 vmin(posBuf[0], posBuf[1], posBuf[2]);
+	glm::vec3 vmax(posBuf[0], posBuf[1], posBuf[2]);
+	for(size_t i = 0; i < posBuf.size(); i += 3) {
+		glm::vec3 v(posBuf[i], posBuf[i+1], posBuf[i+2]);
+		// I can't believe this is my (kSAM's) code
+		vmin.x = std::min(vmin.x, v.x);
+		vmin.y = std::min(vmin.y, v.y);
+		vmin.z = std::min(vmin.z, v.z);
+		vmax.x = std::max(vmax.x, v.x);
+		vmax.y = std::max(vmax.y, v.y);
+		vmax.z = std::max(vmax.z, v.z);
 	}
-	return bounds;
+	glm::vec3 center = 0.5f*(vmin + vmax);
+	glm::vec3 diff = vmax - vmin;
+	float diffmax = diff.x;
+	diffmax = std::max(diffmax, diff.y);
+	diffmax = std::max(diffmax, diff.z);
+	float scale = 1.0f / diffmax;
+	for(int i = 0; i < (int)posBuf.size(); i += 3) {
+		posBuf[i+0] = (posBuf[i+0] - center.x) * scale;
+		posBuf[i+1] = (posBuf[i+1] - center.y) * scale;
+		posBuf[i+2] = (posBuf[i+2] - center.z) * scale;
+	}
+
+	// Readjust the bounding radius to account for changes in posBuf
+	setBoundingRadius();
 }
-
-// void Mesh::fitToUnitBox()
-// {
-// 	// Scale the vertex positions so that they fit within [-1, +1] in all three dimensions.
-// 	glm::vec3 vmin(posBuf[0], posBuf[1], posBuf[2]);
-// 	glm::vec3 vmax(posBuf[0], posBuf[1], posBuf[2]);
-// 	for(int i = 0; i < (int)posBuf.size(); i += 3) {
-// 		glm::vec3 v(posBuf[i], posBuf[i+1], posBuf[i+2]);
-// 		vmin.x = std::min(vmin.x, v.x);
-// 		vmin.y = std::min(vmin.y, v.y);
-// 		vmin.z = std::min(vmin.z, v.z);
-// 		vmax.x = std::max(vmax.x, v.x);
-// 		vmax.y = std::max(vmax.y, v.y);
-// 		vmax.z = std::max(vmax.z, v.z);
-// 	}
-// 	glm::vec3 center = 0.5f*(vmin + vmax);
-// 	glm::vec3 diff = vmax - vmin;
-// 	float diffmax = diff.x;
-// 	diffmax = std::max(diffmax, diff.y);
-// 	diffmax = std::max(diffmax, diff.z);
-// 	float scale = 1.0f / diffmax;
-// 	for(int i = 0; i < (int)posBuf.size(); i += 3) {
-// 		posBuf[i  ] = (posBuf[i  ] - center.x) * scale;
-// 		posBuf[i+1] = (posBuf[i+1] - center.y) * scale;
-// 		posBuf[i+2] = (posBuf[i+2] - center.z) * scale;
-// 	}
-
-// 	// Readjust the bounding radius to account for changes in posBuf
-// 	setBoundingRadius();
-// }
 
 // // construct new matrix just for the sphere test
 // void Mesh::transform() {

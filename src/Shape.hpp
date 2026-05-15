@@ -103,18 +103,20 @@ public:
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 
 private:
+	// Set to true when intersect() is called for the first time on the mesh.
+	bool initializedSphereMat = false;
+
 	// These buffers are only populated when a mesh is loaded.
 	std::vector<float> posBuf;
 	std::vector<float> norBuf;
 	std::vector<float> texBuf;
 
 	double boundingRadius;
-	glm::vec3 meshCenter; // Defined in model/local space.
-	glm::mat4 inv_sphereMat; // matrix used for bounding sphere tests 
-	glm::mat4 sphereMat; // only useful for debugging
+	glm::vec3 meshCenter; 	  // Defined in model/local space.
+	glm::mat4 inv_sphereMat;  // matrix used for bounding sphere tests 
+	glm::mat4 sphereMat; 	  // only useful for debugging
 	glm::mat4 invT_sphereMat; // likewise
 
-	std::vector<float> getBoundingBox();
 	void setBoundingRadius();
 };
 
