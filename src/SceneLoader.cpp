@@ -328,6 +328,8 @@ std::shared_ptr<Shape> shapeFromString(const std::string& type)
         return nullptr;
     } else if (type == "box") {
         return make_shared<Box>();
+    } else if (type == "cylinder") {
+        return make_shared<Cylinder>();
     } else {
         std::cerr << "shapeFromString: unrecognized shape type:"
                   << type << '\n';

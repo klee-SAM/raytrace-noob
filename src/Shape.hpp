@@ -9,7 +9,7 @@ public:
 	virtual ~Shape() = default;
 
 	void setModelMatrix(const glm::mat4& m);
-	glm::mat4 getModelMatrix() { return modelMat; }
+	glm::mat4 getModelMatrix() const { return modelMat; }
 	void setMaterial(const std::shared_ptr<Material>& mat) { material = mat; }
 
 	virtual void intersect(const Ray& ray, std::vector<Hit>& hits) = 0;
@@ -24,6 +24,7 @@ protected:
 	std::shared_ptr<Material> material;
 
     void transform();
+
 };
 
 /* Represents a sphere.
@@ -64,6 +65,13 @@ class Box : public Shape {
 public:
 	Box() {}
 	virtual ~Box() = default;
+	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+};
+
+class Cylinder : public Shape {
+public:
+	Cylinder() {}
+	virtual ~Cylinder() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 };
 

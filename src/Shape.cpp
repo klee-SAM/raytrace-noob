@@ -205,10 +205,56 @@ void Box::intersect(const Ray& ray, vector<Hit>& hits) {
 	h1.u = 0;
 	h1.v = 0;
 	hits.push_back(h1);
-
-	// tbd
 }
 
+
+
+void Cylinder::intersect(const Ray& ray, vector<Hit>& hits) {
+	vec3 pk = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
+	vec3 vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
+	vec3 vk = normalize(vx);
+
+	float a = vk.x*vk.x + vk.z*vk.z;
+	// ray is parallel to y-axis
+	if (a < EPSILION) return;
+
+	float b = 2*(pk.x*vk.x + pk.z*vk.z);
+	float c = pk.x*pk.x + pk.z*pk.z - 1;
+	float d = b*b - 4.0f*a*c;
+	if (d < EPSILION) return;
+	float den = 1.0f/(2*a);
+	
+	float t0 = (-b - glm::sqrt(d))*den;
+	float t1 = (-b + glm::sqrt(d))*den;
+
+	vec3 x0 = pk + t0*vk;
+	vec3 wld_x0 = vec3(modelMat*vec4(x0, 1.0f));
+	vec3 wld_n0 = normalize(vec3(invT_modelMat*vec4(x0.x, 0.0f, x0.z, 0.0f)));
+	float wld_t0 = t0/glm::length(vx);
+
+	Hit h0; 
+	h0.x = wld_x0; 
+	h0.n = wld_n0; 
+	h0.t = wld_t0;
+	h0.m = material;
+	h0.u = 0;
+	h0.v = 0;
+	hits.push_back(h0);
+
+	vec3 x1 = pk + t1*vk;
+	vec3 wld_x1 = vec3(modelMat*vec4(x1, 1.0f));
+	vec3 wld_n1 = normalize(vec3(invT_modelMat*vec4(x0.x, 0.0f, x0.z, 0.0f)));
+	float wld_t1 = t1/glm::length(vx);
+
+	Hit h1; 
+	h1.x = wld_x1; 
+	h1.n = wld_n1; 
+	h1.t = wld_t1;
+	h1.m = material;
+	h1.u = 0;
+	h1.v = 0;
+	hits.push_back(h1);
+}
 /*
 Mesh::Mesh() {
 }

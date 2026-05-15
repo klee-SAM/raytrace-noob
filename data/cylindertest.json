@@ -1,0 +1,47 @@
+{
+    "camera" : {
+        "distance" : 5.0,
+        "antialias" : 1,
+        "fov" : 45.0,
+        "rotation" : [0,0, 0]
+    },
+    "materials" : {
+        "red" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [1.0, 0.0, 0.0],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
+        },
+        "green" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.0, 1.0, 0.0],
+            "specular" : [1.0, 1.0, 1.0],
+            "exponent" : 100.0
+        },
+        "blue" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.0, 0.0, 1.0],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
+        }
+    },
+    "lights" : [
+        { 
+            "position": [-2.0, 2.0, 2.0], 
+            "intensity": 0.75
+        },
+        { 
+            "position": [0.0, 0.0, -2.0], 
+            "intensity": 0.25
+        }
+    ],
+    "shapes" : [
+        {
+            "shape" : "cylinder",
+            "position" : [0.0, 0.0, 0.0],
+            "scale" : [1.0, 0.1, 0.5],
+            "rotation" : [-25, 0, -22.5],
+            "material" : "red"
+        }
+    ]
+}

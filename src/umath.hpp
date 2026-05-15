@@ -13,8 +13,9 @@ public:
         glm::mat4 modMat(1.0f); 
         modMat[3] = glm::vec4(position, 1.0f);
         modMat *= glm::rotate(glm::mat4(1.0f), rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-        modMat *= glm::rotate(glm::mat4(1.0f), rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
         modMat *= glm::rotate(glm::mat4(1.0f), rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+        modMat *= glm::rotate(glm::mat4(1.0f), rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+        
         modMat *= glm::scale(glm::mat4(1.0f), scale);
         return modMat;
     }
