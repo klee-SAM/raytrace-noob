@@ -22,6 +22,13 @@
             "material" : "red"
         },
         {
+            "shape" : "box",
+            "position" : [1.25, -0.85, 0.5],
+            "scale" : [0.15, 0.15, 0.15],
+            "rotation" : [0, 45, 0],
+            "material" : "green"
+        },
+        {
             "shape" : "sphere",
             "position" : [1.0, -0.7, 0.0],
             "scale" : [0.3, 0.3, 0.3],
@@ -31,7 +38,7 @@
             "shape" : "sphere",
             "position" : [-0.5, 0.0, -0.5],
             "scale" : [1,1,1],
-            "material" : "green"
+            "material" : "cyan"
         },
         {
             "shape" : "sphere",
@@ -47,7 +54,7 @@
         {
             "shape" : "plane",
             "position" : [0.0, 0.0, -3.0],
-            "rotation" : [1.5708, 0, 0],
+            "rotation" : [90, 0, 0],
             "material" : "grey"
         }
 
@@ -64,13 +71,20 @@
             "diffuse" : [0.0, 1.0, 0.0],
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0,
-            "reflCoeff" : 0.75
+            "reflCoeff" : 0.25
         },
         "blue" : {
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [0.0, 0.0, 1.0],
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0
+        },
+        "cyan" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.0, 1.0, 1.0],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0,
+            "reflCoeff" : 0.5
         },
         "grey" : {
             "ambient" : [0.1, 0.1, 0.1],

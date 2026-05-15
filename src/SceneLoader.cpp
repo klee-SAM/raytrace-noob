@@ -260,6 +260,9 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
                 scl = float3FromToken(value);
             } else if (jsonstreq(key, "rotation")) {
                 rot = float3FromToken(value);
+                rot.x = glm::radians(rot.x);
+                rot.y = glm::radians(rot.y);
+                rot.z = glm::radians(rot.z);
             } else if (jsonstreq(key, "material")) {
                 smat = scene->getMaterial(stringFromToken(value));
             } else {
