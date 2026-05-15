@@ -25,6 +25,12 @@ protected:
 
     void transform();
 
+	virtual glm::vec2 computeUV(const glm::vec3& point) const = 0;
+	virtual glm::vec4 computeNormal(const glm::vec3& x) const = 0;
+	Hit toWorldSpaceHit(
+		const glm::vec3& x, // hit position
+		const glm::vec3& vx, // unnormalized ray dir
+		float t) const;
 };
 
 /* Represents a sphere.
@@ -36,6 +42,9 @@ public:
 	Sphere() {}
 	virtual ~Sphere() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+protected:
+	virtual glm::vec2 computeUV(const glm::vec3&) const override;
+	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
 };
 
 /* Represents a plane.
@@ -55,6 +64,9 @@ public:
         computeUVvectors(r); 
     }
     void setPosition(const glm::vec3& r) { modelMat[3] = glm::vec4(r, 1.0f); }
+protected:
+	virtual glm::vec2 computeUV(const glm::vec3&) const override;
+	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
 private:
     glm::vec3 uvec, vvec;
     bool computedUVvectors = false;
@@ -66,6 +78,9 @@ public:
 	Box() {}
 	virtual ~Box() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+protected:
+	virtual glm::vec2 computeUV(const glm::vec3&) const override;
+	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
 };
 
 class Cylinder : public Shape {
@@ -73,6 +88,9 @@ public:
 	Cylinder() {}
 	virtual ~Cylinder() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+protected:
+	virtual glm::vec2 computeUV(const glm::vec3&) const override;
+	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
 };
 
 // class Mesh : public Shape {

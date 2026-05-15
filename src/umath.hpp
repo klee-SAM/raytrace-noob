@@ -52,3 +52,6 @@ namespace {
     const Interval Interval::empty = Interval(INF, -INF);
     const Interval Interval::world = Interval(-INF, INF); 
 }
+
+// Returns the number without the integer part (-2.6 -> -0.6)
+constexpr float decimal(float x) { return x - (int)x; }

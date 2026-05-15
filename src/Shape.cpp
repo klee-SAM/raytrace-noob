@@ -16,14 +16,33 @@ void Shape::setModelMatrix(const mat4& m) {
 	invT_modelMat = inverse(transpose(m));
 }
 
+Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const {
+	vec3 wld_x = vec3(modelMat*vec4(x, 1.0f));
+	vec3 wld_n = normalize(vec3(invT_modelMat*computeNormal(x)));
+	float wld_t = t/length(vx);
 
+	Hit h; 
+	h.x = wld_x; 
+	h.n = wld_n; 
+	h.t = wld_t;
+	h.m = material;
+	vec2 uv = computeUV(x);
+	h.u = uv.x;
+	h.v = uv.y;
+
+	return h;
+}
 
 // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
-vec2 sphere_computeUV(const vec3& p) {
+vec2 Sphere::computeUV(const vec3& p) const {
     float u = (1.0 + std::atan2(p.z, p.x)*R_PI)/2;
     float v = 0.5 + std::asin(p.y)*R_PI;
     return vec2(u, v);
 }
+
+vec4 Sphere::computeNormal(const glm::vec3& x) const { 
+	return vec4(x, 0.0f); 
+};
 
 void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
 	vec3 pk = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
@@ -39,50 +58,33 @@ void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
 	den = 1.0f/(2.0f*a);
 
 	if (d > 0.0f) {
-		// We can do the same calculations for a unit sphere
-		// because of the transformations to local space
+		
 		float t0 = (-b - glm::sqrt(d))*den; 
 		float t1 = (-b + glm::sqrt(d))*den;
 
-		// However, we want to only push the hits in world space.
-		// Know that x' = n' for a unit sphere.
 		vec3 x0 = pk + t0*vk;
-		vec3 wld_x0 = vec3(modelMat*vec4(x0, 1.0f));
-		// When transforming the normals, use the inverse transpose
-		// for handling nonuniform scales
-		vec3 wld_n0 = normalize(vec3(invT_modelMat*vec4(x0, 0.0f)));
-		// worth reiterating: the denominator for t is
-		// the length of the unnormalized v'.
-		float wld_t0 = t0/length(vx);
-
-        Hit h0; 
-        h0.x = wld_x0; 
-        h0.n = wld_n0; 
-        h0.t = wld_t0;
-        h0.m = material;
-        vec2 uv0 = sphere_computeUV(x0);
-        h0.u = uv0.x;
-        h0.v = uv0.y;
+        Hit h0 = toWorldSpaceHit(x0, vx, t0);
 		hits.push_back(h0);
 
 		vec3 x1 = pk + t1*vk;
-		vec3 wld_x1 = vec3(modelMat*vec4(x1, 1.0f));
-		vec3 wld_n1 = normalize(vec3(invT_modelMat*vec4(x1, 0.0f)));
-		// If instead use the normalized v, then the given
-		// t value for the sphere will be incorrect, leading to
-		// other objects clipping the sphere, or otherwise
-		float wld_t1 = t1/length(vx);
-
-		Hit h1; 
-        h1.x = wld_x1; 
-        h1.n = wld_n1; 
-        h1.t = wld_t1;
-        h1.m = material;
-        vec2 uv1 = sphere_computeUV(x1);
-        h1.u = uv1.x;
-        h1.v = uv1.y;
+		Hit h1 = toWorldSpaceHit(x1, vx, t1);
 		hits.push_back(h1);
 	}
+	// We can do the same calculations for a unit sphere
+	// because of the transformations to local space
+
+	// However, we want to only push the hits in world space.
+	// Know that x' = n' for a unit sphere.
+
+	// When transforming the normals, use the inverse transpose
+	// for handling nonuniform scales
+
+	// worth reiterating: the denominator for t is
+	// the length of the unnormalized v'.
+
+	// If instead use the normalized v, then the given
+	// t value for the sphere will be incorrect, leading to
+	// other objects clipping the sphere, or otherwise
 }
 
 
@@ -97,6 +99,11 @@ void Plane::computeUVvectors(const glm::vec3& normal) {
     uvec = normalize(dot(max_ab, max_ab) < dot(c, c) ? c : max_ab);
     vvec = cross(normal, uvec);
 }
+
+// Plane uses different information to compute the UV and normals, 
+// so just leave them like this to avoid compiler errors
+vec2 Plane::computeUV(const vec3& p) const { return vec2(0.0f); }
+vec4 Plane::computeNormal(const glm::vec3& x) const {  return vec4(0.0f); }
 
 // The rotation of the plane is used as the normal
 void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
@@ -151,15 +158,28 @@ Pair checkAxis(float pos, float dir) {
 	return p;
 }
 
-vec4 box_normal_at(const vec3& p) {
+vec4 Box::computeNormal(const vec3& p) const {
 	// Assume values range from [-1, 1]; do reciprocal so that values
-	// close to 1 do not get truncated to 0
+	// close to 1 do not get truncated to 0 (total hack)
 	float r_maxc = 1.0f/std::max(std::max(abs(p.x), abs(p.y)), abs(p.z));
 	float cx = static_cast<int>(p.x*r_maxc);
 	float cy = static_cast<int>(p.y*r_maxc);
 	float cz = static_cast<int>(p.z*r_maxc);
 	return vec4(cx, cy, cz, 1.0f);
 }
+
+vec2 Box::computeUV(const glm::vec3& p) const {
+	// For any hit on the box, at least one component has
+	// a value of 1, indicating the face that is hit. 
+	// The information of the other 2 components are used 
+	// to get the UV. this is temporary
+	float maxc = std::max(std::max(abs(p.x), abs(p.y)), abs(p.z));
+	float u, v;
+	if (abs(p.x) == maxc) u = decimal(p.y), v = decimal(p.z);
+	if (abs(p.y) == maxc) u = decimal(p.x), v = decimal(p.z);
+	else 				  u = decimal(p.x), v = decimal(p.y);
+	return vec2(u, v);
+};
 
 // Axis-aligned bounding box intersection
 void Box::intersect(const Ray& ray, vector<Hit>& hits) {
@@ -179,35 +199,22 @@ void Box::intersect(const Ray& ray, vector<Hit>& hits) {
 	if (tmin > tmax) return;
 
 	vec3 x0 = pk + tmin*vk;
-	vec3 wld_x0 = vec3(modelMat*vec4(x0, 1.0f));
-	vec3 wld_n0 = normalize(vec3(invT_modelMat*box_normal_at(x0)));
-	float wld_t0 = tmin/length(vx);
-
-	vec3 x1 = pk + tmax*vk;
-	vec3 wld_x1 = vec3(modelMat*vec4(x1, 1.0f));
-	vec3 wld_n1 = normalize(vec3(invT_modelMat*box_normal_at(x1)));
-	float wld_t1 = tmax/length(vx);
-
-	Hit h0; 
-	h0.x = wld_x0; 
-	h0.n = wld_n0; 
-	h0.t = wld_t0;
-	h0.m = material;
-	h0.u = 0;
-	h0.v = 0;
+	Hit h0 = toWorldSpaceHit(x0, vx, tmin);
 	hits.push_back(h0);
 
-	Hit h1; 
-	h1.x = wld_x1; 
-	h1.n = wld_n1; 
-	h1.t = wld_t1;
-	h1.m = material;
-	h1.u = 0;
-	h1.v = 0;
+	vec3 x1 = pk + tmax*vk;
+	Hit h1 = toWorldSpaceHit(x1, vx, tmax);
 	hits.push_back(h1);
 }
 
+vec4 Cylinder::computeNormal(const vec3& x0) const {
+	return vec4(x0.x, 0.0f, x0.z, 0.0f);
+}
 
+vec2 Cylinder::computeUV(const vec3& p) const {
+	// TODO: uv for cylinders
+	return vec2(0.0f, 0.0f);
+} 
 
 void Cylinder::intersect(const Ray& ray, vector<Hit>& hits) {
 	vec3 pk = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
@@ -228,33 +235,16 @@ void Cylinder::intersect(const Ray& ray, vector<Hit>& hits) {
 	float t1 = (-b + glm::sqrt(d))*den;
 
 	vec3 x0 = pk + t0*vk;
-	vec3 wld_x0 = vec3(modelMat*vec4(x0, 1.0f));
-	vec3 wld_n0 = normalize(vec3(invT_modelMat*vec4(x0.x, 0.0f, x0.z, 0.0f)));
-	float wld_t0 = t0/glm::length(vx);
-
-	Hit h0; 
-	h0.x = wld_x0; 
-	h0.n = wld_n0; 
-	h0.t = wld_t0;
-	h0.m = material;
-	h0.u = 0;
-	h0.v = 0;
+	Hit h0 = toWorldSpaceHit(x0, vx, t0);
 	hits.push_back(h0);
 
 	vec3 x1 = pk + t1*vk;
-	vec3 wld_x1 = vec3(modelMat*vec4(x1, 1.0f));
-	vec3 wld_n1 = normalize(vec3(invT_modelMat*vec4(x0.x, 0.0f, x0.z, 0.0f)));
-	float wld_t1 = t1/glm::length(vx);
-
-	Hit h1; 
-	h1.x = wld_x1; 
-	h1.n = wld_n1; 
-	h1.t = wld_t1;
-	h1.m = material;
-	h1.u = 0;
-	h1.v = 0;
+	Hit h1 = toWorldSpaceHit(x1, vx, t1); 
 	hits.push_back(h1);
 }
+
+
+
 /*
 Mesh::Mesh() {
 }
