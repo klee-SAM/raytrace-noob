@@ -406,6 +406,8 @@ bool Mesh::intersect_triangle(
 	const float *vert1 = &posBuf.at(3+i); 
 	const float *vert2 = &posBuf.at(6+i);
 
+	// TODO
+
 	return false;
 }
 
@@ -418,7 +420,6 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 	vec3 pk, vx, vk;
 
-	// Bounding sphere debug code should be removed soon
 	if (SHOW_BOUNDING_SPHERE) {
 		// here, use inv_sphereMat to accurately represent the bounding sphere
 		initSphereMatrices();
@@ -497,10 +498,13 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 		// normalized, so explicitly normalize it again.
 		vec3 wld_n = normalize(vec3(invT_modelMat*vec4(nx, ny, nz, 0.0f)));
 
+		// Only two texture components per vertex
+		float tex_u = w*texBuf.at(0+i) + u*texBuf.at(2+i) + v*texBuf.at(4+i);
+		float tex_v = w*texBuf.at(1+i) + u*texBuf.at(3+i) + v*texBuf.at(5+i);
+
 		Hit h; 
-		h.x = wld_x; 
-		h.n = wld_n; 
-		h.t = t; 
+		h.x = wld_x; h.n = wld_n; h.t = t; 
+		h.u = tex_u; h.v = tex_v;
 		h.m = this->material;
 		hits.push_back(h);
 	}
