@@ -23,8 +23,6 @@ protected:
 
 	std::shared_ptr<Material> material;
 
-    void transform();
-
 	virtual glm::vec2 computeUV(const glm::vec3& point) const = 0;
 	virtual glm::vec4 computeNormal(const glm::vec3& x) const = 0;
 	Hit toWorldSpaceHit(
@@ -98,13 +96,17 @@ public:
 	Mesh() {};
 	virtual ~Mesh() = default;
 	// Assume that the .obj file and .mtl files are in the same directory.
-	void loadMesh(const std::string &meshName, const std::string &directoryPath, bool = false);
+	void loadMesh(const std::string &meshName, 
+				  const std::string &directoryPath, 
+				  bool = false);
 	void fitToUnitBox();
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
-
+protected:
+	virtual glm::vec2 computeUV(const glm::vec3&) const override;
+	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
 private:
 	// Set to true when intersect() is called for the first time on the mesh.
-	bool initializedSphereMat = false;
+	bool sphere_matrix_initialized = false;
 
 	// These buffers are only populated when a mesh is loaded.
 	std::vector<float> posBuf;
@@ -118,6 +120,11 @@ private:
 	glm::mat4 invT_sphereMat; // likewise
 
 	void setBoundingRadius();
+	bool intersect_triangle(
+		const vec3& orig, const vec3& dir, const float t,
+		const size_t &posBufOffset, float &u, float &v);
+
+	void initSphereMatrices();
 };
 
 

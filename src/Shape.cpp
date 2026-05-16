@@ -215,7 +215,8 @@ vec2 Cylinder::computeUV(const vec3& p) const {
 	return vec2(0.0f, 0.0f);
 } 
 
-void Cylinder::intersect(const Ray& ray, vector<Hit>& hits) {
+void Cylinder::intersect(const Ray& ray, vector<Hit>& hits) 
+{
 	vec3 pk = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
 	vec3 vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
 	vec3 vk = normalize(vx);
@@ -378,112 +379,132 @@ void Mesh::fitToUnitBox()
 	setBoundingRadius();
 }
 
-// // construct new matrix just for the sphere test
-// void Mesh::transform() {
-// 	MatrixStack MV;
-// 	MV.pushMatrix();
-// 	MV.translate(position);
-// 	MV.rotate(rotation.z, vec3(0,0,1));
-// 	MV.rotate(rotation.y, vec3(0,1,0));
-// 	MV.rotate(rotation.x, vec3(1,0,0));
-// 	MV.scale(scale);
+// construct new matrix just for the sphere test
+void Mesh::initSphereMatrices() 
+{
+	if (sphere_matrix_initialized) return;
+	sphere_matrix_initialized = true;
+	sphereMat = modelMat*glm::scale(mat4(1.0f), vec3(this->boundingRadius));
+	inv_sphereMat = inverse(sphereMat);
+	invT_sphereMat = inverse(transpose(sphereMat));
+}
 
-// 	MV.pushMatrix();
-// 	MV.scale(boundingRadius);
-// 	sphereMat = MV.topMatrix(); // only useful for debugging
-// 	inv_sphereMat = inverse(MV.topMatrix());
-// 	invT_sphereMat = inverse(transpose(MV.topMatrix())); // likewise
-// 	MV.popMatrix();
+// toWorldSpaceHit() is not needed for meshes, so
+// leave these with empty definitions
+vec2 Mesh::computeUV(const glm::vec3&) const {}
+vec4 Mesh::computeNormal(const glm::vec3&) const {}
 
-// 	modelMat = MV.topMatrix();
-// 	inv_modelMat = inverse(MV.topMatrix());
-// 	invT_modelMat = inverse(transpose(MV.topMatrix()));
-// 	// I am lazy.
-// }
+// This assumes that the position buffer size is a 
+// multiple of 9. posBufOffset is the index of the
+// x component of the 1st vertex.
+bool Mesh::intersect_triangle(
+	const vec3& orig, const vec3& dir, const float t,
+	const size_t &posBufOffset, float &u, float &v) 
+{
+	const size_t &i = posBufOffset;
+	const float *vert0 = &posBuf.at(0+i); 
+	const float *vert1 = &posBuf.at(3+i); 
+	const float *vert2 = &posBuf.at(6+i);
 
-// const bool TEST_BOUNDING_SPHERE = false;
+	return false;
+}
 
-// // Some floating-point error possible, or the normals are not normal
-// void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
-// 	// transform ray to local coords
-// 	vec3 l_rorig = vec3(inv_modelMat*vec4(ray.origin, 1.0f));
+const bool SHOW_BOUNDING_SPHERE = false;
 
-// 	vec3 pk;
-// 	vec3 vx;
-// 	if (TEST_BOUNDING_SPHERE) {
-// 		// here, use inv_sphereMat to accurately represent the bounding sphere
-// 		pk = vec3(inv_sphereMat*vec4(ray.origin, 1.0f)) - meshCenter;
-// 		vx = vec3(inv_sphereMat*vec4(ray.direction, 0.0f));
-// 	} else {
-// 		pk = l_rorig - meshCenter;
-// 		vx = vec3(inv_modelMat*vec4(ray.direction, 0.0f));
-// 	}
-// 	vec3 vk = normalize(vx);
-// 	float a, b, c;
-// 	float d, den;
+// Some floating-point error possible, or the normals are not normal
+void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
+	// transform ray to local coords
+	vec3 l_rorig = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
 
-// 	a = dot(vk, vk);
-// 	b = 2*dot(vk, pk);
-// 	c = dot(pk, pk) - 1;
-// 	d = b*b - 4*a*c;
-// 	den = 1.0f/(2*a);
+	vec3 pk, vx, vk;
 
-// 	if (d <= 0.0f) return;
+	// Bounding sphere debug code should be removed soon
+	if (SHOW_BOUNDING_SPHERE) {
+		// here, use inv_sphereMat to accurately represent the bounding sphere
+		initSphereMatrices();
+		pk = vec3(inv_sphereMat*vec4(ray.pos, 1.0f)) - meshCenter;
+		vx = vec3(inv_sphereMat*vec4(ray.dir, 0.0f));
+	} else {
+		pk = l_rorig - meshCenter; // put sphere at center of mesh
+		vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
+	}
 
-// 	if (TEST_BOUNDING_SPHERE) {
-// 		float t0 = (-b - glm::sqrt(d))*den; 
-// 		float t1 = (-b + glm::sqrt(d))*den;
+	vk = normalize(vx);
+	float a, b, c;
+	float d, den;
 
-// 		vec3 x0 = pk + t0*vk;
-// 		vec3 wld_x0 = vec3(sphereMat*vec4(x0, 1.0f));
-// 		vec3 wld_n0 = normalize(vec3(invT_sphereMat*vec4(x0, 0.0f)));
-// 		float wld_t0 = t0/length(vx);
-// 		hits.push_back(Hit(wld_x0, wld_n0, wld_t0, material));
+	a = dot(vk, vk);
+	b = 2*dot(vk, pk);
+	c = dot(pk, pk) - 1;
+	d = b*b - 4*a*c;
+	den = 1.0f/(2*a);
 
-// 		vec3 x1 = pk + t1*vk;
-// 		vec3 wld_x1 = vec3(sphereMat*vec4(x1, 1.0f));
-// 		vec3 wld_n1 = normalize(vec3(invT_sphereMat*vec4(x1, 0.0f)));
-// 		float wld_t1 = t1/length(vx);
-// 		hits.push_back(Hit(wld_x1, wld_n1, wld_t1, material));
-// 		return;
-// 	}
+	if (d <= 0.0f) return;
 
-// 	float rorig[3] = {l_rorig.x, l_rorig.y, l_rorig.z};
-// 	float rdir[3] = {vk.x, vk.y, vk.z};
+	if (SHOW_BOUNDING_SPHERE) {
+		float t0 = (-b - glm::sqrt(d))*den; 
+		float t1 = (-b + glm::sqrt(d))*den;
 
-// 	float t, u, v;
+		vec3 x0 = pk + t0*vk;
+		vec3 wld_x0 = vec3(sphereMat*vec4(x0, 1.0f));
+		vec3 wld_n0 = normalize(vec3(invT_sphereMat*vec4(x0, 0.0f)));
+		float wld_t0 = t0/length(vx);
+		Hit h0;
+		h0.x = wld_x0;
+		h0.n = wld_n0;
+		h0.t = wld_t0;
+		h0.m = material;
+		hits.push_back(h0);
 
-// 	if (posBuf.size() % 9 != 0) {
-// 		// Otherwise, a segfault may occur from invalid
-// 		// memory access (2:57 AM brain thinking).
-// 		cerr << "posBuf.size() == " 
-// 			 << posBuf.size() 
-// 			 << "; unsafe size\n";
-// 		return;
-// 	} 
-// 	for (size_t i = 0; i < posBuf.size(); i += 9) {
-// 		// float vert0[3], float vert1[3], and float vert2[3] are represented
-// 		// by respective offsets. Use pointer magic for speed; this gives me a ~2x speedup:
-// 		if (!intersect_triangle3(&l_rorig.x, &vk.x, &posBuf.at(0+i), &posBuf.at(3+i), &posBuf.at(6+i), &t, &u, &v)) continue;
-// 		float w = 1.0f - v - u;
-// 		// Because of branch prediction, I have chosen not to check for t here;
-// 		// that should be handled in hits, given a positive min value
-// 		float rx = rorig[0]+t*rdir[0];
-// 		float ry = rorig[1]+t*rdir[1];
-// 		float rz = rorig[2]+t*rdir[2];
-// 		vec3 wld_x = vec3(modelMat*vec4(rx, ry, rz, 1.0f));
-// 		// assume that hopefully the normals for the 3 vertices are the same
-// 		// loadmesh ensures a vertex only has 1 normal associated with it
-// 		float nx = w*norBuf.at(0+i) + u*norBuf.at(3+i) + v*norBuf.at(6+i);
-// 		float ny = w*norBuf.at(1+i) + u*norBuf.at(4+i) + v*norBuf.at(7+i);
-// 		float nz = w*norBuf.at(2+i) + u*norBuf.at(5+i) + v*norBuf.at(8+i);
-// 		// Because of floating-point error, the interpolated normal is no longer
-// 		// normalized, so explicitly normalize it again. This is why we 
-// 		// renormalize the attribute normal in fragment shaders.
-// 		vec3 wld_n = normalize(vec3(invT_modelMat*vec4(nx, ny, nz, 0.0f)));
-// 		hits.push_back(Hit(wld_x, wld_n, t, this->material));
-// 	}
-// }	
+		vec3 x1 = pk + t1*vk;
+		vec3 wld_x1 = vec3(sphereMat*vec4(x1, 1.0f));
+		vec3 wld_n1 = normalize(vec3(invT_sphereMat*vec4(x1, 0.0f)));
+		float wld_t1 = t1/length(vx);
+		Hit h1;
+		h0.x = wld_x1;
+		h0.n = wld_n1;
+		h0.t = wld_t1;
+		h0.m = material;
+		hits.push_back(h1);
+		return;
+	}
+
+	float t, u, v;
+
+	if (posBuf.size() % 9 != 0) {
+		// Otherwise, a segfault may occur from invalid
+		// memory access (2:57 AM brain thinking).
+		cerr << "posBuf.size() == " 
+			 << posBuf.size() 
+			 << "; unsafe size\n";
+		return;
+	} 
+
+	for (size_t i = 0; i < posBuf.size(); i += 9) {
+		if (!intersect_triangle(l_rorig, vk, t, i, u, v)) continue;
+		float w = 1.0f - v - u;
+		// Because of branch prediction, I have chosen not to check for t here;
+		// that should be handled in hits, given a positive min value
+		vec3 rv = l_rorig + t*vk;
+		vec3 wld_x = vec3(modelMat*vec4(rv, 1.0f));
+		// assume that the normals for the 3 vertices are the same
+		// loadmesh ensures a vertex only has 1 normal associated with it
+		float nx = w*norBuf.at(0+i) + u*norBuf.at(3+i) + v*norBuf.at(6+i);
+		float ny = w*norBuf.at(1+i) + u*norBuf.at(4+i) + v*norBuf.at(7+i);
+		float nz = w*norBuf.at(2+i) + u*norBuf.at(5+i) + v*norBuf.at(8+i);
+
+		// Because of floating-point error, the interpolated normal is no longer
+		// normalized, so explicitly normalize it again.
+		vec3 wld_n = normalize(vec3(invT_modelMat*vec4(nx, ny, nz, 0.0f)));
+
+		Hit h; 
+		h.x = wld_x; 
+		h.n = wld_n; 
+		h.t = t; 
+		h.m = this->material;
+		hits.push_back(h);
+	}
+}	
 
 
 
