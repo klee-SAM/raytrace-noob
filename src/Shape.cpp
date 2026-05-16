@@ -391,24 +391,46 @@ void Mesh::initSphereMatrices()
 
 // toWorldSpaceHit() is not needed for meshes, so
 // leave these with empty definitions
-vec2 Mesh::computeUV(const glm::vec3&) const {}
-vec4 Mesh::computeNormal(const glm::vec3&) const {}
+vec2 Mesh::computeUV(const glm::vec3&) const { return vec2(0.0f); }
+vec4 Mesh::computeNormal(const glm::vec3&) const { return vec4(0.0f); }
 
 // This assumes that the position buffer size is a 
 // multiple of 9. posBufOffset is the index of the
 // x component of the 1st vertex.
+// https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+// https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/
 bool Mesh::intersect_triangle(
-	const vec3& orig, const vec3& dir, const float t,
-	const size_t &posBufOffset, float &u, float &v) 
+	const vec3& orig, const vec3& dir, 
+	const size_t &posBufOffset, float &t, float &u, float &v) 
 {
 	const size_t &i = posBufOffset;
-	const float *vert0 = &posBuf.at(0+i); 
-	const float *vert1 = &posBuf.at(3+i); 
-	const float *vert2 = &posBuf.at(6+i);
+	const float *v0 = &posBuf.at(0+i); 
+	const float *v1 = &posBuf.at(3+i); 
+	const float *v2 = &posBuf.at(6+i);
 
-	// TODO
+	vec3 p0(*(v0), *(v0+1), *(v0+2));
+	vec3 p1(*(v1), *(v1+1), *(v1+2));
+	vec3 p2(*(v2), *(v2+1), *(v2+2));
+	
+	// todo: try optimize further by
+	// reducing vector creation
+	vec3 c0 = orig - p0;
+	vec3 c1 = p1 - p0;
+	vec3 c2 = p2 - p0;
 
-	return false;
+	vec3 p = glm::cross(dir, c2);
+	vec3 q = glm::cross(c0, c1);
+
+	float inv_det = 1.0f/dot(p, c1);
+	t = dot(q, c2)*inv_det;
+	u = dot(p, c0)*inv_det;
+	v = dot(q, dir)*inv_det;
+
+	vec3 plane_normal = cross(c1, c2);
+	bool isParallelToNorm = glm::abs(dot(plane_normal, dir)) < EPSILION;
+	bool isOutsideTri = v < 0 || u < 0 || u + v > 1;
+
+	return !isParallelToNorm && !isOutsideTri;
 }
 
 const bool SHOW_BOUNDING_SPHERE = false;
@@ -470,6 +492,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 		return;
 	}
 
+	// u and v refer to barycentric coordinates.
 	float t, u, v;
 
 	if (posBuf.size() % 9 != 0) {
@@ -482,13 +505,13 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 	} 
 
 	for (size_t i = 0; i < posBuf.size(); i += 9) {
-		if (!intersect_triangle(l_rorig, vk, t, i, u, v)) continue;
+		if (!intersect_triangle(l_rorig, vk, i, t, u, v)) continue;
 		float w = 1.0f - v - u;
 		// Because of branch prediction, I have chosen not to check for t here;
 		// that should be handled in hits, given a positive min value
 		vec3 rv = l_rorig + t*vk;
 		vec3 wld_x = vec3(modelMat*vec4(rv, 1.0f));
-		// assume that the normals for the 3 vertices are the same
+
 		// loadmesh ensures a vertex only has 1 normal associated with it
 		float nx = w*norBuf.at(0+i) + u*norBuf.at(3+i) + v*norBuf.at(6+i);
 		float ny = w*norBuf.at(1+i) + u*norBuf.at(4+i) + v*norBuf.at(7+i);

@@ -120,9 +120,9 @@ private:
 	glm::mat4 invT_sphereMat; // likewise
 
 	void setBoundingRadius();
-	bool intersect_triangle(
-		const vec3& orig, const vec3& dir, const float t,
-		const size_t &posBufOffset, float &u, float &v);
+	bool intersect_triangle(const glm::vec3& o, const glm::vec3& d, 
+							const size_t &off, float &t, float &u, 
+							float &v);
 
 	void initSphereMatrices();
 };
