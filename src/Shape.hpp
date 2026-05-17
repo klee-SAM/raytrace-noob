@@ -101,7 +101,7 @@ class Mesh : public Shape {
 public:
 	Mesh() {};
 	Mesh(const std::string& objName, const std::string& directory) {
-		loadMesh(objName, directory, true);
+		loadMesh(objName, directory);
 	}
 	virtual ~Mesh() = default;
 	// Assume that the .obj file and .mtl files are in the same directory.

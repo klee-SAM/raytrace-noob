@@ -415,7 +415,6 @@ inline vec3 SUB(const float *v1, const float *v2) {
 // multiple of 9. posBufOffset is the index of the
 // x component of the 1st vertex.
 // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-// https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/
 bool Mesh::intersect_triangle(const vec3& orig, const vec3& dir, 
 							  const size_t &i, /* posBufOffset */ 
 							  float &t, float &u, float &v) 
@@ -521,18 +520,25 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 		vec3 rv = l_rorig + t*r_vk;
 		vec3 wld_x = vec3(modelMat*vec4(rv, 1.0f));
 
-		// loadmesh ensures a vertex only has 1 normal associated with it
-		float nx = w*norBuf.at(0+i) + u*norBuf.at(3+i) + v*norBuf.at(6+i);
-		float ny = w*norBuf.at(1+i) + u*norBuf.at(4+i) + v*norBuf.at(7+i);
-		float nz = w*norBuf.at(2+i) + u*norBuf.at(5+i) + v*norBuf.at(8+i);
+		vec3 wld_n; float tex_u = 0.0f, tex_v = 0.0f;
 
-		// Because of floating-point error, the interpolated normal is no longer
-		// normalized, so explicitly normalize it again.
-		vec3 wld_n = normalize(vec3(invT_modelMat*vec4(nx, ny, nz, 0.0f)));
+		// loadmesh ensures a vertex only has 1 normal associated with it,
+		// if there are any attribute normals
+		if (i < norBuf.size()) {
+			float nx = w*norBuf.at(0+i) + u*norBuf.at(3+i) + v*norBuf.at(6+i);
+			float ny = w*norBuf.at(1+i) + u*norBuf.at(4+i) + v*norBuf.at(7+i);
+			float nz = w*norBuf.at(2+i) + u*norBuf.at(5+i) + v*norBuf.at(8+i);
 
-		// Only two texture components per vertex
-		float tex_u = w*texBuf.at(0+j) + u*texBuf.at(2+j) + v*texBuf.at(4+j);
-		float tex_v = w*texBuf.at(1+j) + u*texBuf.at(3+j) + v*texBuf.at(5+j);
+			// Because of floating-point error, the interpolated normal is no longer
+			// normalized, so explicitly normalize it again.
+			wld_n = normalize(vec3(invT_modelMat*vec4(nx, ny, nz, 0.0f)));
+		}
+
+		// Only two texture components per vertex, if there are any
+		if (j < texBuf.size()) {
+			tex_u = w*texBuf.at(0+j) + u*texBuf.at(2+j) + v*texBuf.at(4+j);
+			tex_v = w*texBuf.at(1+j) + u*texBuf.at(3+j) + v*texBuf.at(5+j);
+		}
 
 		Hit h; 
 		h.x = wld_x; h.n = wld_n; h.t = t; 

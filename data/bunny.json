@@ -8,7 +8,7 @@
     "materials" : {
         "red" : {
             "ambient" : [0.1, 0.1, 0.1],
-            "diffuse" : [1.0, 0.0, 0.0],
+            "diffuse" : [1.0, 0.25, 0.0],
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0
         }
@@ -19,18 +19,18 @@
             "intensity": 0.75
         },
         { 
-            "position": [0.0, 0.0, -2.0], 
+            "position": [3.0, -1.0, -1.0], 
             "intensity": 0.25
         }
     ],
     "shapes" : [
         {
             "shape" : "mesh",
-            "position" : [0, 0, -5.0],
+            "position" : [0, -1, 0.0],
             "scale" : [1,1,1],
-            "rotation" : [0, 135, 0],
+            "rotation" : [7.5, 45, 0],
             "material" : "red",
-            "file" : "teapot.obj"
+            "file" : "bunny.obj"
         }
     ]
 }

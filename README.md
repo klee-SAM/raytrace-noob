@@ -34,6 +34,7 @@ Adding more features as a learning exercise
 
 ### misc.
 - [ ] scene format documentation (json)
+- [ ] partial .mtl support (tiny_obj_loader)
 
 
 
@@ -61,3 +62,4 @@ These instructions are for Linux. Other platforms may have slightly different bu
 - Raytracing in One Weekend series (https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 - The Ray Tracer Challenge: (https://pragprog.com/titles/jbtracer/the-ray-tracer-challenge/)
 - cpp_multithreading: (https://github.com/wasimusu/cpp_multithreading)
+- https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html
