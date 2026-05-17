@@ -69,10 +69,11 @@ public:
         computeUVvectors(r); 
     }
     void setPosition(const glm::vec3& r) { modelMat[3] = glm::vec4(r, 1.0f); }
-
+	
+	virtual void initialize() override;
 private:
     glm::vec3 uvec, vvec;
-    bool computedUVvectors = false;
+	glm::vec3 normal;
     void computeUVvectors(const glm::vec3& n);
 };
 
@@ -111,7 +112,7 @@ public:
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 private:
 	// Set to true when intersect() is called for the first time on the mesh.
-	bool sphere_matrix_initialized = false;
+	void initialize() override;
 
 	// These buffers are only populated when a mesh is loaded.
 	std::vector<float> posBuf;
@@ -122,7 +123,6 @@ private:
 	glm::vec3 meshCenter; 	  // Defined in model/local space.
 	glm::mat4 inv_sphereMat;  // matrix used for bounding sphere tests 
 	glm::mat4 sphereMat; 	  // only useful for debugging
-	glm::mat4 invT_sphereMat; // likewise
 
 	void setBoundingRadius();
 	bool intersect_triangle(const glm::vec3& o, const glm::vec3& d, 

@@ -99,9 +99,17 @@ void Plane::computeUVvectors(const glm::vec3& normal) {
     vvec = cross(normal, uvec);
 }
 
+// Assume that the plane isn't rotating over time,
+// so set uvec and vvec only "once" knowing that
+// the normal is finalized
+void Plane::initialize() {
+	this->normal = vec3(modelMat[1]);
+	computeUVvectors(this->normal);
+}
+
 // The rotation of the plane is used as the normal
 void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
-	vec3 n = vec3(modelMat[1]);
+	vec3 &n = normal;
 	// Compute the distance from the ray origin using:
 	float t = dot(n, vec3(modelMat[3])-ray.pos)/dot(n, ray.dir);
 
@@ -110,13 +118,6 @@ void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
 	vec3 x = ray.pos + offset;
 
 	// Compute u, v coordinates
-    if (!computedUVvectors) { 
-        // Assume that the plane isn't rotating over time,
-        // so set uvec and vvec only "once" knowing that
-        // the normal is finalized
-        computeUVvectors(n);
-        computedUVvectors = true;
-    }
 	float u = dot(offset, uvec);
 	float v = dot(offset, vvec);
 
@@ -239,7 +240,6 @@ void Cylinder::intersect(const Ray& ray, vector<Hit>& hits)
 }
 
 
-
 void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool printVerticesCount) 
 {
     // Load geometry
@@ -255,7 +255,6 @@ void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool pr
 	else meshPath += meshName; 
 
 	// boolean parameter enables triangulation of faces with 4+ vertices
-	// TODO: add support for .mtl files
 	bool success = tinyobj::LoadObj(&attrib, &shapes, &obj_mats, &errMsg, 
 		meshPath.c_str(), directoryPath.c_str(), true);
 
@@ -283,9 +282,6 @@ void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool pr
 				if (!attrib.texcoords.empty()) {
 					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+0]);
 					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+1]);
-					// Push empty values to match the size of the normal and
-					// position buffers.
-					texBuf.push_back(0.0f); 
 				}
 			}
 			index_offset += fv; // b/c of triangulate, offset is always += 3.
@@ -295,8 +291,21 @@ void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool pr
 
 	setBoundingRadius();
 
+	if (posBuf.size() % 9 != 0) {
+		// Otherwise, a segfault may occur from invalid
+		// memory access (2:57 AM brain thinking).
+		cerr << "posBuf.size() == " << posBuf.size() 
+			 << "; not a multiple of 9\n";
+		return;
+	} 
+	if (texBuf.size() % 6 != 0) {
+		cerr << "texBuf.size() == " << texBuf.size()
+			 << "; not a multiple of 6\n";
+		return;
+	}
+
     if (printVerticesCount)
-	    cout << "Number of vertices: " << posBuf.size()/3 << endl;
+	    clog << "Number of vertices: " << posBuf.size()/3 << '\n';
 }
 
 void Mesh::setBoundingRadius() 
@@ -347,7 +356,6 @@ void Mesh::setBoundingRadius()
 	clog << to_string(this->boundingRadius) << '\n';
 }
 
-
 void Mesh::fitToUnitBox()
 {
 	// Scale the vertex positions so that they fit within [-1, +1] in all three dimensions.
@@ -379,14 +387,11 @@ void Mesh::fitToUnitBox()
 	setBoundingRadius();
 }
 
-// construct new matrix just for the sphere test
-void Mesh::initSphereMatrices() 
+// construct new matrix just for the uniform sphere test
+void Mesh::initialize() 
 {
-	if (sphere_matrix_initialized) return;
-	sphere_matrix_initialized = true;
 	sphereMat = glm::scale(modelMat, vec3(this->boundingRadius));
 	inv_sphereMat = inverse(sphereMat);
-	invT_sphereMat = inverse(transpose(sphereMat));
 }
 
 // This assumes that the position buffer size is a 
@@ -438,7 +443,6 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 	vec3 pk, vx, vk;
 
 	// here, use inv_sphereMat to accurately represent the bounding sphere
-	initSphereMatrices();
 	pk = vec3(inv_sphereMat*vec4(ray.pos - meshCenter, 1.0f));
 	vx = vec3(inv_sphereMat*vec4(ray.dir, 0.0f));
 
@@ -460,7 +464,8 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 		vec3 x0 = pk + t0*vk;
 		vec3 wld_x0 = vec3(sphereMat*vec4(x0, 1.0f));
-		vec3 wld_n0 = normalize(vec3(invT_sphereMat*vec4(x0, 0.0f)));
+		// sphereMat used instead of inv_T, since size is uniform
+		vec3 wld_n0 = normalize(vec3(sphereMat*vec4(x0, 0.0f)));
 		float wld_t0 = t0/length(vx);
 		Hit h0;
 		h0.x = wld_x0;
@@ -471,7 +476,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 		vec3 x1 = pk + t1*vk;
 		vec3 wld_x1 = vec3(sphereMat*vec4(x1, 1.0f));
-		vec3 wld_n1 = normalize(vec3(invT_sphereMat*vec4(x1, 0.0f)));
+		vec3 wld_n1 = normalize(vec3(sphereMat*vec4(x1, 0.0f)));
 		float wld_t1 = t1/length(vx);
 		Hit h1;
 		h0.x = wld_x1;
@@ -488,16 +493,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 	// u and v refer to barycentric coordinates.
 	float t, u, v;
 
-	if (posBuf.size() % 9 != 0) {
-		// Otherwise, a segfault may occur from invalid
-		// memory access (2:57 AM brain thinking).
-		cerr << "posBuf.size() == " 
-			 << posBuf.size() 
-			 << "; unsafe size\n";
-		return;
-	} 
-
-	for (size_t i = 0; i < posBuf.size(); i += 9) {
+	for (size_t i = 0, j = 0; i < posBuf.size(); i += 9, j += 6) {
 		if (!intersect_triangle(l_rorig, vk, i, t, u, v)) continue;
 		float w = 1.0f - v - u;
 		// Because of branch prediction, I have chosen not to check for t here;
@@ -515,8 +511,8 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 		vec3 wld_n = normalize(vec3(invT_modelMat*vec4(nx, ny, nz, 0.0f)));
 
 		// Only two texture components per vertex
-		float tex_u = w*texBuf.at(0+i) + u*texBuf.at(2+i) + v*texBuf.at(4+i);
-		float tex_v = w*texBuf.at(1+i) + u*texBuf.at(3+i) + v*texBuf.at(5+i);
+		float tex_u = w*texBuf.at(0+j) + u*texBuf.at(2+j) + v*texBuf.at(4+j);
+		float tex_v = w*texBuf.at(1+j) + u*texBuf.at(3+j) + v*texBuf.at(5+j);
 
 		Hit h; 
 		h.x = wld_x; h.n = wld_n; h.t = t; 
