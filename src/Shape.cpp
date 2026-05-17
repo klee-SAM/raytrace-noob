@@ -313,7 +313,7 @@ void Mesh::setBoundingRadius()
 	} bounds;
 
 	if (posBuf.size() < 3) {
-		this->boundingRadius = 0;
+		this->boundingRadius = 0.0f;
 		cerr << "Expected posBuf.size() > 3, got " << posBuf.size() << '\n';
 		return;
 	}
@@ -348,9 +348,8 @@ void Mesh::setBoundingRadius()
 	this->meshCenter = vec3(cx, cy, cz);
 
 	this->boundingRadius = (maxPos - minPos)/2;
-	
 
-	clog << to_string(this->meshCenter) << '\n';
+	clog << to_string(this->boundingRadius) << '\n';
 }
 
 
@@ -439,7 +438,7 @@ bool Mesh::intersect_triangle(
 	return !isParallelToNorm && !isOutsideTri && (t > 0);
 }
 
-const bool SHOW_BOUNDING_SPHERE = true;
+const bool SHOW_BOUNDING_SPHERE = false;
 
 // Some floating-point error possible, or the normals are not normal
 void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
@@ -448,15 +447,10 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 	vec3 pk, vx, vk;
 
-	if (SHOW_BOUNDING_SPHERE) {
-		// here, use inv_sphereMat to accurately represent the bounding sphere
-		initSphereMatrices();
-		pk = vec3(inv_sphereMat*vec4(ray.pos, 1.0f));
-		vx = vec3(inv_sphereMat*vec4(ray.dir, 0.0f));
-	} else {
-		pk = l_rorig - meshCenter; // put sphere at center of mesh
-		vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
-	}
+	// here, use inv_sphereMat to accurately represent the bounding sphere
+	initSphereMatrices();
+	pk = vec3(inv_sphereMat*vec4(ray.pos - meshCenter, 1.0f));
+	vx = vec3(inv_sphereMat*vec4(ray.dir, 0.0f));
 
 	vk = normalize(vx);
 	float a, b, c;
@@ -497,6 +491,9 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 		hits.push_back(h1);
 		return;
 	}
+
+	vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
+	vk = normalize(vx);
 
 	// u and v refer to barycentric coordinates.
 	float t, u, v;

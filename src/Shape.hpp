@@ -116,10 +116,8 @@ private:
 	std::vector<float> norBuf;
 	std::vector<float> texBuf;
 
-	double boundingRadius;
-	glm::vec3 boundingScales;
+	float boundingRadius; 
 	glm::vec3 meshCenter; 	  // Defined in model/local space.
-	float meshOffset;
 	glm::mat4 inv_sphereMat;  // matrix used for bounding sphere tests 
 	glm::mat4 sphereMat; 	  // only useful for debugging
 	glm::mat4 invT_sphereMat; // likewise

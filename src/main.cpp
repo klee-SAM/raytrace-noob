@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     string outputname = argv[2];
 
     // fix the width and height for debugging, for now
-    uint width = 128U;
+    uint width = 64U;
     uint height = width;
 
     shared_ptr<Scene> target_scene = make_shared<Scene>();
