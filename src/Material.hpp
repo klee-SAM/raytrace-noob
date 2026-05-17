@@ -10,6 +10,8 @@ public:
     float exponent;
 
     float reflCoeff;
+    float refrIndex;
+    float transparency;
 
     std::shared_ptr<Texture> texture;
     float textureOpacity;
@@ -22,10 +24,18 @@ public:
     // we just have a simple boolean check
     // (just check if texture loaded)
 
-    Material() : ambient{glm::vec3(0.0f)}, diffuse{glm::vec3(0.0f)}, 
-        specular{glm::vec3(0.0f)}, exponent{1.0f}, reflCoeff{0.0f} {};
+    Material() : ambient{glm::vec3(0.0f)}, 
+                 diffuse{glm::vec3(0.0f)}, 
+                 specular{glm::vec3(0.0f)}, 
+                 exponent{1.0f}, 
+                 reflCoeff{0.0f}, 
+                 refrIndex{1.0f}, 
+                 transparency{0.0f}
+                 {};
+                 
     Material(glm::vec3 amb, glm::vec3 dif, glm::vec3 spe, float exp)
     : ambient{amb}, diffuse{dif}, specular{spe}, exponent(exp) {}
+
     virtual ~Material() = default;
 
     void copy(Material& oth) { *this = oth; }
