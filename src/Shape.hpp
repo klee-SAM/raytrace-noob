@@ -129,7 +129,7 @@ private:
 							const size_t &off, float &t, float &u, 
 							float &v);
 
-	void initSphereMatrices();
+	bool sphere_test(const Ray& ray);
 };
 
 

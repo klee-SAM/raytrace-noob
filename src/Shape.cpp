@@ -352,8 +352,6 @@ void Mesh::setBoundingRadius()
 	this->meshCenter = vec3(cx, cy, cz);
 
 	this->boundingRadius = (maxPos - minPos)/2;
-
-	clog << to_string(this->boundingRadius) << '\n';
 }
 
 void Mesh::fitToUnitBox()
@@ -394,111 +392,133 @@ void Mesh::initialize()
 	inv_sphereMat = inverse(sphereMat);
 }
 
+// custom functions for speed; only do operations when needed
+
+// TODO: test replacment with reference writing?
+inline vec3 CROSS(const float *v1, const float *v2) {
+	return vec3(v1[1]*v2[2]-v1[2]*v2[1],
+				v1[2]*v2[0]-v1[0]*v2[2],
+				v1[0]*v2[1]-v1[1]*v2[0]);
+}
+
+inline float DOT(const float *v1, const float *v2) {
+	return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+}
+
+inline vec3 SUB(const float *v1, const float *v2) {
+	return vec3(v1[0]-v2[0], 
+				v1[1]-v2[1], 
+				v1[2]-v2[2]);
+}
+
 // This assumes that the position buffer size is a 
 // multiple of 9. posBufOffset is the index of the
 // x component of the 1st vertex.
 // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/
-bool Mesh::intersect_triangle(
-	const vec3& orig, const vec3& dir, 
-	const size_t &posBufOffset, float &t, float &u, float &v) 
+bool Mesh::intersect_triangle(const vec3& orig, const vec3& dir, 
+							  const size_t &i, /* posBufOffset */ 
+							  float &t, float &u, float &v) 
 {
-	const size_t &i = posBufOffset;
-	const float *v0 = &posBuf.at(0+i); 
-	const float *v1 = &posBuf.at(3+i); 
-	const float *v2 = &posBuf.at(6+i);
+	vec3 edge1, edge2, pvec, qvec, tvec;
+	float det, inv_det;
 
-	vec3 p0(*(v0), *(v0+1), *(v0+2));
-	vec3 p1(*(v1), *(v1+1), *(v1+2));
-	vec3 p2(*(v2), *(v2+1), *(v2+2));
+	float *vt0 = &posBuf.at(0+i); 
+	float *vt1 = &posBuf.at(3+i); 
+	float *vt2 = &posBuf.at(6+i);
+
+	edge1 = SUB(vt1, vt0);
+	edge2 = SUB(vt2, vt0);
+
+	pvec = CROSS(&dir.x, &edge2.x);
+
+	det = DOT(&edge1.x, &pvec.x);
+	// Cull backfacing triangles (det is negative for backfacing).
+	// Handle the case where ray is not parallel to 
+	// plane (det == 0) implicitly.
+	if (det < EPSILION) return false; 
+	inv_det = 1.0f/det;
+
+	tvec = SUB(&orig.x, vt0);
+	u = DOT(&tvec.x, &pvec.x)*inv_det;
+	// barycentric coord test
+	if (u < 0.0f || u > 1.0f) return false;
+
+	qvec = CROSS(&tvec.x, &edge1.x);
+	v = DOT(&dir.x, &qvec.x)*inv_det;
+	if (v < 0.0f || u + v > 1.0f) return false;
+
+	t = DOT(&edge2.x, &qvec.x) * inv_det;
 	
-	// todo: try optimize further by
-	// reducing vector creation
-	vec3 c0 = orig - p0;
-	vec3 c1 = p1 - p0;
-	vec3 c2 = p2 - p0;
-
-	vec3 p = glm::cross(dir, c2);
-	vec3 q = glm::cross(c0, c1);
-
-	float inv_det = 1.0f/dot(p, c1);
-	t = dot(q, c2)*inv_det;
-	u = dot(p, c0)*inv_det;
-	v = dot(q, dir)*inv_det;
-
-	vec3 plane_normal = cross(c1, c2);
-	bool isParallelToNorm = glm::abs(dot(plane_normal, dir)) < EPSILION;
-	bool isOutsideTri = v < 0 || u < 0 || u + v > 1;
-
-	return !isParallelToNorm && !isOutsideTri && (t > 0);
+	return true;
 }
 
-const bool SHOW_BOUNDING_SPHERE = false;
+// Comment this out to show the actual model
+// #define SHOW_BOUNDING_SPHERE
 
 // Some floating-point error possible, or the normals are not normal
 void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 	// transform ray to local coords
 	vec3 l_rorig = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
 
+	// bounding sphere test
 	vec3 pk, vx, vk;
-
 	// here, use inv_sphereMat to accurately represent the bounding sphere
 	pk = vec3(inv_sphereMat*vec4(ray.pos - meshCenter, 1.0f));
 	vx = vec3(inv_sphereMat*vec4(ray.dir, 0.0f));
-
 	vk = normalize(vx);
+	
 	float a, b, c;
-	float d, den;
-
+	float d;
 	a = dot(vk, vk);
 	b = 2*dot(vk, pk);
 	c = dot(pk, pk) - 1;
 	d = b*b - 4*a*c;
-	den = 1.0f/(2*a);
-
+	
+	// Return early if the ray does not intersect the bounding uniform sphere
 	if (d <= 0.0f) return;
 
-	if (SHOW_BOUNDING_SPHERE) {
-		float t0 = (-b - glm::sqrt(d))*den; 
-		float t1 = (-b + glm::sqrt(d))*den;
+	#ifdef SHOW_BOUNDING_SPHERE
+	float den = 1.0f/(2*a);
+	float t0 = (-b - glm::sqrt(d))*den; 
+	float t1 = (-b + glm::sqrt(d))*den;
 
-		vec3 x0 = pk + t0*vk;
-		vec3 wld_x0 = vec3(sphereMat*vec4(x0, 1.0f));
-		// sphereMat used instead of inv_T, since size is uniform
-		vec3 wld_n0 = normalize(vec3(sphereMat*vec4(x0, 0.0f)));
-		float wld_t0 = t0/length(vx);
-		Hit h0;
-		h0.x = wld_x0;
-		h0.n = wld_n0;
-		h0.t = wld_t0;
-		h0.m = material;
-		hits.push_back(h0);
+	vec3 x0 = pk + t0*vk;
+	vec3 wld_x0 = vec3(sphereMat*vec4(x0, 1.0f));
+	// sphereMat used instead of inv_T, since size is uniform
+	vec3 wld_n0 = normalize(vec3(sphereMat*vec4(x0, 0.0f)));
+	float wld_t0 = t0/length(vx);
+	Hit h0;
+	h0.x = wld_x0;
+	h0.n = wld_n0;
+	h0.t = wld_t0;
+	h0.m = material;
+	hits.push_back(h0);
 
-		vec3 x1 = pk + t1*vk;
-		vec3 wld_x1 = vec3(sphereMat*vec4(x1, 1.0f));
-		vec3 wld_n1 = normalize(vec3(sphereMat*vec4(x1, 0.0f)));
-		float wld_t1 = t1/length(vx);
-		Hit h1;
-		h0.x = wld_x1;
-		h0.n = wld_n1;
-		h0.t = wld_t1;
-		h0.m = material;
-		hits.push_back(h1);
-		return;
-	}
+	vec3 x1 = pk + t1*vk;
+	vec3 wld_x1 = vec3(sphereMat*vec4(x1, 1.0f));
+	vec3 wld_n1 = normalize(vec3(sphereMat*vec4(x1, 0.0f)));
+	float wld_t1 = t1/length(vx);
+	Hit h1;
+	h0.x = wld_x1;
+	h0.n = wld_n1;
+	h0.t = wld_t1;
+	h0.m = material;
+	hits.push_back(h1);
+	return;
+	#endif
 
-	vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
-	vk = normalize(vx);
+	vec3 r_vk = normalize(vec3(inv_modelMat*vec4(ray.dir, 0.0f)));
 
 	// u and v refer to barycentric coordinates.
 	float t, u, v;
 
 	for (size_t i = 0, j = 0; i < posBuf.size(); i += 9, j += 6) {
-		if (!intersect_triangle(l_rorig, vk, i, t, u, v)) continue;
+		if (!intersect_triangle(l_rorig, r_vk, i, t, u, v)) continue;
 		float w = 1.0f - v - u;
 		// Because of branch prediction, I have chosen not to check for t here;
 		// that should be handled in hits, given a positive min value
-		vec3 rv = l_rorig + t*vk;
+		vec3 rv = l_rorig + t*r_vk;
 		vec3 wld_x = vec3(modelMat*vec4(rv, 1.0f));
 
 		// loadmesh ensures a vertex only has 1 normal associated with it
