@@ -262,7 +262,7 @@ void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool pr
 	// boolean parameter enables triangulation of faces with 4+ vertices
 	// TODO: add support for .mtl files
 	bool success = tinyobj::LoadObj(&attrib, &shapes, &obj_mats, &errMsg, 
-		meshPath.c_str(), nullptr, true);
+		meshPath.c_str(), directoryPath.c_str(), true);
 
 	if (!errMsg.empty()) std::cerr << errMsg << '\n';
 	if (!success) return; 
@@ -288,6 +288,9 @@ void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool pr
 				if (!attrib.texcoords.empty()) {
 					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+0]);
 					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+1]);
+					// Push empty values to match the size of the normal and
+					// position buffers.
+					texBuf.push_back(0.0f); 
 				}
 			}
 			index_offset += fv; // b/c of triangulate, offset is always += 3.
@@ -337,14 +340,17 @@ void Mesh::setBoundingRadius()
 
 	float minPos = std::min(std::min(bounds.x.min, bounds.y.min), bounds.z.min);
 	float maxPos = std::max(std::max(bounds.x.max, bounds.y.max), bounds.z.max);
-	
-	this->boundingRadius = (maxPos - minPos)/2;
 
 	// center the sphere wrt mesh's vertices
 	float cx = (bounds.x.max + bounds.x.min)/2;
 	float cy = (bounds.y.max + bounds.y.min)/2;
 	float cz = (bounds.z.max + bounds.z.min)/2;
 	this->meshCenter = vec3(cx, cy, cz);
+
+	this->boundingRadius = (maxPos - minPos)/2;
+	
+
+	clog << to_string(this->meshCenter) << '\n';
 }
 
 
@@ -384,7 +390,7 @@ void Mesh::initSphereMatrices()
 {
 	if (sphere_matrix_initialized) return;
 	sphere_matrix_initialized = true;
-	sphereMat = modelMat*glm::scale(mat4(1.0f), vec3(this->boundingRadius));
+	sphereMat = glm::scale(modelMat, vec3(this->boundingRadius));
 	inv_sphereMat = inverse(sphereMat);
 	invT_sphereMat = inverse(transpose(sphereMat));
 }
@@ -430,10 +436,10 @@ bool Mesh::intersect_triangle(
 	bool isParallelToNorm = glm::abs(dot(plane_normal, dir)) < EPSILION;
 	bool isOutsideTri = v < 0 || u < 0 || u + v > 1;
 
-	return !isParallelToNorm && !isOutsideTri;
+	return !isParallelToNorm && !isOutsideTri && (t > 0);
 }
 
-const bool SHOW_BOUNDING_SPHERE = false;
+const bool SHOW_BOUNDING_SPHERE = true;
 
 // Some floating-point error possible, or the normals are not normal
 void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
@@ -445,7 +451,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 	if (SHOW_BOUNDING_SPHERE) {
 		// here, use inv_sphereMat to accurately represent the bounding sphere
 		initSphereMatrices();
-		pk = vec3(inv_sphereMat*vec4(ray.pos, 1.0f)) - meshCenter;
+		pk = vec3(inv_sphereMat*vec4(ray.pos, 1.0f));
 		vx = vec3(inv_sphereMat*vec4(ray.dir, 0.0f));
 	} else {
 		pk = l_rorig - meshCenter; // put sphere at center of mesh

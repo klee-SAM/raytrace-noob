@@ -1,5 +1,6 @@
 #include "SceneLoader.hpp"
 
+#include <typeinfo>
 #include "umath.hpp"
 
 using namespace std;
@@ -248,6 +249,8 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
         glm::vec3 pos(0.0f), scl(1.0f), rot(0.0f);
         std::shared_ptr<Material> smat = defaultMaterial;
 
+        std::string mesh_filename;
+
         int prop_ind = 1;
         for (int prop = 0; prop < s_tok->size; ++prop) {
             auto key = s_tok + prop_ind, value = key+1;
@@ -265,6 +268,8 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
                 rot.z = glm::radians(rot.z);
             } else if (jsonstreq(key, "material")) {
                 smat = scene->getMaterial(stringFromToken(value));
+            } else if (jsonstreq(key, "file")) {
+                mesh_filename = stringFromToken(value);
             } else {
                 std::cerr << "parseShapes: invalid property: "
                           << print_token(key) << '\n';
@@ -277,9 +282,15 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
             modelMat.setPosition(pos);
             modelMat.setRotation(rot);
             modelMat.setScale(scl);
+            
+            // Hack to initialize a mesh object
+            bool isMesh = dynamic_cast<Mesh*>(shape.get()) != nullptr;
+            if (isMesh) { shape = make_shared<Mesh>(mesh_filename, srcDir); }
+
             shape->setModelMatrix(modelMat.getMatrix());
             shape->setMaterial(smat);
             scene->pushShape(shape);
+
         } else {
             std::cerr << "Shape not created.\n";
         }
@@ -324,8 +335,7 @@ std::shared_ptr<Shape> shapeFromString(const std::string& type)
     } else if (type == "plane") {
         return make_shared<Plane>();
     } else if (type == "mesh") { 
-        std::cerr << "...\n"; 
-        return nullptr;
+        return make_shared<Mesh>();
     } else if (type == "box") {
         return make_shared<Box>();
     } else if (type == "cylinder") {

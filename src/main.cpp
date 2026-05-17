@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     string outputname = argv[2];
 
     // fix the width and height for debugging, for now
-    uint width = 256U;
+    uint width = 128U;
     uint height = width;
 
     shared_ptr<Scene> target_scene = make_shared<Scene>();
@@ -93,6 +93,7 @@ int main(int argc, char** argv) {
     shared_ptr<Camera> camera = make_shared<Camera>(width, height, 45.0f);
 
     SceneLoader sl(RESOURCE_DIR+filename);
+    sl.setResourceDirectory(RESOURCE_DIR);
     sl.loadSceneFile(camera, target_scene);
     
     camera->applyProjection(P);

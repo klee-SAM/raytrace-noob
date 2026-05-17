@@ -20,12 +20,17 @@ public:
     SceneLoader() : location{""} {}
     SceneLoader(const std::string& loc) : location{loc} {}
 
+    // for scene.json files
     void setFileLocation(const std::string& loc) { location = loc; }
+
+    // for .obj files, must be called before loading scene with meshes
+    void setResourceDirectory(const std::string& loc) { srcDir = loc; }
 
     void loadSceneFile(std::shared_ptr<Camera>& cam, std::shared_ptr<Scene>& scene);
 
 private:
     std::string location;
+    std::string srcDir;
     std::ifstream file;
 
     std::string jsonData;

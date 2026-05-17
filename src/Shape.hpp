@@ -94,6 +94,9 @@ protected:
 class Mesh : public Shape {
 public:
 	Mesh() {};
+	Mesh(const std::string& objName, const std::string& directory) {
+		loadMesh(objName, directory, true);
+	}
 	virtual ~Mesh() = default;
 	// Assume that the .obj file and .mtl files are in the same directory.
 	void loadMesh(const std::string &meshName, 
@@ -114,7 +117,9 @@ private:
 	std::vector<float> texBuf;
 
 	double boundingRadius;
+	glm::vec3 boundingScales;
 	glm::vec3 meshCenter; 	  // Defined in model/local space.
+	float meshOffset;
 	glm::mat4 inv_sphereMat;  // matrix used for bounding sphere tests 
 	glm::mat4 sphereMat; 	  // only useful for debugging
 	glm::mat4 invT_sphereMat; // likewise
