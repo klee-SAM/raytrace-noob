@@ -8,6 +8,9 @@ public:
 	Shape() {}
 	virtual ~Shape() = default;
 
+	// Called when the shape needs to compute 
+	virtual void initialize() {}
+
 	void setModelMatrix(const glm::mat4& m);
 	glm::mat4 getModelMatrix() const { return modelMat; }
 	void setMaterial(const std::shared_ptr<Material>& mat) { material = mat; }
@@ -23,8 +26,12 @@ protected:
 
 	std::shared_ptr<Material> material;
 
-	virtual glm::vec2 computeUV(const glm::vec3& point) const = 0;
-	virtual glm::vec4 computeNormal(const glm::vec3& x) const = 0;
+	virtual glm::vec2 computeUV(const glm::vec3& point) const { 
+		return glm::vec2(0.0f); 
+	}
+	virtual glm::vec4 computeNormal(const glm::vec3& x) const { 
+		return glm::vec4(0.0f); 
+	}
 	Hit toWorldSpaceHit(
 		const glm::vec3& x, // hit position
 		const glm::vec3& vx, // unnormalized ray dir
@@ -62,9 +69,7 @@ public:
         computeUVvectors(r); 
     }
     void setPosition(const glm::vec3& r) { modelMat[3] = glm::vec4(r, 1.0f); }
-protected:
-	virtual glm::vec2 computeUV(const glm::vec3&) const override;
-	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
+
 private:
     glm::vec3 uvec, vvec;
     bool computedUVvectors = false;
@@ -104,9 +109,6 @@ public:
 				  bool = false);
 	void fitToUnitBox();
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
-protected:
-	virtual glm::vec2 computeUV(const glm::vec3&) const override;
-	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
 private:
 	// Set to true when intersect() is called for the first time on the mesh.
 	bool sphere_matrix_initialized = false;

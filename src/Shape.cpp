@@ -99,11 +99,6 @@ void Plane::computeUVvectors(const glm::vec3& normal) {
     vvec = cross(normal, uvec);
 }
 
-// Plane uses different information to compute the UV and normals, 
-// so just leave them like this to avoid compiler errors
-vec2 Plane::computeUV(const vec3& p) const { return vec2(0.0f); }
-vec4 Plane::computeNormal(const glm::vec3& x) const {  return vec4(0.0f); }
-
 // The rotation of the plane is used as the normal
 void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
 	vec3 n = vec3(modelMat[1]);
@@ -393,11 +388,6 @@ void Mesh::initSphereMatrices()
 	inv_sphereMat = inverse(sphereMat);
 	invT_sphereMat = inverse(transpose(sphereMat));
 }
-
-// toWorldSpaceHit() is not needed for meshes, so
-// leave these with empty definitions
-vec2 Mesh::computeUV(const glm::vec3&) const { return vec2(0.0f); }
-vec4 Mesh::computeNormal(const glm::vec3&) const { return vec4(0.0f); }
 
 // This assumes that the position buffer size is a 
 // multiple of 9. posBufOffset is the index of the
