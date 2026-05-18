@@ -2,7 +2,7 @@
     "camera" : {
         "distance" : 5.0,
         "antialias" : 1,
-        "fov" : 45.0
+        "fov" : 60.0
     },
     "lights" : [
         {
@@ -36,9 +36,15 @@
         },
         {
             "shape" : "sphere",
-            "position" : [0, 0.0, 3],
+            "position" : [-0.5, 0.0, 3.0],
             "scale" : [0.5,0.5,0.5],
             "material" : "refractive"
+        },
+        {
+            "shape" : "sphere",
+            "position" : [0.5, 0.0, 3.0],
+            "scale" : [0.5,0.5,0.5],
+            "material" : "refractive2"
         },
         {
             "shape" : "plane",
@@ -85,6 +91,15 @@
             "refrIndex" : 1.5,
             "reflCoeff" : 1.0,
             "transparency" : 1.0
+        },
+        "refractive2" : {
+            "ambient" : [0.0,0.1,0.0],
+            "diffuse" : [0.0,1.0,0.0],
+            "specular": [0,0,0],
+            "exponent": 0.0,
+            "refrIndex" : 0.9,
+            "reflCoeff" : 0.25,
+            "transparency" : 0.75
         }
     }
 }

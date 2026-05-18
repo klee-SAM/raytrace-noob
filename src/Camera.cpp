@@ -146,11 +146,12 @@ Ray refractRay(
     float n1, n2;
     float &rf_i = rec.m->refrIndex;
     vec3 norm = rec.n;
+    Ray refrRay;
 
     // Renormalize direction vector, because apparently it
     // was not normalized before
     float cosI = dot(normalize(ray.dir), norm);
-    assert(fabs(cosI) < 1.01f);
+    // assert(fabs(cosI) < 1.01f);
 
     if (cosI > 0.0f || backFacing) {
         // Leaving the shape
@@ -164,7 +165,6 @@ Ray refractRay(
         // Entering the shape, assume outside is air
         n1 = 1.0f;
         n2 = rf_i;
-        cosI = -cosI;
     }
 
     float eta = n1/n2;
@@ -173,21 +173,25 @@ Ray refractRay(
     // Total internal reflection, but reflect instead
     if (sin2T > 1.0f) {
         reflectance = 1.0f;
-        return reflectRay(ray, rec);
+        return refrRay;
     }
     
-    float k = 1.0f - sin2T; // cos(t)^2
-    float cosT = sqrt(k);
+    // cos(t)^2
+    float cosT = sqrt(1.0f - sin2T);
     
+    // use -cosI to prevent black center void
+    // in eta < 1 and to fix my chronic sleep problems
+    cosI = -cosI;
     float m = 1.0f - (n1 > n2 ? cosT : cosI);
     // atrocity for (1 - cos)^5: (m^2)^2 * m = m^5
-    float mcos = m*m*m*m*m; 
-    float r0 = (1.0f - rf_i)/(1.0f + rf_i); r0 *= r0;
-    reflectance = r0 + (1-r0)*mcos;
-    assert(reflectance < 1.01f);
+    float r0 = (n1 - n2)/(n1 + n2); r0 *= r0;
+    reflectance = r0 + (1.0f-r0)*(m*m*m*m*m);
+    // reflectance = std::clamp(fabs(reflectance), 0.0f, 1.0f);
+    
 
-    Ray refrRay;
-    refrRay.dir = eta*ray.dir - (eta*cosI + cosT)*norm;
+    refrRay.dir = (eta*ray.dir) + ((eta*(cosI) - cosT)*norm);
+    // ig i'll find the math error later
+    // refrRay.dir = glm::refract(ray.dir, norm, eta);
     refrRay.pos = rec.x + refrRay.dir*(float)Camera::EPSILION;
 
     return refrRay;
@@ -216,7 +220,7 @@ vec3 Camera::getRayColor(
 
     float reflectance = 0.0f;
     bool reflective = rec.m->reflCoeff > Camera::MINIMUM_COEFF;
-    bool refractive = fabs(rec.m->refrIndex-1.0f) > Camera::MINIMUM_COEFF &&
+    bool refractive = fabs(rec.m->refrIndex-1.0f) > CONSTANTS::EPSILION &&
                       rec.m->transparency > Camera::MINIMUM_COEFF;
 
     if (reflective) { 
