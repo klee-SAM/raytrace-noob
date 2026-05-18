@@ -26,31 +26,19 @@
             "position" : [1.25, -0.85, 0.5],
             "scale" : [0.15, 0.15, 0.15],
             "rotation" : [0, 45, 0],
-            "material" : "green"
-        },
-        {
-            "shape" : "sphere",
-            "position" : [1.0, -0.7, 0.0],
-            "scale" : [0.3, 0.3, 0.3],
-            "material" : "blue"
+            "material" : "red"
         },
         {
             "shape" : "sphere",
             "position" : [-0.5, 0.0, -0.5],
             "scale" : [1,1,1],
-            "material" : "cyan"
-        },
-        {
-            "shape" : "cylinder",
-            "position" : [-1, 0.0, 1.5],
-            "scale" : [0.125,1,0.125],
-            "material" : "yellow"
+            "material" : "magenta"
         },
         {
             "shape" : "sphere",
-            "position" : [1.5, 0.0, -1.5],
-            "scale" : [1,1,1],
-            "material" : "reflective"
+            "position" : [0, 0.0, 2],
+            "scale" : [0.5,0.5,0.5],
+            "material" : "refractive"
         },
         {
             "shape" : "plane",
@@ -59,9 +47,15 @@
         },
         {
             "shape" : "plane",
-            "position" : [0.0, 0.0, -3.0],
+            "position" : [0.0, 0.0, -6.0],
             "rotation" : [90, 0, 0],
-            "material" : "grey"
+            "material" : "blue"
+        },
+        {
+            "shape" : "plane",
+            "position" : [0.0, 0.0, 6.0],
+            "rotation" : [-90, 0, 0],
+            "material" : "refractive"
         }
 
     ],
@@ -72,32 +66,17 @@
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0
         },
-        "green" : {
-            "ambient" : [0.1, 0.1, 0.1],
-            "diffuse" : [0.0, 1.0, 0.0],
-            "specular" : [1.0, 1.0, 0.5],
-            "exponent" : 100.0,
-            "reflCoeff" : 0.25
-        },
         "blue" : {
             "ambient" : [0.1, 0.1, 0.1],
-            "diffuse" : [0.0, 0.0, 1.0],
+            "diffuse" : [0.05, 0.25, 1.0],
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0
         },
-        "cyan" : {
+        "magenta" : {
             "ambient" : [0.1, 0.1, 0.1],
-            "diffuse" : [0.0, 1.0, 1.0],
+            "diffuse" : [1.0, 0.0, 1.0],
             "specular" : [1.0, 1.0, 0.5],
-            "exponent" : 100.0,
-            "reflCoeff" : 0.5
-        },
-        "yellow" : {
-            "ambient" : [0.1, 0.1, 0.1],
-            "diffuse" : [1.0, 1.0, 0.0],
-            "specular" : [1.0, 1.0, 0.5],
-            "exponent" : 100.0,
-            "reflCoeff" : 0.25
+            "exponent" : 100.0
         },
         "grey" : {
             "ambient" : [0.1, 0.1, 0.1],
@@ -105,7 +84,7 @@
             "specular" : [0.0, 0.0, 0.0],
             "exponent" : 0.0
         },
-        "reflective" : {
+        "refractive" : {
             "ambient" : [0,0,0],
             "diffuse" : [0,0,0],
             "specular": [0,0,0],
