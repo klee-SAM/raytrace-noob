@@ -144,10 +144,21 @@ vec3 Camera::getRayColor(
         if (recursiveDepth >= Camera::MAX_RECURSIONS) 
             return clr;
 
+        // todo: extract this to another function
         vec3 refl = glm::reflect(ray.dir, rec.n);
         Ray reflRay; reflRay.dir = refl;
         reflRay.pos = rec.x + rec.n*(float)interval.min;
         clr += rec.m->reflCoeff*getRayColor(scene, reflRay, interval, recursiveDepth + 1);
+        
+    } else if (glm::abs(rec.m->refrIndex-1.0f) > CONSTANTS::EPSILION) {
+        if (recursiveDepth >= Camera::MAX_RECURSIONS)
+            return clr;
+
+        float eta = 0.0f; // to be added
+        vec3 refr = glm::refract(ray.dir, rec.n, eta);
+        Ray refrRay;  refrRay.dir = refr;
+        refrRay.pos = rec.x + rec.n*(float)interval.min;
+
     }
 
     // The eye vector does not point to the camera when reflecting

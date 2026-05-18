@@ -3,6 +3,14 @@
 
 // Utility math functions and classes
 
+namespace CONSTANTS {
+    constexpr double PI = 3.14159265358979323846;
+    constexpr double R_PI = 1.0/PI;
+
+    constexpr double INF = std::numeric_limits<double>::infinity();
+    constexpr double EPSILION = glm::epsilon<float>();
+}
+
 class ModelMatConstr {
 public:
     void setScale(const glm::vec3& s) { scale = s; }
@@ -26,15 +34,10 @@ private:
 	glm::vec3 rotation = glm::vec3(0.0f); // contains the Euler angles for each axis
 };
 
-constexpr double PI = 3.14159265358979323846;
-constexpr double R_PI = 1.0/PI;
-
-constexpr double INF = std::numeric_limits<double>::infinity();
-constexpr double EPSILION = glm::epsilon<float>();
-
 // Create an anonymous namespace so the linker doesn't complain
 // about multiple definitions
 namespace {
+    using namespace CONSTANTS;
     class Interval {
     public:
         double min, max;

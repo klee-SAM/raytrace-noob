@@ -8,6 +8,7 @@
 
 using namespace std;
 using namespace glm;
+using namespace CONSTANTS;
 
 void Shape::setModelMatrix(const mat4& m) {
 	modelMat = m;
