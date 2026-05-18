@@ -134,38 +134,60 @@ Ray reflectRay(const Ray &ray, const Hit &rec)
     return reflRay;
 }
 
+bool printed = false;
 // Creates a new ray with a direction dependant on the material's IoR
-// Major assistance from
-// https://stackoverflow.com/questions/26087106/refraction-in-raytracing
-Ray refractRay(const Ray &ray, const Hit &rec) {
+// Uses Schlick's approximation of Fresnel's equations for refraction.
+Ray refractRay(
+    const Ray &ray, 
+    const Hit &rec, 
+    float &reflectance,
+    bool backFacing = false) 
+{
     float n1, n2;
+    float &rf_i = rec.m->refrIndex;
     vec3 norm = rec.n;
 
-    float cosI = dot(ray.dir, norm);
+    // Renormalize direction vector, because apparently it
+    // was not normalized before
+    float cosI = dot(normalize(ray.dir), norm);
+    assert(fabs(cosI) < 1.01f);
 
-    if (cosI > 0.0f) {
+    if (cosI > 0.0f || backFacing) {
         // Leaving the shape
-        n1 = rec.m->refrIndex;
+        n1 = rf_i;
         n2 = 1.0f;
         // Hitting from inside of the surface, so
         // make the normal face inside the shape
-        norm = -norm;
+        // (alr done by getRayColor() earlier)
+        // norm = -norm;
     } else {
         // Entering the shape, assume outside is air
         n1 = 1.0f;
-        n2 = rec.m->refrIndex;
+        n2 = rf_i;
         cosI = -cosI;
     }
 
-    float etaRatio = n1/n2;
-    
-    float sin2T = etaRatio*etaRatio*(1-cosI*cosI);
+    float eta = n1/n2;
+    float sin2T = eta*eta*(1.0f-cosI*cosI);
 
     // Total internal reflection, but reflect instead
-    if (sin2T > 1.0f) return reflectRay(ray, rec);
-    // TODO: fresnal effect
-    Ray refrRay;  
-    refrRay.dir = glm::refract(ray.dir, norm, etaRatio);
+    if (sin2T > 1.0f) {
+        reflectance = 1.0f;
+        return reflectRay(ray, rec);
+    }
+    
+    float k = 1.0f - sin2T; // cos(t)^2
+    float cosT = sqrt(k);
+    
+    float m = 1.0f - (n1 > n2 ? cosT : cosI);
+    // atrocity for (1 - cos)^5: (m^2)^2 * m = m^5
+    float mcos = m*m*m*m*m; 
+    float r0 = (1.0f - rf_i)/(1.0f + rf_i); r0 *= r0;
+    reflectance = r0 + (1-r0)*mcos;
+    assert(reflectance < 1.01f);
+
+    Ray refrRay;
+    refrRay.dir = eta*ray.dir - (eta*cosI + cosT)*norm;
     refrRay.pos = rec.x + refrRay.dir*(float)Camera::EPSILION;
 
     return refrRay;
@@ -189,25 +211,40 @@ vec3 Camera::getRayColor(
         return clr;
     }
 
-    if (rec.m->reflCoeff >= Camera::MINIMUM_REFL_COEFF) { 
+    vec3 reflClr = vec3(0.0f);
+    vec3 refrClr = vec3(0.0f);
+
+    float reflectance = 0.0f;
+    bool reflective = rec.m->reflCoeff > Camera::MINIMUM_COEFF;
+    bool refractive = fabs(rec.m->refrIndex-1.0f) > Camera::MINIMUM_COEFF &&
+                      rec.m->transparency > Camera::MINIMUM_COEFF;
+
+    if (reflective) { 
         if (recursiveDepth >= Camera::MAX_RECURSIONS) 
             return clr;
-        vec3 reflClr = getRayColor(scene, reflectRay(ray, rec), interval, recursiveDepth+1);
-        clr += rec.m->reflCoeff*reflClr;
-        
-    } else if (glm::abs(rec.m->refrIndex-1.0f) > CONSTANTS::EPSILION) {
+        reflClr = getRayColor(scene, reflectRay(ray, rec), interval, recursiveDepth+1);
+        reflClr = rec.m->reflCoeff*reflClr;
+    } 
+
+    // Determine if the ray is inside or outside the object,
+    // only to handle the case of lighting for CSG.
+    // Doing this means that refraction must account for
+    // this possibility via parameter
+    bool back_face = dot(ray.dir, rec.n) > 0.0f; // true if inside
+    if (back_face) rec.n = -rec.n;    
+    
+    if (refractive) {
         if (recursiveDepth >= Camera::MAX_RECURSIONS)
             return clr;
-        vec3 refrClr = getRayColor(scene, refractRay(ray, rec), interval, recursiveDepth+1);
-        clr += refrClr;
+        refrClr = getRayColor(scene, refractRay(ray, rec, reflectance, back_face), 
+                              interval, recursiveDepth+1);
+        refrClr *= rec.m->transparency;
     }
 
-    // The eye vector does not point to the camera when reflecting
-    vec3 ev = recursiveDepth > 0 ? normalize(-ray.dir) : normalize(vec3(cameraPos) - rec.x);
-
-    // Determine if the ray is inside or outside the object
-    bool back_face = dot(ray.dir, rec.n) > 0.0f; // true if inside
-    if (back_face) rec.n = -rec.n;
+    // The eye vector does not point to the camera when reflecting/refracting
+    vec3 ev = recursiveDepth > 0 ? 
+              normalize(-ray.dir) : 
+              normalize(vec3(cameraPos) - rec.x);
 
     vec3 bp_clr = rec.m->ambient;
     for (auto& light : scene->lights) {
@@ -236,6 +273,13 @@ vec3 Camera::getRayColor(
         bp_clr += Li * (diff_cont + spec_cont);
     }
 
-    clr += (1.0f - rec.m->reflCoeff) * bp_clr;
+    clr += (1.0f - rec.m->reflCoeff)*bp_clr;
+
+    if (reflective && rec.m->transparency > 0.0f) {
+        clr += reflClr*reflectance + refrClr*(1.0f-reflectance);
+    } else {
+        clr += reflClr + refrClr;
+    }
+    
     return clr;
 }

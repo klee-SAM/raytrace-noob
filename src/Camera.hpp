@@ -13,7 +13,7 @@ public:
     static constexpr double EPSILION = 1E-3;
     static constexpr double MAX_DIST = std::numeric_limits<float>::max();
     static constexpr uint MAX_RECURSIONS = 7;
-    static constexpr float MINIMUM_REFL_COEFF = 0.005f;
+    static constexpr float MINIMUM_COEFF = 0.005f;
 
     Camera() : aspectRatio(1.0), fovy(glm::radians(45.0)), width(1), height(1) { }
     Camera(uint w, uint h) : fovy{glm::radians(45.0)}, width{w}, height{h} {

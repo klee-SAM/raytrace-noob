@@ -225,6 +225,8 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>
                 material->reflCoeff = doubleFromToken(value);
             } else if (jsonstreq(key, "refrIndex")) {
                 material->refrIndex = doubleFromToken(value);
+            } else if (jsonstreq(key, "transparency")) {
+                material->transparency = doubleFromToken(value);
             }
             
             prop_ind += 1 + offsetToNextKey(value); 
