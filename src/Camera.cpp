@@ -144,24 +144,26 @@ Ray refractRay(const Ray &ray, const Hit &rec) {
     float cosI = dot(ray.dir, norm);
 
     if (cosI > 0.0f) {
-        // Entering the shape, assume outside is air
-        n1 = 1.0f;
-        n2 = rec.m->refrIndex;
-        norm = -norm; // 
-    } else {
         // Leaving the shape
         n1 = rec.m->refrIndex;
         n2 = 1.0f;
+        // Hitting from inside of the surface, so
+        // make the normal face inside the shape
+        norm = -norm;
+    } else {
+        // Entering the shape, assume outside is air
+        n1 = 1.0f;
+        n2 = rec.m->refrIndex;
         cosI = -cosI;
     }
 
     float etaRatio = n1/n2;
-
+    
     float sin2T = etaRatio*etaRatio*(1-cosI*cosI);
 
     // Total internal reflection, but reflect instead
     if (sin2T > 1.0f) return reflectRay(ray, rec);
-
+    // TODO: fresnal effect
     Ray refrRay;  
     refrRay.dir = glm::refract(ray.dir, norm, etaRatio);
     refrRay.pos = rec.x + refrRay.dir*(float)Camera::EPSILION;

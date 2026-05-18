@@ -50,14 +50,7 @@
             "position" : [0.0, 0.0, -6.0],
             "rotation" : [90, 0, 0],
             "material" : "blue"
-        },
-        {
-            "shape" : "plane",
-            "position" : [0.0, 0.0, 6.0],
-            "rotation" : [-90, 0, 0],
-            "material" : "magenta"
         }
-
     ],
     "materials" : {
         "red" : {
@@ -89,7 +82,7 @@
             "diffuse" : [0.0,0,0.0],
             "specular": [0,0,0],
             "exponent": 0.0,
-            "refrIndex" : 1.25
+            "refrIndex" : 1.5
         }
     }
 }
