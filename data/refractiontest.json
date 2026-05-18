@@ -36,7 +36,7 @@
         },
         {
             "shape" : "sphere",
-            "position" : [0, 0.0, 2],
+            "position" : [0, 0.0, 3],
             "scale" : [0.5,0.5,0.5],
             "material" : "refractive"
         },
@@ -55,7 +55,7 @@
             "shape" : "plane",
             "position" : [0.0, 0.0, 6.0],
             "rotation" : [-90, 0, 0],
-            "material" : "refractive"
+            "material" : "magenta"
         }
 
     ],
@@ -85,11 +85,11 @@
             "exponent" : 0.0
         },
         "refractive" : {
-            "ambient" : [0,0,0],
-            "diffuse" : [0,0,0],
+            "ambient" : [0.0,0,0.0],
+            "diffuse" : [0.0,0,0.0],
             "specular": [0,0,0],
             "exponent": 0.0,
-            "reflCoeff" : 1.0
+            "refrIndex" : 1.25
         }
     }
 }

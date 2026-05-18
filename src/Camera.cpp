@@ -32,6 +32,8 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, double offsetx, double offsety) {
     return cray;
 }
 
+int mand;
+
 shared_ptr<Image> Camera::render(
     shared_ptr<Scene> scene, 
     const mat4& P,
@@ -70,6 +72,7 @@ shared_ptr<Image> Camera::render(
             image->setPixel(x, y, color);
         }
     }
+    clog << mand << '\n';
     std::clog << "\rDone." << std::string(30, ' ') << '\n';
     return image;
 }
@@ -122,6 +125,50 @@ vec3 Camera::getSkyColor(const Ray& ray) {
     return vec3(0.0f);
 }
 
+Ray reflectRay(const Ray &ray, const Hit &rec) 
+{
+    Ray reflRay; 
+    // ray.dir - 2.0f * dot(rec.n, ray.dir) * rec.n
+    reflRay.dir = glm::reflect(ray.dir, rec.n);
+    reflRay.pos = rec.x + reflRay.dir*(float)Camera::EPSILION;
+    return reflRay;
+}
+
+// Creates a new ray with a direction dependant on the material's IoR
+// Major assistance from
+// https://stackoverflow.com/questions/26087106/refraction-in-raytracing
+Ray refractRay(const Ray &ray, const Hit &rec) {
+    float n1, n2;
+    vec3 norm = rec.n;
+
+    float cosI = dot(ray.dir, norm);
+
+    if (cosI > 0.0f) {
+        // Entering the shape, assume outside is air
+        n1 = 1.0f;
+        n2 = rec.m->refrIndex;
+        norm = -norm; // 
+    } else {
+        // Leaving the shape
+        n1 = rec.m->refrIndex;
+        n2 = 1.0f;
+        cosI = -cosI;
+    }
+
+    float etaRatio = n1/n2;
+
+    float sin2T = etaRatio*etaRatio*(1-cosI*cosI);
+
+    // Total internal reflection, but reflect instead
+    if (sin2T > 1.0f) return reflectRay(ray, rec);
+
+    Ray refrRay;  
+    refrRay.dir = glm::refract(ray.dir, norm, etaRatio);
+    refrRay.pos = rec.x + refrRay.dir*(float)Camera::EPSILION;
+
+    return refrRay;
+}
+
 vec3 Camera::getRayColor(
     shared_ptr<Scene> scene, 
     const Ray& ray, 
@@ -143,22 +190,14 @@ vec3 Camera::getRayColor(
     if (rec.m->reflCoeff >= Camera::MINIMUM_REFL_COEFF) { 
         if (recursiveDepth >= Camera::MAX_RECURSIONS) 
             return clr;
-
-        // todo: extract this to another function
-        vec3 refl = glm::reflect(ray.dir, rec.n);
-        Ray reflRay; reflRay.dir = refl;
-        reflRay.pos = rec.x + rec.n*(float)interval.min;
-        clr += rec.m->reflCoeff*getRayColor(scene, reflRay, interval, recursiveDepth + 1);
+        vec3 reflClr = getRayColor(scene, reflectRay(ray, rec), interval, recursiveDepth+1);
+        clr += rec.m->reflCoeff*reflClr;
         
     } else if (glm::abs(rec.m->refrIndex-1.0f) > CONSTANTS::EPSILION) {
         if (recursiveDepth >= Camera::MAX_RECURSIONS)
             return clr;
-
-        float eta = 0.0f; // to be added
-        vec3 refr = glm::refract(ray.dir, rec.n, eta);
-        Ray refrRay;  refrRay.dir = refr;
-        refrRay.pos = rec.x + rec.n*(float)interval.min;
-
+        vec3 refrClr = getRayColor(scene, refractRay(ray, rec), interval, recursiveDepth+1);
+        clr += refrClr;
     }
 
     // The eye vector does not point to the camera when reflecting
