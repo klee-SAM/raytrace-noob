@@ -13,7 +13,7 @@ Adding more features as a learning exercise
 
 #### light interactions
 - [ ] Texture mapping
-- [ ] Refraction
+- [X] Refraction
 - [ ] Surface roughness
 - [ ] Ambient occulusion
 - [ ] Area lights
@@ -24,7 +24,7 @@ Adding more features as a learning exercise
 - [ ] SDF and sphere tracing
 
 #### optimizations
-- [ ] Multithreading
+- [X] Multithreading
 - [ ] BVH for meshes
 - [ ] BVH for scene
 - [ ] GPU acceleration
