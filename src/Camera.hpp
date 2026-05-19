@@ -32,6 +32,8 @@ public:
         this->height = std::sqrt(totalPixels*(1.0/aspect));
     }
 
+    virtual ~Camera() = default;
+
     void applyProjection(MatrixStack&);
     void applyView(MatrixStack&);
 
@@ -49,7 +51,7 @@ public:
     void setSky(SkyType s) { sky = s; }
 
     std::shared_ptr<Image> render(std::shared_ptr<Scene>, const glm::mat4&, const glm::mat4&);
-
+    void setRow(std::shared_ptr<Scene> scene, std::shared_ptr<Image> image, uint y);
 private:
     glm::vec3 translation; // Relative translation, which is indirectly used in computing cameraPos
     glm::vec3 rotation;    // Relative rotation
@@ -70,6 +72,7 @@ private:
     glm::vec4 cameraPos; // contains world-space position of camera
     glm::mat4 C;         // Camera Matrix
     glm::mat4 invP;      // inverse of projection mat
+    float sample_scale;
 
     glm::vec3 getRayColor(
         std::shared_ptr<Scene> scene, const Ray& ray, 

@@ -32,12 +32,29 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, double offsetx, double offsety) {
     return cray;
 }
 
-int mand;
+void Camera::setRow(shared_ptr<Scene> scene, shared_ptr<Image> image, uint y) 
+{
+    for (uint x = 0; x < width; ++x) {
+        vec3 color = vec3(0.0f);
 
-shared_ptr<Image> Camera::render(
-    shared_ptr<Scene> scene, 
-    const mat4& P,
-    const mat4& V) 
+        if (samples <= 1) {
+            Ray cray = castPrimaryRay(x, y);
+            color = getRayColor(scene, cray);
+        } else {
+            for (uint i = 0; i < samples; ++i) {
+                double dx = linearRand(0.001f, 0.999f);
+                double dy = linearRand(0.001f, 0.999f);
+                Ray cray = castPrimaryRay(x, y, dx, dy);
+                color += getRayColor(scene, cray);
+            }
+            color *= sample_scale;
+        }
+        
+        image->setPixel(x, y, color);
+    }
+}
+
+shared_ptr<Image> Camera::render(shared_ptr<Scene> scene, const mat4& P, const mat4& V) 
 {
     // Precompute as much as possible before loops
     C = inverse(V);
@@ -45,34 +62,26 @@ shared_ptr<Image> Camera::render(
     cameraPos = C[3]; 
     cameraPos.w = 1.0f;
 
-    float sample_scale = 1.0/samples;
+    sample_scale = 1.0/samples;
 
     uint totalCasts = height*width;
 
     shared_ptr<Image> image = make_shared<Image>(width, height);
 
+    list<thread> jobs;
+
     for (uint y = 0; y < height; ++y) {
         std::clog << '\r' << y*width << '/' << totalCasts << " scans completed " << std::flush;
-        for (uint x = 0; x < width; ++x) {
-            vec3 color = vec3(0.0f);
 
-            if (samples <= 1) {
-                Ray cray = castPrimaryRay(x, y);
-                color = getRayColor(scene, cray);
-            } else {
-                for (uint i = 0; i < samples; ++i) {
-                    double dx = linearRand(0.001f, 0.999f);
-                    double dy = linearRand(0.001f, 0.999f);
-                    Ray cray = castPrimaryRay(x, y, dx, dy);
-                    color += getRayColor(scene, cray);
-                }
-                color *= sample_scale;
-            }
-            
-            image->setPixel(x, y, color);
-        }
+        thread t(&Camera::setRow, this, scene, image, y);
+        jobs.push_front(std::move(t));
     }
-    clog << mand << '\n';
+
+    for (auto& job : jobs) {
+        if (!job.joinable()) continue;
+        job.join();
+    }
+
     std::clog << "\rDone." << std::string(30, ' ') << '\n';
     return image;
 }
@@ -119,7 +128,7 @@ vec3 Camera::getSkyColor(const Ray& ray) {
         break;
     case (Camera::SkyType::Void):
     default:
-        return vec3(0.1f);
+        return vec3(0.0f);
         break;
     }
     return vec3(0.0f);
