@@ -263,8 +263,15 @@ vec3 Camera::getRayColor(
         sray.dir = lv;
 
         Hit srec;
-        if (hit(scene->shapes, sray, Interval(interval.min, tl), srec)) {
-            continue;
+        bool behindShape = hit(scene->shapes, sray, Interval(interval.min, tl), srec);
+        bool shapeIsTransparent = srec.m != nullptr &&
+                                  srec.m->transparency > Camera::MINIMUM_COEFF;
+
+        float s_transparency = 1.0f;
+
+        if (behindShape) {
+            if (!shapeIsTransparent) continue;
+            s_transparency = srec.m->transparency;
         }
 
         float Li = light->intensity;
@@ -274,7 +281,7 @@ vec3 Camera::getRayColor(
 
         auto diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
         auto spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
-        bp_clr += Li * (diff_cont + spec_cont);
+        bp_clr += s_transparency * Li * (diff_cont + spec_cont);
     }
 
     clr += (1.0f - rec.m->reflCoeff)*bp_clr;
