@@ -603,17 +603,11 @@ void CSG::filter_intersections(
 	std::vector<Hit>& hits)
 {
 	bool inl = false, inr = false; 
-	// unoptimal way to make difference show right shape's faces
+	// unoptimal way to make difference show right shape's faces; hacky
 	float s = this->operationType == OperationType::Difference ? -1.0f : 1.0f;
-	// Note: I will not fall to premature optimization
-	// Note: I will not fall to premature optimization
-	// Note: I will not fall to premature optimization
 	vector<Hit> new_hits;
 	for (auto& hit : hits) {
-		// Dark magic numbers for no speckles on reflected faces :D
 		inl = (lt_min - hit.t < EPSILION) && (hit.t - lt_max < s*EPSILION);
-		// this is specifically the way it is to have faces properly show
-		// for difference
 		inr = (rt_min - hit.t < EPSILION) && (hit.t - rt_max < s*EPSILION);
 		// Assume that the given hits list is sorted in ascending order
 		// of t; that is, the first intersection is outside both shapes
