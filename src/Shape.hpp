@@ -133,31 +133,24 @@ private:
 };
 
 
-// enum class OperationType{Intersection, Union, Difference};
+enum class OperationType{Intersection, Union, Difference};
 
-// class CSG : public Shape {
-// public:
-// 	/*
-// 	intersection = 0
-// 	difference = 1
-// 	union = 2
-// 	*/
-// 	OperationType operationType;
-// 	std::shared_ptr<Shape> left;
-// 	std::shared_ptr<Shape> right;
+class CSG : public Shape {
+public:
+	OperationType operationType;
+	std::shared_ptr<Shape> left;
+	std::shared_ptr<Shape> right;
 
-// 	CSG();
-// 	CSG(OperationType o, std::shared_ptr<Shape> l, std::shared_ptr<Shape> r) 
-// 	: left{l}, right{r} { operationType = o; }
-// 	virtual ~CSG();
-// 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
-
-// private:
-// 	void filter_intersections(
-// 		const float &lt_min, 
-// 		const float &lt_max,
-// 		const float &rt_min,
-// 		const float &rt_max,   
-// 		std::vector<Hit>& hits);
-// 	void local_intersect(const Ray& ray, std::vector<Hit>& hits);
-// };
+	CSG() {};
+	CSG(OperationType o, std::shared_ptr<Shape> l, std::shared_ptr<Shape> r) 
+	: left{l}, right{r} { operationType = o; }
+	virtual ~CSG() = default;
+	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+private:
+	void filter_intersections(
+		const float &lt_min, 
+		const float &lt_max,
+		const float &rt_min,
+		const float &rt_max,   
+		std::vector<Hit>& hits);
+};

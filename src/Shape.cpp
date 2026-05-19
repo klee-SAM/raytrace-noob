@@ -550,87 +550,76 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 }	
 
 
+bool cmp(const Hit& a, const Hit& b) { return a.t < b.t; }
 
+void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
+	vector<Hit> rightHits;
+	this->left->intersect(ray, hits);
+	this->right->intersect(ray, rightHits);
+	float lt_min, lt_max, rt_min, rt_max;
+	// Assume that only primitives are hit, that only
+	// 0 or 2+ intersections are returned, and that
+	// the hit vectors are sorted.
+	if (hits.size() < 2) {
+		lt_min = 0.0f; lt_max = 0.0f;
+	} else {
+		lt_min = hits.at(0).t;
+		lt_max = hits.at(hits.size()-1).t;
+	}
+	if (rightHits.size() < 2) {
+		rt_min = 0.0f; rt_max = 0.0f;
+	} else {
+		rt_min = rightHits.at(0).t;
+		rt_max = rightHits.at(rightHits.size()-1).t;
+	}
+	for (auto& it : rightHits) {
+		// ensure that faces in difference csgs are properly lit
+		if (operationType == OperationType::Difference) it.n = -it.n;
+		// it barely makes a difference whether this copied or not,
+		// so just leave this alone
+		hits.push_back(std::move(it));
+	}
+	std::sort(hits.begin(), hits.end(), cmp);
 
-// CSG::CSG() {}
+	filter_intersections(lt_min, lt_max, rt_min, rt_max, hits);
+}
 
-// CSG::~CSG() {}
+bool intersection_allowed(OperationType op, bool inL, bool inR)
+{
+	if (op == OperationType::Union)
+		return (inL && !inR) || (!inL && inR);
+	else if (op == OperationType::Intersection)
+		return (inL && inR);
+	else if (op == OperationType::Difference)
+		return (inL && !inR);
+	return false;
+}
 
-// void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
-// 	local_intersect(ray, hits);
-// }
-
-// bool cmp(const Hit& a, const Hit& b) { return a.t < b.t; }
-
-// void CSG::local_intersect(const Ray& ray, std::vector<Hit>& hits) {
-// 	vector<Hit> leftHits, rightHits;
-// 	this->left->intersect(ray, leftHits);
-// 	this->right->intersect(ray, rightHits);
-// 	float lt_min, lt_max, rt_min, rt_max;
-// 	// Assume that only primitives are hit, and that 
-// 	// each primitive returns either 0 or 2 intersections
-// 	if (leftHits.size() < 2) {
-// 		lt_min = 0.0f; lt_max = 0.0f;
-// 	} else {
-// 		lt_min = leftHits.at(0).t;
-// 		lt_max = leftHits.at(1).t;
-// 	}
-// 	if (rightHits.size() < 2) {
-// 		rt_min = 0.0f; rt_max = 0.0f;
-// 	} else {
-// 		rt_min = rightHits.at(0).t;
-// 		rt_max = rightHits.at(1).t;
-// 	}
-// 	vector<Hit> nhits(std::move(leftHits));
-// 	for (auto& it : rightHits) {
-// 		// ensure that faces in difference csgs are properly lit
-// 		if (operationType == OperationType::Difference) it.n = -it.n;
-// 		nhits.push_back(std::move(it));
-// 	}
-// 	std::sort(nhits.begin(), nhits.end(), cmp);
-
-// 	filter_intersections(lt_min, lt_max, rt_min, rt_max, nhits);
-// 	hits = std::move(nhits);
-// }
-
-// bool intersection_allowed(OperationType op, bool inL, bool inR)
-// {
-// 	if (op == OperationType::Union)
-// 		return (inL && !inR) || (!inL && inR);
-// 	else if (op == OperationType::Intersection)
-// 		return (inL && inR);
-// 	else if (op == OperationType::Difference)
-// 		return (inL && !inR);
-// 	return false;
-// }
-
-// const float EPSILION = 0.0000005f;
-
-// void CSG::filter_intersections(
-// 	const float &lt_min, 
-// 	const float &lt_max,
-// 	const float &rt_min,
-// 	const float &rt_max,   
-// 	std::vector<Hit>& hits)
-// {
-// 	bool inl = false, inr = false; 
-// 	// unoptimal way to make difference show right shape's faces
-// 	float s = this->operationType == OperationType::Difference ? -1.0f : 0.0f;
-// 	// Note: I will not fall to premature optimization
-// 	// Note: I will not fall to premature optimization
-// 	// Note: I will not fall to premature optimization
-// 	vector<Hit> new_hits;
-// 	for (auto& hit : hits) {
-// 		// Dark magic numbers for no speckles on reflected faces :D
-// 		inl = (lt_min - EPSILION <= hit.t) && (hit.t <= lt_max + s*EPSILION);
-// 		// this is specifically the way it is to have faces properly show
-// 		// for difference
-// 		inr = (rt_min - s*EPSILION <= hit.t) && (hit.t <= rt_max + s*EPSILION);
-// 		// Assume that the given hits list is sorted in ascending order
-// 		// of t; that is, the first intersection is outside both shapes
-// 		if (intersection_allowed(this->operationType, inl, inr)) {
-// 			new_hits.push_back(hit);
-// 		}
-// 	}
-// 	hits = std::move(new_hits);
-// }
+void CSG::filter_intersections(
+	const float &lt_min, 
+	const float &lt_max,
+	const float &rt_min,
+	const float &rt_max,   
+	std::vector<Hit>& hits)
+{
+	bool inl = false, inr = false; 
+	// unoptimal way to make difference show right shape's faces
+	float s = this->operationType == OperationType::Difference ? -1.0f : 1.0f;
+	// Note: I will not fall to premature optimization
+	// Note: I will not fall to premature optimization
+	// Note: I will not fall to premature optimization
+	vector<Hit> new_hits;
+	for (auto& hit : hits) {
+		// Dark magic numbers for no speckles on reflected faces :D
+		inl = (lt_min - hit.t < EPSILION) && (hit.t - lt_max < s*EPSILION);
+		// this is specifically the way it is to have faces properly show
+		// for difference
+		inr = (rt_min - hit.t < EPSILION) && (hit.t - rt_max < s*EPSILION);
+		// Assume that the given hits list is sorted in ascending order
+		// of t; that is, the first intersection is outside both shapes
+		if (intersection_allowed(this->operationType, inl, inr)) {
+			new_hits.push_back(hit);
+		}
+	}
+	hits = std::move(new_hits);
+}

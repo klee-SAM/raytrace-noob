@@ -12,6 +12,7 @@ Adding more features as a learning exercise
 - [ ] Object/Regional Light Attentuation
 
 #### light interactions
+- [X] Partial BP/Reflect
 - [ ] Texture mapping
 - [X] Refraction
 - [ ] Surface roughness

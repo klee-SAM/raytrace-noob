@@ -70,6 +70,118 @@ shared_ptr<Scene> createTestScene0() {
     return target_scene;
 }
 
+shared_ptr<Scene> createCSGTestScene() {
+    shared_ptr<Material> redMat = make_shared<Material>(
+        vec3(0.1f, 0.1f, 0.1f),
+        vec3(1.0f, 0.0f, 0.0f),
+        vec3(1.0f, 1.0f, 0.5f),
+        100.0f
+    );
+
+    shared_ptr<Material> greenMat = make_shared<Material>(
+        vec3(0.1f, 0.1f, 0.1f),
+        vec3(0.0f, 1.0f, 0.0f),
+        vec3(1.0f, 1.0f, 0.5f),
+        100.0f
+    );
+
+    shared_ptr<Material> blueMat = make_shared<Material>(
+        vec3(0.1f, 0.1f, 0.1f),
+        vec3(0.0f, 0.25f, 1.0f),
+        vec3(1.0f, 1.0f, 0.5f),
+        100.0f
+    );
+
+    shared_ptr<Scene> target_scene = make_shared<Scene>();
+
+    shared_ptr<Light> lighta = make_shared<Light>(vec3(-2.0f, 2.0f, 2.0f), 0.5f);
+    shared_ptr<Light> lightb = make_shared<Light>(vec3(2.0f, -2.0f, 4.0f), 0.5f);
+	target_scene->lights.push_back(lighta);
+    target_scene->lights.push_back(lightb);
+
+    MatrixStack MV;
+
+    shared_ptr<Sphere> green_sp = make_shared<Sphere>();
+    MV.push();
+    MV.translate(vec3(0.0f, 0.0f, 0.0f));
+    MV.scale(0.875f);
+	green_sp->setModelMatrix(MV.top());
+	green_sp->setMaterial(greenMat);
+    MV.pop();
+
+	shared_ptr<Sphere> blue_sp = make_shared<Sphere>();
+    MV.push();
+    MV.translate(vec3(0.0f, 0.0f, .5f));
+    MV.scale(0.625f);
+    blue_sp->setModelMatrix(MV.top());
+	blue_sp->setMaterial(blueMat);
+    MV.pop();
+
+	shared_ptr<Sphere> red_sp = make_shared<Sphere>();
+    MV.push();
+	red_sp->setMaterial(redMat);
+    red_sp->setModelMatrix(MV.top());
+    MV.pop();
+
+	shared_ptr<CSG> csgtest2 = make_shared<CSG>(
+        OperationType::Intersection, red_sp, 
+        make_shared<CSG>(
+            OperationType::Union, green_sp, blue_sp)
+    );
+    
+	target_scene->pushShape(csgtest2);
+
+    MV.push();
+	MV.translate(vec3(2.0f, 1.5f, -4.5f));
+    MV.translate(0.0f, 0.0f, -5.0f);
+	MV.rotate(-45.0f, vec3(0.0f,1.0f,0.0f));
+	auto world = MV.top();
+	// misnomer, getModelMatrix() is the object matrix
+	blue_sp->setModelMatrix(world*blue_sp->getModelMatrix());
+	red_sp->setModelMatrix(world*red_sp->getModelMatrix());
+	green_sp->setModelMatrix(world*green_sp->getModelMatrix());
+    MV.pop();
+
+	vector<Shape> disk_comps;
+	shared_ptr<Sphere> rs = make_shared<Sphere>();
+    MV.push();
+    MV.translate(vec3(0.0f, 0.0f, 0.0f));
+    MV.scale(1.0f);
+	rs->setModelMatrix(MV.top());
+	rs->setMaterial(redMat);
+    MV.pop();
+
+	shared_ptr<Sphere> bs = make_shared<Sphere>();
+    MV.push();
+    MV.translate(vec3(0.0f, 0.0f, .5f));
+	MV.scale(0.625f);
+	bs->setModelMatrix(MV.top());
+	bs->setMaterial(blueMat);
+    MV.pop();
+
+	shared_ptr<Sphere> gs = make_shared<Sphere>();
+	MV.push();
+    MV.translate(vec3(0.0f, 0.0f, -.5f));
+	gs->setModelMatrix(MV.top());
+	gs->setMaterial(greenMat);
+    MV.pop();
+
+	shared_ptr<CSG> hole_disk = make_shared<CSG>(
+		OperationType::Difference, rs,
+        make_shared<CSG>(OperationType::Union, gs, bs)
+    );
+	target_scene->pushShape(hole_disk);
+
+	MV.reset();
+	MV.translate(vec3(-1.0f, 1.5f, -5.5f));
+	MV.rotate(225.0f, vec3(0.0f,1.0f,0.0f));
+	world = MV.top();
+	bs->setModelMatrix(world*bs->getModelMatrix());
+	rs->setModelMatrix(world*rs->getModelMatrix());
+	gs->setModelMatrix(world*gs->getModelMatrix());
+    return target_scene;
+}
+
 int main(int argc, char** argv) {
     if (argc < 3) {
         clog << "Usage: ./prog sceneFile outputFile\n";
@@ -92,9 +204,15 @@ int main(int argc, char** argv) {
     MatrixStack MV = MatrixStack();
     shared_ptr<Camera> camera = make_shared<Camera>(width, height, 45.0f);
 
-    SceneLoader sl(RESOURCE_DIR+filename);
-    sl.setResourceDirectory(RESOURCE_DIR);
-    sl.loadSceneFile(camera, target_scene);
+    if (filename == "csgtest") {
+        outputname = "csgtest.png";
+        target_scene = createCSGTestScene();
+    } else {
+        SceneLoader sl(RESOURCE_DIR+filename);
+        sl.setResourceDirectory(RESOURCE_DIR);
+        sl.loadSceneFile(camera, target_scene);
+    }
+    
     
     camera->applyProjection(P);
     camera->applyView(MV);
