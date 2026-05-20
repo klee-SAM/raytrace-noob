@@ -76,8 +76,12 @@ shared_ptr<Image> Camera::render(shared_ptr<Scene> scene, const mat4& P, const m
         thread t(&Camera::setRow, this, scene, image, y);
         jobs.push_front(std::move(t));
     }
+    
+    std::clog << '\n';
 
+    uint jobCount = 0;
     for (auto& job : jobs) {
+        std::clog << '\r' << jobCount++ << '/' << jobs.size() << " jobs joined " << std::flush;
         if (!job.joinable()) continue;
         job.join();
     }
@@ -114,8 +118,6 @@ bool hit(
     }
     return intersected_any;
 }
-
-const bool SHOW_NORMALS = false;
 
 vec3 Camera::getSkyColor(const Ray& ray) {
     float cx, cy, cz;
@@ -206,6 +208,9 @@ Ray refractRay(
     return refrRay;
 }
 
+
+// #define SHOW_NORMALS
+
 vec3 Camera::getRayColor(
     shared_ptr<Scene> scene, 
     const Ray& ray, 
@@ -216,13 +221,13 @@ vec3 Camera::getRayColor(
     vec3 clr = vec3(0.0);
     if (!hit(scene->shapes, ray, interval, rec)) return getSkyColor(ray);
 
-    if (SHOW_NORMALS) {
-        clr = rec.n;
-        clr.r = .5f*clr.r+.5f;
-        clr.g = .5f*clr.g+.5f;
-        clr.b = .5f*clr.b+.5f;
-        return clr;
-    }
+    #ifdef SHOW_NORMALS
+    clr = rec.n;
+    clr.r = .5f*clr.r+.5f;
+    clr.g = .5f*clr.g+.5f;
+    clr.b = .5f*clr.b+.5f;
+    return clr;
+    #endif
 
     vec3 reflectClr = vec3(0.0f);
     vec3 refractClr = vec3(0.0f);

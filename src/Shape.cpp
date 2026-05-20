@@ -433,10 +433,11 @@ bool Mesh::intersect_triangle(const vec3& orig, const vec3& dir,
 	pvec = CROSS(&dir.x, &edge2.x);
 
 	det = DOT(&edge1.x, &pvec.x);
-	// Cull backfacing triangles (det is negative for backfacing).
+	// do not cull backfacing triangles (det is negative for backfacing).
 	// Handle the case where ray is not parallel to 
 	// plane (det == 0) implicitly.
-	if (det < EPSILION) return false; 
+	// Bright specks may appear w/ backface culling. 
+	if (fabs(det) < EPSILION) return false; 
 	inv_det = 1.0f/det;
 
 	tvec = SUB(&orig.x, vt0);

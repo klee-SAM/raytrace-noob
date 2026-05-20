@@ -1,0 +1,44 @@
+{
+    "camera" : {
+        "distance" : 5.0,
+        "antialias" : 1,
+        "fov" : 45.0,
+        "rotation" : [0, 0, 0]
+    },
+    "materials" : {
+        "red" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.75, 0.25, 1.0],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
+        },
+        "green" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.0, 0.2, 0.7],
+            "specular" : [0.0, 0.0, 0.0],
+            "exponent" : 100.0
+        }
+    },
+    "lights" : [
+        { 
+            "position": [1.0, 1.0, 2.0], 
+            "intensity": 1.0
+        }
+    ],
+    "shapes" : [
+        {
+            "shape" : "mesh",
+            "position" : [0.3, -1.5, 0.0],
+            "scale" : [1.5,1.5,1.5],
+            "rotation" : [20, 0, 0],
+            "material" : "red",
+            "file" : "bunny.obj"
+        }, 
+        {
+            "shape" : "plane",
+            "position" : [0.0, -1.0, 0.0],
+            "rotation": [20,0,0],
+            "material" : "green"
+        }
+    ]
+}

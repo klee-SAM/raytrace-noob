@@ -183,20 +183,27 @@ shared_ptr<Scene> createCSGTestScene() {
 }
 
 int main(int argc, char** argv) {
+    string filename, outputname;
+    uint width = 256U, height = 256U;
+
     if (argc < 3) {
         clog << "Usage: ./prog sceneFile outputFile\n";
         return 0;
+    } else if (argc >= 3) {
+        filename = argv[1];
+        outputname = argv[2];
     }
+
+    if (argc >= 4) {
+        width = stoi(argv[3]);
+        height = width;
+    }
+    if (argc >= 5) {
+        height = stoi(argv[4]);
+    } 
 
     // argument handling should be rewritten to be more flexible
     // (using flags like -width, for example)
-
-    string filename = argv[1];
-    string outputname = argv[2];
-
-    // fix the width and height for debugging, for now
-    uint width = 256U;
-    uint height = width;
 
     shared_ptr<Scene> target_scene = make_shared<Scene>();
 
