@@ -32,7 +32,7 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, double offsetx, double offsety) {
     return cray;
 }
 
-void Camera::setRow(shared_ptr<Scene>& scene, shared_ptr<Image>& image, uint y) 
+void Camera::setRow(unique_ptr<Scene>& scene, unique_ptr<Image>& image, uint y) 
 {
     for (uint x = 0; x < width; ++x) {
         vec3 color = vec3(0.0f);
@@ -54,36 +54,33 @@ void Camera::setRow(shared_ptr<Scene>& scene, shared_ptr<Image>& image, uint y)
     }
 }
 
-std::mutex rowM;
-uint rowsProcessed = 0;
+atomic<uint> rowsProcessed(0);
 uint jobsFinished = 0;
 
 void processRows(
     Camera* self,
     RowQueue& queue, 
-    shared_ptr<Scene> scene, 
-    shared_ptr<Image> image) 
+    unique_ptr<Scene>& scene, 
+    unique_ptr<Image>& image) 
 {
     bool success;
     while (!queue.empty()) {
         uint row = queue.pop(success);
         if (!success) return;
         self->setRow(scene, image, row);
-
-        std::unique_lock lock(rowM);
         rowsProcessed++;
     }
 }
 // what a mess
 void countScans(uint width, uint height, uint raythreads, uint totalCasts) {
-    while (rowsProcessed < height || jobsFinished < raythreads) {
+    while (rowsProcessed < height && jobsFinished < raythreads) {
         std::clog << '\r' << rowsProcessed*width << '/' 
                   << totalCasts << " scans completed " << std::flush;
         this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
-shared_ptr<Image> Camera::render(shared_ptr<Scene>& scene, const mat4& P, const mat4& V) 
+unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const mat4& V) 
 {
     // Precompute as much as possible before loops
     C = inverse(V);
@@ -95,7 +92,7 @@ shared_ptr<Image> Camera::render(shared_ptr<Scene>& scene, const mat4& P, const 
 
     uint totalCasts = height*width;
 
-    shared_ptr<Image> image = make_shared<Image>(width, height);
+    unique_ptr<Image> image = make_unique<Image>(width, height);
 
     uint numThreads = thread::hardware_concurrency();
     if (numThreads < 2) numThreads = 2; // create at least 2 threads: one for counting, the other traces
@@ -108,7 +105,8 @@ shared_ptr<Image> Camera::render(shared_ptr<Scene>& scene, const mat4& P, const 
     vector<thread> threads;
     // reserve 1 thread for outputting the current number of scans completed
     for (uint i = 0; i < numThreads-1; ++i) {
-        threads.push_back(std::move(thread(processRows, this, std::ref(jobs), scene, image)));
+        threads.push_back(std::move(thread(processRows, this, 
+            std::ref(jobs), std::ref(scene), std::ref(image))));
     }
     
     thread counter(countScans, width, height, numThreads-1, totalCasts);
@@ -248,7 +246,7 @@ Ray refractRay(
 // #define SHOW_NORMALS
 
 vec3 Camera::getRayColor(
-    shared_ptr<Scene>& scene, 
+    unique_ptr<Scene>& scene, 
     const Ray& ray, 
     const Interval& interval, 
     uint recursiveDepth) 

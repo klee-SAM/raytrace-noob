@@ -75,8 +75,8 @@ public:
     enum class SkyType {Void, Haze};
     void setSky(SkyType s) { sky = s; }
 
-    std::shared_ptr<Image> render(std::shared_ptr<Scene>&, const glm::mat4&, const glm::mat4&);
-    void setRow(std::shared_ptr<Scene>& scene, std::shared_ptr<Image>& image, uint y);
+    std::unique_ptr<Image> render(std::unique_ptr<Scene>&, const glm::mat4&, const glm::mat4&);
+    void setRow(std::unique_ptr<Scene>& scene, std::unique_ptr<Image>& image, uint y);
 private:
     glm::vec3 translation; // Relative translation, which is indirectly used in computing cameraPos
     glm::vec3 rotation;    // Relative rotation
@@ -100,7 +100,7 @@ private:
     float sample_scale;
 
     glm::vec3 getRayColor(
-        std::shared_ptr<Scene>& scene, const Ray& ray, 
+        std::unique_ptr<Scene>& scene, const Ray& ray, 
         const Interval& interval = Interval(EPSILION, MAX_DIST), 
         uint recursiveDepth = 0);
     

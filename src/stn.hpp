@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include <atomic>
 #include <thread>
 #include <future>
 

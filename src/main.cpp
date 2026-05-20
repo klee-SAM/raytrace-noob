@@ -14,7 +14,7 @@ using namespace glm;
 
 const string RESOURCE_DIR = "../data/";
 
-shared_ptr<Scene> createTestScene0() {
+void initializeTestScene0(unique_ptr<Scene>& target_scene) {
     shared_ptr<Material> redMat = make_shared<Material>(
         vec3(0.1f, 0.1f, 0.1f),
         vec3(1.0f, 0.0f, 0.0f),
@@ -35,8 +35,6 @@ shared_ptr<Scene> createTestScene0() {
         vec3(1.0f, 1.0f, 0.5f),
         100.0f
     );
-
-    shared_ptr<Scene> target_scene = make_shared<Scene>();
 
     shared_ptr<Light> lighta = make_shared<Light>(vec3(-2.0f, 1.0f, 1.0f), 1.0f);
 	target_scene->lights.push_back(lighta);
@@ -66,11 +64,9 @@ shared_ptr<Scene> createTestScene0() {
 	blue_sp->setMaterial(blueMat);
 	target_scene->shapes.push_back(blue_sp);
     MV.pop();
-
-    return target_scene;
 }
 
-shared_ptr<Scene> createCSGTestScene() {
+void initializeCSGTestScene(unique_ptr<Scene>& target_scene) {
     shared_ptr<Material> redMat = make_shared<Material>(
         vec3(0.1f, 0.1f, 0.1f),
         vec3(1.0f, 0.0f, 0.0f),
@@ -91,8 +87,6 @@ shared_ptr<Scene> createCSGTestScene() {
         vec3(1.0f, 1.0f, 0.5f),
         100.0f
     );
-
-    shared_ptr<Scene> target_scene = make_shared<Scene>();
 
     shared_ptr<Light> lighta = make_shared<Light>(vec3(-2.0f, 2.0f, 2.0f), 0.5f);
     shared_ptr<Light> lightb = make_shared<Light>(vec3(2.0f, -2.0f, 4.0f), 0.5f);
@@ -179,7 +173,6 @@ shared_ptr<Scene> createCSGTestScene() {
 	bs->setModelMatrix(world*bs->getModelMatrix());
 	rs->setModelMatrix(world*rs->getModelMatrix());
 	gs->setModelMatrix(world*gs->getModelMatrix());
-    return target_scene;
 }
 
 int main(int argc, char** argv) {
@@ -205,16 +198,16 @@ int main(int argc, char** argv) {
     // argument handling should be rewritten to be more flexible
     // (using flags like -width, for example)
 
-    shared_ptr<Scene> target_scene = make_shared<Scene>();
+    unique_ptr<Scene> target_scene = make_unique<Scene>();
 
     MatrixStack P = MatrixStack();
     MatrixStack MV = MatrixStack();
-    shared_ptr<Camera> camera = make_shared<Camera>(width, height, 45.0f);
+    unique_ptr<Camera> camera = make_unique<Camera>(width, height, 45.0f);
 
     /// test 
     if (filename == "csgtest") {
         outputname = "csgtest.png";
-        target_scene = createCSGTestScene();
+        initializeCSGTestScene(target_scene);
     } else {
         SceneLoader sl(RESOURCE_DIR+filename);
         sl.setResourceDirectory(RESOURCE_DIR);
@@ -227,11 +220,10 @@ int main(int argc, char** argv) {
 
     clock_t start = clock();
     // Each core increments the cycle count by 1, so attempt to account for that in the benchmark
-    // by assuming all processors are used. This is still not totally accurate because of the
-    // time also spent joining the threads.
+    // by assuming all processors are used. This is still not totally accurate.
     auto processor_count = std::thread::hardware_concurrency();
     if (processor_count < 1) processor_count = 1;
-    shared_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
+    unique_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
     clog << "Seconds used by render(): " 
          << (double)(clock()-start)/(processor_count*CLOCKS_PER_SEC) << '\n';
     image->setFilename(outputname);

@@ -26,7 +26,7 @@ public:
     // for .obj files, must be called before loading scene with meshes
     void setResourceDirectory(const std::string& loc) { srcDir = loc; }
 
-    void loadSceneFile(std::shared_ptr<Camera>& cam, std::shared_ptr<Scene>& scene);
+    void loadSceneFile(std::unique_ptr<Camera>& cam, std::unique_ptr<Scene>& scene);
 
 private:
     std::string location;
@@ -42,11 +42,11 @@ private:
         return jsonData.substr(tok->start, tok->end - tok->start);
     }
 
-    int parseCameraProperties(const jsmntok_t* obj_tok, std::shared_ptr<Camera>& cam);
-    int parseLights(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& scene);
-    int parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>& scene);
-    int parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& scene);
-    int parseShape(const jsmntok_t* obj_tok, std::shared_ptr<Shape>& parentShape);
+    int parseCameraProperties(const jsmntok_t* obj_tok, std::unique_ptr<Camera>& cam);
+    int parseLights(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& scene);
+    int parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>& scene);
+    int parseShapes(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& scene);
+    int parseShape(const jsmntok_t* obj_tok, std::unique_ptr<Shape>& parentShape);
 
     class ShapeProperties {
     public:

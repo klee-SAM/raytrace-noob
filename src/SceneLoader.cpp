@@ -13,7 +13,7 @@ const bool VERBOSE = false;
 
 std::shared_ptr<Shape> shapeFromString(const std::string& type);
 
-void SceneLoader::loadSceneFile(std::shared_ptr<Camera>& cam, std::shared_ptr<Scene>& scene) 
+void SceneLoader::loadSceneFile(std::unique_ptr<Camera>& cam, std::unique_ptr<Scene>& scene) 
 {
     if (scene == nullptr || cam == nullptr) {
         throw std::logic_error("loadSceneFile: One or more arguments are null pointers");
@@ -121,7 +121,7 @@ void SceneLoader::loadSceneFile(std::shared_ptr<Camera>& cam, std::shared_ptr<Sc
 // repeating logic here; could create new classes to abstract away the details
 // of reading object and array tokens
 
-int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::shared_ptr<Camera>& cam)
+int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::unique_ptr<Camera>& cam)
 {
     int j = 1; // the offset to the next key token
     // this pointer arithmetic is not very safe
@@ -158,7 +158,7 @@ int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::shared_ptr
     return j;
 }
 
-int SceneLoader::parseLights(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& scene)
+int SceneLoader::parseLights(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& scene)
 {
     int j = 1;
     for (int item = 0; item < arr_tok->size; ++item) {
@@ -193,7 +193,7 @@ int SceneLoader::parseLights(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
     return j;
 }
 
-int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>& scene) 
+int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>& scene) 
 {
     assert(obj_tok->type == JSMN_OBJECT);
 
@@ -248,7 +248,7 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>
     return j;
 }
 
-int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& scene) 
+int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& scene) 
 {
     ModelMatConstr modelMat;
 
@@ -334,7 +334,7 @@ void SceneLoader::ShapeProperties::applyProperties(
 };
 
 // For use in recursively parsing shapes
-int SceneLoader::parseShape(const jsmntok_t* obj_tok, shared_ptr<Shape>& parentShape) 
+int SceneLoader::parseShape(const jsmntok_t* obj_tok, unique_ptr<Shape>& parentShape) 
 {
     if (obj_tok->type != JSMN_OBJECT) {
         std::cerr << "parseShape(): token is of type "
