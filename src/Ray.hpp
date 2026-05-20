@@ -2,10 +2,17 @@
 #include "stn.hpp"
 #include "Material.hpp"
 
-struct Ray {
+// TODO: rewrite ray as a class that uses vec4s 
+// instead of vec3s, avoid need to convert
+// to and from vec4 for intersect functions
+class Ray {
+public:
     glm::vec3 pos;
     glm::vec3 dir;
     glm::vec3 clr; // Stores the color from a previous computation
+
+    Ray() : pos{glm::vec3(0.0f)}, dir{glm::vec3(0.0f)} {}
+    
 };
 
 struct Hit {

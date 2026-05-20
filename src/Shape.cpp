@@ -553,6 +553,13 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 bool cmp(const Hit& a, const Hit& b) { return a.t < b.t; }
 
 void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
+	// If a transformation is applied to the csg object as a whole,
+	// transform it to local space to avoid having to propagate 
+	// initial transforms to individual leaves
+	// Ray wld_ray;
+	// wld_ray.pos = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
+	// wld_ray.dir = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
+
 	vector<Hit> rightHits;
 	this->left->intersect(ray, hits);
 	this->right->intersect(ray, rightHits);
