@@ -1,6 +1,5 @@
 #include "SceneLoader.hpp"
 
-#include <typeinfo>
 #include "umath.hpp"
 
 using namespace std;
@@ -316,8 +315,32 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
     return j;
 }
 
+
+void SceneLoader::ShapeProperties::applyProperties(
+    shared_ptr<Shape>& shape,
+    ModelMatConstr& modelMat, 
+    const std::string& srcDir) // not nice
+{
+    modelMat.setPosition(pos);
+    modelMat.setRotation(rot);
+    modelMat.setScale(scl);
+    
+    // Hack to initialize a mesh object
+    bool isMesh = dynamic_cast<Mesh*>(shape.get()) != nullptr;
+    if (isMesh) { shape = make_shared<Mesh>(mesh_filename, srcDir); }
+
+    shape->setModelMatrix(modelMat.getMatrix());
+    shape->setMaterial(smat);
+};
+
 // For use in recursively parsing shapes
-int parseShape() {
+int SceneLoader::parseShape(const jsmntok_t* obj_tok, shared_ptr<Shape>& parentShape) 
+{
+    if (obj_tok->type != JSMN_OBJECT) {
+        std::cerr << "parseShape(): token is of type "
+                  << obj_tok->type << '\n'; 
+        return 0;
+    }
     // TODO
     return 0;
 }

@@ -46,6 +46,20 @@ private:
     int parseLights(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& scene);
     int parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>& scene);
     int parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& scene);
+    int parseShape(const jsmntok_t* obj_tok, std::shared_ptr<Shape>& parentShape);
+
+    class ShapeProperties {
+    public:
+        glm::vec3 pos, scl, rot;
+        std::shared_ptr<Material> smat = defaultMaterial;
+        std::string mesh_filename;
+
+        ShapeProperties() : pos(0.0f), scl(1.0f), rot(0.0f) {}
+
+        void applyProperties(std::shared_ptr<Shape>& shape, 
+                             ModelMatConstr& modelMat, 
+                             const std::string& srcDir);
+    };
 
     bool jsonstreq(const jsmntok_t* tok, const std::string& str);
 
