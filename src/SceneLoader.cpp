@@ -213,6 +213,18 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>
         int prop_ind = 1;
         for (int prop = 0; prop < mat_prop_tok->size; ++prop) {
             auto key = mat_prop_tok+prop_ind, value = key + 1;
+
+            // alternate names for the same property
+            auto isReflectProp = [&key, this]() {
+                return jsonstreq(key, "reflCoeff") ||
+                       jsonstreq(key, "reflectance");
+            };
+
+            auto isRefractProp = [&key, this]() {
+                return jsonstreq(key, "refrIndex") ||
+                       jsonstreq(key, "refractionIndex");
+            };
+
             if (jsonstreq(key, "ambient")) {
                 material->ambient = float3FromToken(value);
             } else if (jsonstreq(key, "diffuse")) {
@@ -221,9 +233,9 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::shared_ptr<Scene>
                 material->specular = float3FromToken(value);
             } else if (jsonstreq(key, "exponent")) {
                 material->exponent = doubleFromToken(value);
-            } else if (jsonstreq(key, "reflCoeff")) {
+            } else if (isReflectProp()) {
                 material->reflCoeff = doubleFromToken(value);
-            } else if (jsonstreq(key, "refrIndex")) {
+            } else if (isRefractProp()) {
                 material->refrIndex = doubleFromToken(value);
             } else if (jsonstreq(key, "transparency")) {
                 material->transparency = doubleFromToken(value);
@@ -302,6 +314,11 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
         j += prop_ind;
     }
     return j;
+}
+
+// For use in recursively parsing shapes
+int parseShape() {
+    // TODO
 }
 
 // Misc. helper functions
