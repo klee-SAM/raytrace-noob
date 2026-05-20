@@ -586,12 +586,19 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 
 bool intersection_allowed(OperationType op, bool inL, bool inR)
 {
-	if (op == OperationType::Union)
+	switch (op) {
+	case OperationType::Union:
 		return (inL && !inR) || (!inL && inR);
-	else if (op == OperationType::Intersection)
-		return (inL && inR);
-	else if (op == OperationType::Difference)
+		break;
+	case OperationType::Intersection:
+		return (inL && inR); 
+		break;
+	case OperationType::Difference:
 		return (inL && !inR);
+		break;
+	default:
+		break;
+	}
 	return false;
 }
 
