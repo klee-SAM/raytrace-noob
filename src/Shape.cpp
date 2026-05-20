@@ -45,8 +45,8 @@ vec4 Sphere::computeNormal(const glm::vec3& x) const {
 };
 
 void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
-	vec3 pk = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
-	vec3 vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
+	vec3 pk = vec3(inv_modelMat*ray.pos);
+	vec3 vx = vec3(inv_modelMat*ray.dir);
 	vec3 vk = normalize(vx);
 	float a, b, c;
 	float d, den;
@@ -112,11 +112,11 @@ void Plane::initialize() {
 void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
 	vec3 &n = normal;
 	// Compute the distance from the ray origin using:
-	float t = dot(n, vec3(modelMat[3])-ray.pos)/dot(n, ray.dir);
+	float t = dot(n, vec3(modelMat[3])-ray.getPos())/dot(n, ray.getDir());
 
 	// and the position of intersection by
 	vec3 offset = t*ray.dir;
-	vec3 x = ray.pos + offset;
+	vec3 x = ray.getPos() + offset;
 
 	// Compute u, v coordinates
 	float u = dot(offset, uvec);
@@ -181,8 +181,8 @@ vec2 Box::computeUV(const glm::vec3& p) const {
 void Box::intersect(const Ray& ray, vector<Hit>& hits) {
 	// Transform the ray back to model space first;
 	// axis tests assume the box is at the origin
-	vec3 pk = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
-	vec3 vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
+	vec3 pk = vec3(inv_modelMat*ray.pos);
+	vec3 vx = vec3(inv_modelMat*ray.dir);
 	vec3 vk = normalize(vx);
 
 	Pair tx = checkAxis(pk.x, vk.x);
@@ -214,8 +214,8 @@ vec2 Cylinder::computeUV(const vec3& p) const {
 
 void Cylinder::intersect(const Ray& ray, vector<Hit>& hits) 
 {
-	vec3 pk = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
-	vec3 vx = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
+	vec3 pk = vec3(inv_modelMat*ray.pos);
+	vec3 vx = vec3(inv_modelMat*ray.dir);
 	vec3 vk = normalize(vx);
 
 	float a = vk.x*vk.x + vk.z*vk.z;
@@ -459,13 +459,13 @@ bool Mesh::intersect_triangle(const vec3& orig, const vec3& dir,
 // Some floating-point error possible, or the normals are not normal
 void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 	// transform ray to local coords
-	vec3 l_rorig = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
+	vec3 l_rorig = vec3(inv_modelMat*ray.pos);
 
 	// bounding sphere test
 	vec3 pk, vx, vk;
 	// here, use inv_sphereMat to accurately represent the bounding sphere
-	pk = vec3(inv_sphereMat*vec4(ray.pos - meshCenter, 1.0f));
-	vx = vec3(inv_sphereMat*vec4(ray.dir, 0.0f));
+	pk = vec3(inv_sphereMat*(ray.pos - vec4(meshCenter, 1.0f)));
+	vx = vec3(inv_sphereMat*(ray.dir));
 	vk = normalize(vx);
 	
 	float a, b, c;
@@ -508,7 +508,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 	return;
 	#endif
 
-	vec3 r_vk = normalize(vec3(inv_modelMat*vec4(ray.dir, 0.0f)));
+	vec3 r_vk = normalize(vec3(inv_modelMat*ray.dir));
 
 	// u and v refer to barycentric coordinates.
 	float t, u, v;

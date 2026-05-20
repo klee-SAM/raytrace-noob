@@ -26,8 +26,8 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, double offsetx, double offsety) {
     coord = glm::normalize(C*coord - cameraPos); // n_pw
 
     Ray cray; 
-    cray.pos = vec3(cameraPos);
-    cray.dir = vec3(coord);
+    cray.pos = cameraPos;
+    cray.dir = coord;
 
     return cray;
 }
@@ -138,8 +138,8 @@ Ray reflectRay(const Ray &ray, const Hit &rec)
 {
     Ray reflRay; 
     // ray.dir - 2.0f * dot(rec.n, ray.dir) * rec.n
-    reflRay.dir = glm::reflect(ray.dir, rec.n);
-    reflRay.pos = rec.x + reflRay.dir*(float)Camera::EPSILION;
+    reflRay.setDir(glm::reflect(ray.getDir(), rec.n));
+    reflRay.setPos(rec.x + reflRay.getDir()*(float)Camera::EPSILION);
     return reflRay;
 }
 
@@ -159,7 +159,7 @@ Ray refractRay(
 
     // Renormalize direction vector, because apparently it
     // was not normalized before
-    float cosI = dot(normalize(ray.dir), norm);
+    float cosI = dot(normalize(ray.getDir()), norm);
     // assert(fabs(cosI) < 1.01f);
 
     if (cosI > 0.0f || backFacing) {
@@ -198,10 +198,10 @@ Ray refractRay(
     // reflectance = std::clamp(fabs(reflectance), 0.0f, 1.0f);
     
 
-    refrRay.dir = (eta*ray.dir) + ((eta*(cosI) - cosT)*norm);
+    refrRay.setDir( (eta*ray.getDir()) + ((eta*(cosI) - cosT)*norm) );
     // ig i'll find the math error later
     // refrRay.dir = glm::refract(ray.dir, norm, eta);
-    refrRay.pos = rec.x + refrRay.dir*(float)Camera::EPSILION;
+    refrRay.setPos( rec.x + refrRay.getDir()*(float)Camera::EPSILION );
 
     return refrRay;
 }
@@ -243,7 +243,7 @@ vec3 Camera::getRayColor(
     // only to handle the case of lighting for CSG.
     // Doing this means that refraction must account for
     // this possibility via parameter
-    bool back_face = dot(ray.dir, rec.n) > 0.0f; // true if inside
+    bool back_face = dot(ray.getDir(), rec.n) > 0.0f; // true if inside
     if (back_face) rec.n = -rec.n;    
     
     if (refractive) {
@@ -268,8 +268,8 @@ vec3 Camera::getRayColor(
         float tl = length(ld);
 
         Ray sray;
-        sray.pos = rec.x + (float)interval.min*rec.n;
-        sray.dir = lv;
+        sray.setPos(rec.x + (float)interval.min*rec.n);
+        sray.setDir(lv);
 
         Hit srec;
         bool behindShape = hit(scene->shapes, sray, Interval(interval.min, tl), srec);

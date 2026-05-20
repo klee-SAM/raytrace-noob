@@ -5,19 +5,39 @@
 // TODO: rewrite ray as a class that uses vec4s 
 // instead of vec3s, avoid need to convert
 // to and from vec4 for intersect functions
+
+typedef glm::vec3 vec3;
+typedef glm::vec4 vec4;
+typedef std::shared_ptr<Material> pMaterial; 
+
 class Ray {
 public:
-    glm::vec3 pos;
-    glm::vec3 dir;
-    glm::vec3 clr; // Stores the color from a previous computation
+    vec4 pos;
+    vec4 dir;
+    vec4 clr; // Stores the color from a previous computation
 
-    Ray() : pos{glm::vec3(0.0f)}, dir{glm::vec3(0.0f)} {}
-    
+    Ray() : pos{vec4(0.0f, 0.0f, 0.0f, 1.0f)}, dir{vec4(0.0f)} {}
+    Ray(const vec3 &pos, const vec3 &dir) 
+    : pos{vec4(pos, 1.0f)}, dir{vec4(dir, 0.0f)} {}
+    Ray(const vec4 &pos, const vec4 &dir) : pos{pos}, dir{dir} {
+        // Ensure ray invariants
+        this->pos.w = 1.0f; this->dir.w = 0.0f;
+    }
+
+    virtual ~Ray() = default;
+
+    // Getter functions when no homogenous coordinate required
+    inline vec3 getPos() const { return vec3(pos); }
+    inline vec3 getDir() const { return vec3(dir); }
+
+    // Setter function for vec3 to vec4
+    inline void setPos(const vec3& p) { pos = vec4(p, 1.0f); }
+    inline void setDir(const vec3& d) { dir = vec4(d, 0.0f); }
 };
 
 struct Hit {
-    glm::vec3 x; // hit location
-    glm::vec3 n; // hit normal
+    vec3 x; // hit location
+    vec3 n; // hit normal
     float t; // dist from origin to hit
     float u; // texture u coord
     float v; // texture v coord
