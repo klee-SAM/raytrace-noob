@@ -464,7 +464,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 	// bounding sphere test
 	vec3 pk, vx, vk;
 	// here, use inv_sphereMat to accurately represent the bounding sphere
-	pk = vec3(inv_sphereMat*(ray.pos - vec4(meshCenter, 1.0f)));
+	pk = vec3(inv_sphereMat*(vec4(ray.getPos() - meshCenter, 1.0f)));
 	vx = vec3(inv_sphereMat*(ray.dir));
 	vk = normalize(vx);
 	

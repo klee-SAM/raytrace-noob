@@ -224,8 +224,8 @@ vec3 Camera::getRayColor(
         return clr;
     }
 
-    vec3 reflClr = vec3(0.0f);
-    vec3 refrClr = vec3(0.0f);
+    vec3 reflectClr = vec3(0.0f);
+    vec3 refractClr = vec3(0.0f);
 
     float reflectance = 0.0f;
     bool reflective = rec.m->reflCoeff > Camera::MINIMUM_COEFF;
@@ -235,8 +235,8 @@ vec3 Camera::getRayColor(
     if (reflective) { 
         if (recursiveDepth >= Camera::MAX_RECURSIONS) 
             return clr;
-        reflClr = getRayColor(scene, reflectRay(ray, rec), interval, recursiveDepth+1);
-        reflClr = rec.m->reflCoeff*reflClr;
+        reflectClr = getRayColor(scene, reflectRay(ray, rec), interval, recursiveDepth+1);
+        reflectClr = rec.m->reflCoeff*reflectClr;
     } 
 
     // Determine if the ray is inside or outside the object,
@@ -249,9 +249,9 @@ vec3 Camera::getRayColor(
     if (refractive) {
         if (recursiveDepth >= Camera::MAX_RECURSIONS)
             return clr;
-        refrClr = getRayColor(scene, refractRay(ray, rec, reflectance, back_face), 
+        refractClr = getRayColor(scene, refractRay(ray, rec, reflectance, back_face), 
                               interval, recursiveDepth+1);
-        refrClr *= rec.m->transparency;
+        refractClr *= rec.m->transparency;
     }
 
     // The eye vector does not point to the camera when reflecting/refracting
@@ -296,9 +296,9 @@ vec3 Camera::getRayColor(
     clr += (1.0f - rec.m->reflCoeff)*bp_clr;
 
     if (reflective && rec.m->transparency > 0.0f) {
-        clr += reflClr*reflectance + refrClr*(1.0f-reflectance);
+        clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
     } else {
-        clr += reflClr + refrClr;
+        clr += reflectClr + refractClr;
     }
     
     return clr;
