@@ -7,6 +7,31 @@
 #include "Ray.hpp"
 #include "umath.hpp"
 
+// For processing image rows in parallel using a limited number of threads.
+class RowQueue {
+private:
+    std::queue<uint> rqueue;
+    mutable std::mutex mut;
+public:
+    RowQueue(): rqueue(), mut() {};
+    
+    // Assume that threads will only ever pop from the queue, and 
+    // that the job of delegating tasks to threads is single-threaded.
+    void push(const uint& val) { rqueue.push(val); }
+    // If the queue is empty, returns 0 and sets success ref to false
+    uint pop(bool &success) {
+        std::unique_lock<std::mutex> lock(mut);
+        // No more rows to process in the queue, so terminate early.
+        if (rqueue.empty()) { success = false; return 0; }
+
+        uint row = rqueue.front();
+        rqueue.pop();
+        success = true;
+        return row;
+    }
+    bool empty() { return rqueue.empty(); }
+};
+
 class Camera {
 public:
     // I could make these modifible via json files
@@ -50,8 +75,8 @@ public:
     enum class SkyType {Void, Haze};
     void setSky(SkyType s) { sky = s; }
 
-    std::shared_ptr<Image> render(std::shared_ptr<Scene>, const glm::mat4&, const glm::mat4&);
-    void setRow(std::shared_ptr<Scene> scene, std::shared_ptr<Image> image, uint y);
+    std::shared_ptr<Image> render(std::shared_ptr<Scene>&, const glm::mat4&, const glm::mat4&);
+    void setRow(std::shared_ptr<Scene>& scene, std::shared_ptr<Image>& image, uint y);
 private:
     glm::vec3 translation; // Relative translation, which is indirectly used in computing cameraPos
     glm::vec3 rotation;    // Relative rotation
@@ -75,7 +100,7 @@ private:
     float sample_scale;
 
     glm::vec3 getRayColor(
-        std::shared_ptr<Scene> scene, const Ray& ray, 
+        std::shared_ptr<Scene>& scene, const Ray& ray, 
         const Interval& interval = Interval(EPSILION, MAX_DIST), 
         uint recursiveDepth = 0);
     

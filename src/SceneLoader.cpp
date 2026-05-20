@@ -319,6 +319,7 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::shared_ptr<Scene>& s
 // For use in recursively parsing shapes
 int parseShape() {
     // TODO
+    return 0;
 }
 
 // Misc. helper functions

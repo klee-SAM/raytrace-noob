@@ -63,5 +63,8 @@ These instructions are for Linux. Other platforms may have slightly different bu
 - Raytracing in One Weekend series (https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 - The Ray Tracer Challenge: (https://pragprog.com/titles/jbtracer/the-ray-tracer-challenge/)
 - cpp_multithreading: (https://github.com/wasimusu/cpp_multithreading)
+
+## Other links:
+- https://stackoverflow.com/questions/15278343/c11-thread-safe-queue
 - https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle
 - https://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf
