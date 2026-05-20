@@ -204,6 +204,7 @@ int main(int argc, char** argv) {
     MatrixStack MV = MatrixStack();
     shared_ptr<Camera> camera = make_shared<Camera>(width, height, 45.0f);
 
+    /// test 
     if (filename == "csgtest") {
         outputname = "csgtest.png";
         target_scene = createCSGTestScene();
