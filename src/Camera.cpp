@@ -200,7 +200,7 @@ Ray refractRay(
     float cosI = dot(normalize(ray.getDir()), norm);
     // assert(fabs(cosI) < 1.01f);
 
-    if (cosI > 0.0f || backFacing) {
+    if (backFacing || cosI > 0.0f) {
         // Leaving the shape
         n1 = rf_i;
         n2 = 1.0f;
@@ -270,14 +270,13 @@ vec3 Camera::getRayColor(
 
     float reflectance = 0.0f;
     bool reflective = rec.m->reflCoeff > Camera::MINIMUM_COEFF;
-    bool refractive = fabs(rec.m->refrIndex-1.0f) > CONSTANTS::EPSILION &&
-                      rec.m->transparency > Camera::MINIMUM_COEFF;
+    bool refractive = rec.m->transparency > Camera::MINIMUM_COEFF;
 
     if (reflective) { 
         if (recursiveDepth >= Camera::MAX_RECURSIONS) 
             return clr;
         reflectClr = getRayColor(scene, reflectRay(ray, rec), interval, recursiveDepth+1);
-        reflectClr = rec.m->reflCoeff*reflectClr;
+        reflectClr *= rec.m->reflCoeff;
     } 
 
     // Determine if the ray is inside or outside the object,
@@ -336,7 +335,7 @@ vec3 Camera::getRayColor(
 
     clr += (1.0f - rec.m->reflCoeff)*bp_clr;
 
-    if (reflective && rec.m->transparency > 0.0f) {
+    if (reflective && refractive) {
         clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
     } else {
         clr += reflectClr + refractClr;
