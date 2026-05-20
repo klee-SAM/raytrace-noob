@@ -74,7 +74,7 @@ void processRows(
         rowsProcessed++;
     }
 }
-
+// what a mess
 void countScans(uint width, uint height, uint raythreads, uint totalCasts) {
     while (rowsProcessed < height || jobsFinished < raythreads) {
         std::clog << '\r' << rowsProcessed*width << '/' 
