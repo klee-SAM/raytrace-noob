@@ -1,5 +1,7 @@
 #include "Camera.hpp"
 
+// #define SHOW_NORMALS
+
 using namespace std;
 using namespace glm;
 
@@ -32,7 +34,7 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, double offsetx, double offsety) {
     return cray;
 }
 
-void Camera::setRow(unique_ptr<Scene>& scene, unique_ptr<Image>& image, uint y) 
+void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, uint y) 
 {
     for (uint x = 0; x < width; ++x) {
         vec3 color = vec3(0.0f);
@@ -54,29 +56,13 @@ void Camera::setRow(unique_ptr<Scene>& scene, unique_ptr<Image>& image, uint y)
     }
 }
 
-atomic<uint> rowsProcessed(0);
-uint jobsFinished = 0;
-
-void processRows(
-    Camera* self,
-    RowQueue& queue, 
-    unique_ptr<Scene>& scene, 
-    unique_ptr<Image>& image) 
+void Camera::processRows(const unique_ptr<Scene>& scene, unique_ptr<Image>& image) 
 {
-    bool success;
-    while (!queue.empty()) {
-        uint row = queue.pop(success);
-        if (!success) return;
-        self->setRow(scene, image, row);
-        rowsProcessed++;
-    }
-}
-// what a mess
-void countScans(uint width, uint height, uint raythreads, uint totalCasts) {
-    while (rowsProcessed < height && jobsFinished < raythreads) {
-        std::clog << '\r' << rowsProcessed*width << '/' 
-                  << totalCasts << " scans completed " << std::flush;
-        this_thread::sleep_for(std::chrono::milliseconds(100));
+    while (!r_queue.empty()) {
+        RowQueue::extract_pair pair = r_queue.pop();
+        if (!pair.success) return;
+        setRow(scene, image, pair.row);
+        r_queue.rowsProcessed++;
     }
 }
 
@@ -95,24 +81,36 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     unique_ptr<Image> image = make_unique<Image>(width, height);
 
     uint numThreads = thread::hardware_concurrency();
-    if (numThreads < 2) numThreads = 2; // create at least 2 threads: one for counting, the other traces
+    // create at least 2 threads: one for counting, the other traces
+    if (numThreads < 2) numThreads = 2;
     std::clog << "Threads available: " << numThreads << '\n';
 
-    RowQueue jobs;
+    uint jobsFinished = 0;
 
-    for (uint y = 0; y < height; ++y) { jobs.push(y); }
+    // Push rows as jobs
+    for (uint y = 0; y < height; ++y) { r_queue.push(y); }
 
     vector<thread> threads;
     // reserve 1 thread for outputting the current number of scans completed
     for (uint i = 0; i < numThreads-1; ++i) {
-        threads.push_back(std::move(thread(processRows, this, 
-            std::ref(jobs), std::ref(scene), std::ref(image))));
+        // passing by non-const ref dangerous!!! thank goodness only 1
+        // thread processes 1 row at a time
+        threads.push_back(std::move(thread(&Camera::processRows, this, 
+            std::ref(scene), std::ref(image))));
     }
+
+    // horrific
+    auto countScans = [this, numThreads, totalCasts, jobsFinished]() {
+        while (r_queue.rowsProcessed < height && jobsFinished < numThreads-1) {
+            std::clog << '\r' << r_queue.rowsProcessed*width << '/' 
+                    << totalCasts << " scans completed " << std::flush;
+            this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    };
     
-    thread counter(countScans, width, height, numThreads-1, totalCasts);
+    thread counter(countScans);
 
     for (auto& thread : threads) {
-        // std::clog << '\r' << jobCount++ << '/' << threads.size() << " thread(s) finished " << std::flush;
         if (!thread.joinable()) continue;
         thread.join();
         ++jobsFinished;
@@ -179,7 +177,6 @@ Ray reflectRay(const Ray &ray, const Hit &rec)
     return reflRay;
 }
 
-bool printed = false;
 // Creates a new ray with a direction dependant on the material's IoR
 // Uses Schlick's approximation of Fresnel's equations for refraction.
 Ray refractRay(
@@ -242,11 +239,8 @@ Ray refractRay(
     return refrRay;
 }
 
-
-// #define SHOW_NORMALS
-
 vec3 Camera::getRayColor(
-    unique_ptr<Scene>& scene, 
+    const unique_ptr<Scene>& scene, 
     const Ray& ray, 
     const Interval& interval, 
     uint recursiveDepth) 

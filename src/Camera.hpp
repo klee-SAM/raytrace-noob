@@ -13,23 +13,31 @@ private:
     std::queue<uint> rqueue;
     mutable std::mutex mut;
 public:
-    RowQueue(): rqueue(), mut() {};
+    std::atomic<uint> rowsProcessed;
+    struct extract_pair { uint row; bool success; };
+
+    RowQueue(): rqueue(), mut(), rowsProcessed(0U) {};
     
     // Assume that threads will only ever pop from the queue, and 
     // that the job of delegating tasks to threads is single-threaded.
-    void push(const uint& val) { rqueue.push(val); }
-    // If the queue is empty, returns 0 and sets success ref to false
-    uint pop(bool &success) {
+    inline void push(const uint& val) { rqueue.push(val); }
+    
+    extract_pair pop() {
         std::unique_lock<std::mutex> lock(mut);
+        extract_pair pair;
         // No more rows to process in the queue, so terminate early.
-        if (rqueue.empty()) { success = false; return 0; }
+        if (rqueue.empty()) { 
+            pair.success = false; 
+            return pair; 
+        }
 
-        uint row = rqueue.front();
+        pair.row = rqueue.front();
         rqueue.pop();
-        success = true;
-        return row;
+        pair.success = true;
+        return pair;
     }
-    bool empty() { return rqueue.empty(); }
+
+    inline bool empty() const { return rqueue.empty(); }
 };
 
 class Camera {
@@ -76,8 +84,12 @@ public:
     void setSky(SkyType s) { sky = s; }
 
     std::unique_ptr<Image> render(std::unique_ptr<Scene>&, const glm::mat4&, const glm::mat4&);
-    void setRow(std::unique_ptr<Scene>& scene, std::unique_ptr<Image>& image, uint y);
+    void setRow(const std::unique_ptr<Scene>& scene, std::unique_ptr<Image>& image, uint y);
+    void processRows(const std::unique_ptr<Scene>& scene, std::unique_ptr<Image>& image);
+
 private:
+    RowQueue r_queue;
+
     glm::vec3 translation; // Relative translation, which is indirectly used in computing cameraPos
     glm::vec3 rotation;    // Relative rotation
 
@@ -100,7 +112,7 @@ private:
     float sample_scale;
 
     glm::vec3 getRayColor(
-        std::unique_ptr<Scene>& scene, const Ray& ray, 
+        const std::unique_ptr<Scene>& scene, const Ray& ray, 
         const Interval& interval = Interval(EPSILION, MAX_DIST), 
         uint recursiveDepth = 0);
     
