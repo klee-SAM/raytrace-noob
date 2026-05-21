@@ -8,7 +8,7 @@ Adding more features as a learning exercise
 #### shapes/objects
 - [x] Infinite cylinders
 - [x] Boxes
-- [ ] CSG
+- [x] CSG
 - [ ] Object/Regional Light Attentuation
 
 #### light interactions
