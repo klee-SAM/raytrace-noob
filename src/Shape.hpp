@@ -152,4 +152,9 @@ private:
 		const float &rt_min,
 		const float &rt_max,   
 		std::vector<Hit>& hits);
+
+	void filter_intersections(
+		const std::vector<Hit>& lhits,
+		const std::vector<Hit>& rhits,
+		std::vector<Hit>& newHits);
 };

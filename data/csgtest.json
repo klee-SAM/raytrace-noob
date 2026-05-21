@@ -3,7 +3,7 @@
         "distance" : 5.0,
         "antialias" : 1,
         "fov" : 45.0,
-        "rotation" : [-45, 22.5, 0],
+        "rotation" : [-60, 22.5, 0],
         "sky" : "haze"
     },
     "materials" : {
