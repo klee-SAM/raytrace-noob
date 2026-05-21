@@ -183,7 +183,7 @@ Ray refractRay(
     const Ray &ray, 
     const Hit &rec, 
     float &reflectance,
-    bool backFacing = false) 
+    bool backFacing) 
 {
     float n1, n2;
     float &rf_i = rec.m->refrIndex;
@@ -192,17 +192,19 @@ Ray refractRay(
 
     // Renormalize direction vector, because apparently it
     // was not normalized before
-    float cosI = dot(normalize(ray.getDir()), norm);
+    // use -cosI to prevent black center void
+    // in eta < 1 and to fix my chronic sleep problems,
+    // this makes the cosI term actually correct
+    float cosI = dot(normalize(ray.getDir()), -norm);
     // assert(fabs(cosI) < 1.01f);
 
-    if (backFacing || cosI > 0.0f) {
+    if (backFacing) {
         // Leaving the shape
         n1 = rf_i;
         n2 = 1.0f;
         // Hitting from inside of the surface, so
         // make the normal face inside the shape
         // (alr done by getRayColor() earlier)
-        // norm = -norm;
     } else {
         // Entering the shape, assume outside is air
         n1 = 1.0f;
@@ -220,18 +222,13 @@ Ray refractRay(
     
     // cos(t)^2
     float cosT = sqrt(1.0f - sin2T);
-    
-    // use -cosI to prevent black center void
-    // in eta < 1 and to fix my chronic sleep problems
-    cosI = -cosI;
     float m = 1.0f - (n1 > n2 ? cosT : cosI);
     // atrocity for (1 - cos)^5: (m^2)^2 * m = m^5
     float r0 = (n1 - n2)/(n1 + n2); r0 *= r0;
     reflectance = r0 + (1.0f-r0)*(m*m*m*m*m);
     // reflectance = std::clamp(fabs(reflectance), 0.0f, 1.0f);
-    
 
-    refrRay.setDir( (eta*ray.getDir()) + ((eta*(cosI) - cosT)*norm) );
+    refrRay.setDir( normalize(eta*ray.getDir()) + ((eta*(cosI) - cosT)*norm) );
     // ig i'll find the math error later
     // refrRay.dir = glm::refract(ray.dir, norm, eta);
     refrRay.setPos( rec.x + refrRay.getDir()*(float)Camera::EPSILION );
@@ -264,23 +261,25 @@ vec3 Camera::getRayColor(
     bool reflective = rec.m->reflCoeff > Camera::MINIMUM_COEFF;
     bool refractive = rec.m->transparency > Camera::MINIMUM_COEFF;
 
-    if (reflective) { 
-        if (recursiveDepth >= Camera::MAX_RECURSIONS) 
-            return clr;
-        reflectClr = getRayColor(scene, reflectRay(ray, rec), interval, recursiveDepth+1);
-        reflectClr *= rec.m->reflCoeff;
-    } 
-
     // Determine if the ray is inside or outside the object,
     // only to handle the case of lighting for CSG.
     // Doing this means that refraction must account for
     // this possibility via parameter
     bool back_face = dot(ray.getDir(), rec.n) > 0.0f; // true if inside
-    if (back_face) rec.n = -rec.n;    
+
+    // Avoid casting additional reflection rays if inside the object, this
+    // avoids massively expensive and unnecessary computation (3x increase)
+    if (reflective && !back_face) { 
+        if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
+        reflectClr = getRayColor(scene, reflectRay(ray, rec), interval, recursiveDepth+1);
+        reflectClr *= rec.m->reflCoeff;
+    }   
     
+    // flip the normal for refraction and csg, if inside
+    if (back_face) rec.n = -rec.n;  
+
     if (refractive) {
-        if (recursiveDepth >= Camera::MAX_RECURSIONS)
-            return clr;
+        if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         refractClr = getRayColor(scene, refractRay(ray, rec, reflectance, back_face), 
                               interval, recursiveDepth+1);
         refractClr *= rec.m->transparency;
