@@ -190,21 +190,13 @@ Ray refractRay(
     vec3 norm = rec.n;
     Ray refrRay;
 
-    // Renormalize direction vector, because apparently it
-    // was not normalized before
-    // use -cosI to prevent black center void
-    // in eta < 1 and to fix my chronic sleep problems,
-    // this makes the cosI term actually correct
-    float cosI = dot(normalize(ray.getDir()), -norm);
-    // assert(fabs(cosI) < 1.01f);
+    float cosI = -dot(normalize(ray.getDir()), norm);
+    assert(fabs(cosI) < 1.01f);
 
     if (backFacing) {
         // Leaving the shape
         n1 = rf_i;
         n2 = 1.0f;
-        // Hitting from inside of the surface, so
-        // make the normal face inside the shape
-        // (alr done by getRayColor() earlier)
     } else {
         // Entering the shape, assume outside is air
         n1 = 1.0f;
@@ -274,12 +266,16 @@ vec3 Camera::getRayColor(
         reflectClr = getRayColor(scene, reflectRay(ray, rec), interval, recursiveDepth+1);
         reflectClr *= rec.m->reflCoeff;
     }   
-    
-    // flip the normal for refraction and csg, if inside
-    if (back_face) rec.n = -rec.n;  
 
     if (refractive) {
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
+        // flip the normal for refraction, if inside
+        // this must be done before calculating cosI for reflection, or
+        // else strange glint appear on refractive surfaces, even if
+        // the cosI and norm are negated after checks
+        if (back_face) rec.n = -rec.n;  
+        // If the above line is not nested in this if statement,
+        // Bright specks may appear on meshes w/ backface culling enabled. 
         refractClr = getRayColor(scene, refractRay(ray, rec, reflectance, back_face), 
                               interval, recursiveDepth+1);
         refractClr *= rec.m->transparency;

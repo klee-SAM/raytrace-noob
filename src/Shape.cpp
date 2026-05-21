@@ -4,6 +4,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
+// #define BACKFACE_CULLING
 #include "Shape.hpp"
 
 using namespace std;
@@ -433,11 +434,16 @@ bool Mesh::intersect_triangle(const vec3& orig, const vec3& dir,
 	pvec = CROSS(&dir.x, &edge2.x);
 
 	det = DOT(&edge1.x, &pvec.x);
-	// do not cull backfacing triangles (det is negative for backfacing).
-	// Handle the case where ray is not parallel to 
-	// plane (det == 0) implicitly.
-	// Bright specks may appear w/ backface culling. 
+
+	// Handle the case where ray is not parallel to plane (det == 0) implicitly.
+	#ifdef BACKFACE_CULLING
+	// cull backfacing tris (det is negative for backfacing)
+	if (det < EPSILION) return false;
+	#else 
+	// keep backfacing tris
 	if (fabs(det) < EPSILION) return false; 
+	#endif
+
 	inv_det = 1.0f/det;
 
 	tvec = SUB(&orig.x, vt0);
