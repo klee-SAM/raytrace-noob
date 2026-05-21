@@ -564,27 +564,28 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 	// transform it to local space to avoid having to propagate 
 	// initial transforms to individual leaves
 	// Ray wld_ray;
-	// wld_ray.pos = vec3(inv_modelMat*vec4(ray.pos, 1.0f));
-	// wld_ray.dir = vec3(inv_modelMat*vec4(ray.dir, 0.0f));
+	// wld_ray.pos = vec3(inv_modelMat*ray.pos);
+	// wld_ray_dir = vec3(inv_modelMat*ray.dir);
 
 	vector<Hit> rightHits;
 	this->left->intersect(ray, hits);
 	this->right->intersect(ray, rightHits);
 	float lt_min, lt_max, rt_min, rt_max;
-	// Assume that only primitives are hit, that only
-	// 0 or 2+ intersections are returned, and that
-	// the hit vectors are sorted.
+	// Take only the first two intersections to determine
+	// the interval; taking the last hit when hits.size() > 2
+	// lead to some intersections being considered when they
+	// should not be (might be bad for donut primitives)
 	if (hits.size() < 2) {
 		lt_min = 0.0f; lt_max = 0.0f;
 	} else {
 		lt_min = hits.at(0).t;
-		lt_max = hits.at(hits.size()-1).t;
+		lt_max = hits.at(1).t;
 	}
 	if (rightHits.size() < 2) {
 		rt_min = 0.0f; rt_max = 0.0f;
 	} else {
 		rt_min = rightHits.at(0).t;
-		rt_max = rightHits.at(rightHits.size()-1).t;
+		rt_max = rightHits.at(1).t;
 	}
 	for (auto& it : rightHits) {
 		// ensure that faces in difference csgs are properly lit

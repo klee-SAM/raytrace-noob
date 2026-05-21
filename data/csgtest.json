@@ -3,7 +3,7 @@
         "distance" : 5.0,
         "antialias" : 1,
         "fov" : 45.0,
-        "rotation" : [0,0, 0],
+        "rotation" : [60, 22.5, 0],
         "sky" : "haze"
     },
     "materials" : {
@@ -29,11 +29,11 @@
     "lights" : [
         { 
             "position": [-2.0, 2.0, 2.0], 
-            "intensity": 0.75
+            "intensity": 0.25
         },
         { 
-            "position": [0.0, 0.0, -2.0], 
-            "intensity": 0.25
+            "position": [0.0, 0.0, 0.0], 
+            "intensity": 0.75
         }
     ],
     "shapes" : [
@@ -51,7 +51,7 @@
                 "right" : {
                     "shape" : "sphere",
                     "material" : "blue",
-                    "scale": [1.5, 1.5, 1.5]
+                    "scale": [1.25, 1.25, 1.25]
                 }
             }, 
             "right" : {
