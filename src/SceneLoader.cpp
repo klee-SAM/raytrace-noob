@@ -250,8 +250,6 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
 
 int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& scene) 
 {
-    ModelMatConstr modelMat;
-
     int j = 1;
     for (int item = 0; item < arr_tok->size; ++item) {
         const jsmntok_t* s_tok = arr_tok+j; // should be an object token
@@ -260,76 +258,97 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& s
             continue;
         }
 
-        ShapeProperties prop;
         std::shared_ptr<Shape> shape;
 
-        int prop_ind = 1;
-        for (int p = 0; p < s_tok->size; ++p) {
-            auto key = s_tok + prop_ind, value = key+1;
-
-            if (jsonstreq(key, "shape")) {
-                shape = shapeFromString(stringFromToken(value));
-            } else if (jsonstreq(key, "position")) {
-                prop.pos = float3FromToken(value);
-            } else if (jsonstreq(key, "scale")) {
-                prop.scl = float3FromToken(value);
-            } else if (jsonstreq(key, "rotation")) {
-                prop.rot = float3FromToken(value);
-                prop.rot.x = glm::radians(prop.rot.x);
-                prop.rot.y = glm::radians(prop.rot.y);
-                prop.rot.z = glm::radians(prop.rot.z);
-            } else if (jsonstreq(key, "material")) {
-                prop.smat = scene->getMaterial(stringFromToken(value));
-            } else if (jsonstreq(key, "file")) {
-                prop.mesh_filename = stringFromToken(value);
-            } else {
-                std::cerr << "parseShapes: invalid property: "
-                          << print_token(key) << '\n';
-            }
-
-            prop_ind += 1 + offsetToNextKey(value);
-        }
-
-        if (shape != nullptr) {
-            prop.applyProperties(shape, modelMat, this->srcDir);
-            scene->pushShape(shape);
-        } else {
-            std::cerr << "Shape not created.\n";
-        }
+        int prop_ind = parseShape(s_tok, scene, shape);
+        scene->pushShape(shape);
 
         j += prop_ind;
     }
     return j;
 }
 
-
-void SceneLoader::ShapeProperties::applyProperties(
-    shared_ptr<Shape>& shape,
-    ModelMatConstr& modelMat, 
-    const std::string& srcDir) // not nice
-{
-    modelMat.setPosition(pos);
-    modelMat.setRotation(rot);
-    modelMat.setScale(scl);
-    
-    // Hack to initialize a mesh object
-    bool isMesh = dynamic_cast<Mesh*>(shape.get()) != nullptr;
-    if (isMesh) { shape = make_shared<Mesh>(mesh_filename, srcDir); }
-
-    shape->setModelMatrix(modelMat.getMatrix());
-    shape->setMaterial(smat);
-};
-
 // For use in recursively parsing shapes
-int SceneLoader::parseShape(const jsmntok_t* obj_tok, unique_ptr<Shape>& parentShape) 
+int SceneLoader::parseShape(
+    const jsmntok_t* s_tok, 
+    unique_ptr<Scene>& scene, 
+    shared_ptr<Shape>& shapeToInit) 
 {
-    if (obj_tok->type != JSMN_OBJECT) {
+    if (s_tok->type != JSMN_OBJECT) {
         std::cerr << "parseShape(): token is of type "
-                  << obj_tok->type << '\n'; 
+                  << s_tok->type << '\n'; 
         return 0;
     }
-    // TODO
-    return 0;
+
+    ShapeProperties prop(*this);
+    std::shared_ptr<Shape> &shape = shapeToInit;
+
+    int prop_ind = 1;
+    for (int p = 0; p < s_tok->size; ++p) {
+        auto key = s_tok + prop_ind, value = key+1;
+
+        std::clog << print_token(key) << " : " 
+            << print_token(value) 
+            << "\n---------\n";
+
+        if (jsonstreq(key, "shape")) {
+            prop.type = shapeTypeFromToken(value);
+            shape = createShape(prop.type);
+        } else if (jsonstreq(key, "position")) {
+            prop.pos = float3FromToken(value);
+        } else if (jsonstreq(key, "scale")) {
+            prop.scl = float3FromToken(value);
+        } else if (jsonstreq(key, "rotation")) {
+            prop.rot = float3FromToken(value);
+            prop.rot.x = glm::radians(prop.rot.x);
+            prop.rot.y = glm::radians(prop.rot.y);
+            prop.rot.z = glm::radians(prop.rot.z);
+        } else if (jsonstreq(key, "material")) {
+            prop.smat = scene->getMaterial(stringFromToken(value));
+        } else if (jsonstreq(key, "file")) {
+            prop.mesh_filename = stringFromToken(value);
+
+        } else if (jsonstreq(key, "left")) {
+            // Parsing nested shapes requires accounting for 
+            // nested tokens within nested tokens
+            prop_ind += 1 + parseShape(value, scene, prop.left);
+            continue;
+        } else if (jsonstreq(key, "right")) {
+            prop_ind += 1 + parseShape(value, scene, prop.right);
+            continue;
+
+        } else if (jsonstreq(key, "operator")) {
+            string operationType = stringFromToken(value);
+
+            if (operationType == "intersection") {
+                prop.operationType = OperationType::Intersection;
+            } else if (operationType == "union" ) {
+                prop.operationType = OperationType::Union;
+            } else if (operationType == "difference") {
+                prop.operationType = OperationType::Difference;
+            } else {
+                cerr << "operationType " << operationType 
+                     << " is not a valid operation type. Valid types: "
+                     << "intersection, union, difference\n";
+                prop.operationType = OperationType::None;
+            }
+
+        }
+        else {
+            std::cerr << "parseShapes: invalid property: "
+                        << print_token(key) << '\n';
+        }
+
+        prop_ind += 1 + offsetToNextKey(value);
+    }
+
+    if (shape != nullptr) {
+        prop.applyProperties(shape);
+    } else {
+        std::cerr << "Shape not created.\n";
+    }
+
+    return prop_ind;
 }
 
 // Misc. helper functions
@@ -360,24 +379,65 @@ bool SceneLoader::jsonstreq(const jsmntok_t* tok, const std::string& str)
     return false;
 }
 
-std::shared_ptr<Shape> shapeFromString(const std::string& type) 
+std::shared_ptr<Shape> SceneLoader::createShape(SHAPE_TYPE type) 
 {
-    if (type == "sphere") {
+    switch(type) {
+    case SHAPE_TYPE::sphere:
         return make_shared<Sphere>(); 
-    } else if (type == "plane") {
+        break;
+    case SHAPE_TYPE::plane:
         return make_shared<Plane>();
-    } else if (type == "mesh") { 
+        break;
+    case SHAPE_TYPE::mesh:
         return make_shared<Mesh>();
-    } else if (type == "box") {
+        break;
+    case SHAPE_TYPE::box:
         return make_shared<Box>();
-    } else if (type == "cylinder") {
+        break;
+    case SHAPE_TYPE::cylinder: 
         return make_shared<Cylinder>();
-    } else {
-        std::cerr << "shapeFromString: unrecognized shape type:"
-                  << type << '\n';
+        break;
+    case SHAPE_TYPE::csg:
+        return make_shared<CSG>();
+    default:
+        std::cerr << "createShape: unrecognized shape type\n";
         return nullptr;
+        break;
     }
 }
+
+void SceneLoader::ShapeProperties::applyProperties(shared_ptr<Shape>& shape)
+{
+    ModelMatConstr modelMat;
+    modelMat.setPosition(pos);
+    modelMat.setRotation(rot);
+    modelMat.setScale(scl);
+    
+    // Hack to initialize a mesh object
+    // bool isMesh = dynamic_cast<Mesh*>(shape.get()) != nullptr;
+
+    // safer
+    switch(this->type) {
+    case SHAPE_TYPE::mesh:
+        shape = make_shared<Mesh>(mesh_filename, loader.srcDir);
+        break;
+    case SHAPE_TYPE::csg:
+        if (left == nullptr || right == nullptr) {
+            std::cerr << "applyProperties: left shape or right shape undeclared\n";
+            break;
+        } else if (operationType == OperationType::None) {
+            std::cerr << "applyProperties: operationType undeclared\n";
+            break;
+        }
+        shape = make_shared<CSG>(operationType, left, right);
+        break;
+    default:
+        break;
+    }
+
+    shape->setModelMatrix(modelMat.getMatrix());
+    shape->setMaterial(smat);
+};
 
 // Token conversion
 
@@ -432,4 +492,26 @@ std::string SceneLoader::stringFromToken(const jsmntok_t* tok)
         throw std::runtime_error("");
     }
     return print_token(tok);
+}
+
+SceneLoader::SHAPE_TYPE SceneLoader::shapeTypeFromToken(const jsmntok_t* tok) 
+{
+    string type = stringFromToken(tok);
+    if (type == "sphere" || type == "ball") {
+        return SHAPE_TYPE::sphere; 
+    } else if (type == "plane") {
+        return SHAPE_TYPE::plane;
+    } else if (type == "mesh") { 
+        return SHAPE_TYPE::mesh;
+    } else if (type == "box") {
+        return SHAPE_TYPE::box;
+    } else if (type == "cylinder") {
+        return SHAPE_TYPE::cylinder;
+    } else if (type == "csg") {
+        return SHAPE_TYPE::csg;    
+    } else {
+        std::cerr << "shapeTypeFromToken: unrecognized shape type:"
+                  << type << '\n';
+        return SHAPE_TYPE::none;
+    }
 }

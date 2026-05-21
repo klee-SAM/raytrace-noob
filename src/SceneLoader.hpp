@@ -30,8 +30,8 @@ public:
 
 private:
     std::string location;
-    std::string srcDir;
     std::ifstream file;
+    std::string srcDir;
 
     std::string jsonData;
     
@@ -46,26 +46,43 @@ private:
     int parseLights(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& scene);
     int parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>& scene);
     int parseShapes(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& scene);
-    int parseShape(const jsmntok_t* obj_tok, std::unique_ptr<Shape>& parentShape);
+    int parseShape(const jsmntok_t* obj_tok, std::unique_ptr<Scene>& scene, 
+        std::shared_ptr<Shape>& parentShape);
+
+    enum class SHAPE_TYPE {none, cylinder, sphere, box, plane, mesh, csg};
 
     class ShapeProperties {
     public:
+        SceneLoader& loader;
+
+        SHAPE_TYPE type;
         glm::vec3 pos, scl, rot;
         std::shared_ptr<Material> smat;
+
+        // shape sub-class properties
+
+        // mesh
         std::string mesh_filename;
 
-        ShapeProperties() : pos(0.0f), scl(1.0f), rot(0.0f), smat(defaultMaterial) {}
+        // csg
+        OperationType operationType;
+        std::shared_ptr<Shape> left;
+        std::shared_ptr<Shape> right;
 
-        void applyProperties(std::shared_ptr<Shape>& shape, 
-                             ModelMatConstr& modelMat, 
-                             const std::string& srcDir);
+        ShapeProperties(SceneLoader& l) : loader(l), 
+            pos(0.0f), scl(1.0f), rot(0.0f), 
+            smat(defaultMaterial) {}
+
+        void applyProperties(std::shared_ptr<Shape>& shape);
     };
+
+    std::shared_ptr<Shape> createShape(SHAPE_TYPE type);
 
     bool jsonstreq(const jsmntok_t* tok, const std::string& str);
 
     enum class PRIMITIVE_TYPE {BOOL, NUL, NUM, NONE};
     using PRIM = SceneLoader::PRIMITIVE_TYPE;
-    PRIMITIVE_TYPE typeOfPrimitiveAt(int offset);
+    PRIM typeOfPrimitiveAt(int offset);
     bool charIsNumeric(int offset);
 
     int intFromToken(const jsmntok_t* tok);
@@ -73,4 +90,5 @@ private:
     double doubleFromToken(const jsmntok_t* tok);
     glm::vec3 float3FromToken(const jsmntok_t* tok);
     std::string stringFromToken(const jsmntok_t* tok);
+    SHAPE_TYPE shapeTypeFromToken(const jsmntok_t* tok);
 };

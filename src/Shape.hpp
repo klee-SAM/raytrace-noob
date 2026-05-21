@@ -132,8 +132,7 @@ private:
 	bool sphere_test(const Ray& ray);
 };
 
-
-enum class OperationType{Intersection, Union, Difference};
+enum class OperationType {None, Intersection, Union, Difference};
 
 class CSG : public Shape {
 public:

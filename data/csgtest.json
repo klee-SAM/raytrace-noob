@@ -46,12 +46,12 @@
                 "left" : {
                     "shape" : "box",
                     "material": "red",
-                    "size": [1.0, 1.0, 1.0]
+                    "scale": [1.0, 1.0, 1.0]
                 },
                 "right" : {
                     "shape" : "sphere",
                     "material" : "blue",
-                    "size": [1.5, 1.5, 1.5]
+                    "scale": [1.5, 1.5, 1.5]
                 }
             }, 
             "right" : {
@@ -60,7 +60,7 @@
                 "left" : {
                     "shape" : "cylinder",
                     "material" : "green",
-                    "size": [0.5, 0.5, 0.5],
+                    "scale": [0.5, 0.5, 0.5],
                     "rotation": [90, 0, 0]
                 },
                 "right" : {
@@ -70,13 +70,13 @@
                     "left" : {
                         "shape" : "cylinder",
                         "material" : "green",
-                        "size": [0.5, 0.5, 0.5],
+                        "scale": [0.5, 0.5, 0.5],
                         "rotation": [0,0,90]
                     },
                     "right" : {
                         "shape" : "cylinder",
                         "material" : "green",
-                        "size": [0.5, 0.5, 0.5],
+                        "scale": [0.5, 0.5, 0.5],
                         "rotation": [0,0,0]
                     }
                 }
