@@ -575,17 +575,23 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 	// the interval; taking the last hit when hits.size() > 2
 	// lead to some intervals being extended when they
 	// should not be (might be bad for donut primitives)
-	if (hits.size() < 2) {
+	if (hits.size() == 0) {
 		// weird hack to make the weird shadows go away; not good
 		lt_min = -1.0f; lt_max = 0.0f;
+	} else if (hits.size() == 1) {
+		lt_min = hits.at(0).t;
+		lt_max = hits.at(0).t;
 	} else {
 		// there could be multiple "inside" intervals,
 		// so just take the closest one
 		lt_min = hits.at(0).t;
 		lt_max = hits.at(1).t;
 	}
-	if (rightHits.size() < 2) {
+	if (rightHits.size() == 0) {
 		rt_min = -1.0f; rt_max = 0.0f;
+	} else if (rightHits.size() == 1) {
+		rt_min = rightHits.at(0).t;
+		rt_max = rightHits.at(0).t;
 	} else {
 		rt_min = rightHits.at(0).t;
 		rt_max = rightHits.at(1).t;
@@ -626,14 +632,14 @@ void CSG::filter_intersections(
 	const float &rt_min,
 	const float &rt_max,   
 	std::vector<Hit>& hits)
-{
+{	
 	bool inl = false, inr = false; 
 	// unoptimal way to make difference show right shape's faces; hacky
-	float s = this->operationType == OperationType::Difference ? -1.0f : 1.0f;
+	float s = this->operationType == OperationType::Difference ? 1.0f : -1.0f;
 	vector<Hit> new_hits;
 	for (auto& hit : hits) {
-		inl = (lt_min - hit.t < EPSILION) && (hit.t - lt_max < s*EPSILION);
-		inr = (rt_min - hit.t < EPSILION) && (hit.t - rt_max < s*EPSILION);
+		inl = (lt_min - hit.t < EPSILION) && (lt_max - hit.t > s*EPSILION);
+		inr = (rt_min - hit.t < EPSILION) && (rt_max - hit.t > s*EPSILION);
 		// Assume that the given hits list is sorted in ascending order
 		// of t; that is, the first intersection is outside both shapes
 		if (intersection_allowed(this->operationType, inl, inr)) {
