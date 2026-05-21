@@ -573,16 +573,19 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 	float lt_min, lt_max, rt_min, rt_max;
 	// Take only the first two intersections to determine
 	// the interval; taking the last hit when hits.size() > 2
-	// lead to some intersections being considered when they
+	// lead to some intervals being extended when they
 	// should not be (might be bad for donut primitives)
 	if (hits.size() < 2) {
-		lt_min = 0.0f; lt_max = 0.0f;
+		// weird hack to make the weird shadows go away; not good
+		lt_min = -1.0f; lt_max = 0.0f;
 	} else {
+		// there could be multiple "inside" intervals,
+		// so just take the closest one
 		lt_min = hits.at(0).t;
 		lt_max = hits.at(1).t;
 	}
 	if (rightHits.size() < 2) {
-		rt_min = 0.0f; rt_max = 0.0f;
+		rt_min = -1.0f; rt_max = 0.0f;
 	} else {
 		rt_min = rightHits.at(0).t;
 		rt_max = rightHits.at(1).t;

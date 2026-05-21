@@ -287,10 +287,6 @@ int SceneLoader::parseShape(
     for (int p = 0; p < s_tok->size; ++p) {
         auto key = s_tok + prop_ind, value = key+1;
 
-        std::clog << print_token(key) << " : " 
-            << print_token(value) 
-            << "\n---------\n";
-
         if (jsonstreq(key, "shape")) {
             prop.type = shapeTypeFromToken(value);
             shape = createShape(prop.type);

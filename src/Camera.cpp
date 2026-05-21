@@ -131,7 +131,7 @@ bool hit(
     float minDist = interval.max;
     bool intersected_any = false;
 
-    vector<Hit> temp_hits; // maintain a list of hits for csg
+    vector<Hit> temp_hits;
     temp_hits.reserve(16); // magic number
 
     for (shared_ptr<Shape>& shape : shapes) {
@@ -306,6 +306,7 @@ vec3 Camera::getRayColor(
         float s_transparency = 1.0f;
 
         if (behindShape) {
+            // clr = .5f*srec.n+vec3(.5);
             if (!shapeIsTransparent) continue;
             s_transparency = srec.m->transparency;
         }
