@@ -127,9 +127,9 @@
             "diffuse" : [1.0,0,1.0],
             "specular": [1,1,0.5],
             "exponent": 300.0,
-            "reflCoeff": 0.5,
+            "reflCoeff": 0.0,
             "refrIndex" : 1.015625,
-            "transparency" : 0.75
+            "transparency" : 0.9375
         }
     }
 }

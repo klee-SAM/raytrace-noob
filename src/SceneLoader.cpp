@@ -260,31 +260,28 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& s
             continue;
         }
 
+        ShapeProperties prop;
         std::shared_ptr<Shape> shape;
-        glm::vec3 pos(0.0f), scl(1.0f), rot(0.0f);
-        std::shared_ptr<Material> smat = defaultMaterial;
-
-        std::string mesh_filename;
 
         int prop_ind = 1;
-        for (int prop = 0; prop < s_tok->size; ++prop) {
+        for (int p = 0; p < s_tok->size; ++p) {
             auto key = s_tok + prop_ind, value = key+1;
 
             if (jsonstreq(key, "shape")) {
                 shape = shapeFromString(stringFromToken(value));
             } else if (jsonstreq(key, "position")) {
-                pos = float3FromToken(value);
+                prop.pos = float3FromToken(value);
             } else if (jsonstreq(key, "scale")) {
-                scl = float3FromToken(value);
+                prop.scl = float3FromToken(value);
             } else if (jsonstreq(key, "rotation")) {
-                rot = float3FromToken(value);
-                rot.x = glm::radians(rot.x);
-                rot.y = glm::radians(rot.y);
-                rot.z = glm::radians(rot.z);
+                prop.rot = float3FromToken(value);
+                prop.rot.x = glm::radians(prop.rot.x);
+                prop.rot.y = glm::radians(prop.rot.y);
+                prop.rot.z = glm::radians(prop.rot.z);
             } else if (jsonstreq(key, "material")) {
-                smat = scene->getMaterial(stringFromToken(value));
+                prop.smat = scene->getMaterial(stringFromToken(value));
             } else if (jsonstreq(key, "file")) {
-                mesh_filename = stringFromToken(value);
+                prop.mesh_filename = stringFromToken(value);
             } else {
                 std::cerr << "parseShapes: invalid property: "
                           << print_token(key) << '\n';
@@ -294,18 +291,8 @@ int SceneLoader::parseShapes(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& s
         }
 
         if (shape != nullptr) {
-            modelMat.setPosition(pos);
-            modelMat.setRotation(rot);
-            modelMat.setScale(scl);
-            
-            // Hack to initialize a mesh object
-            bool isMesh = dynamic_cast<Mesh*>(shape.get()) != nullptr;
-            if (isMesh) { shape = make_shared<Mesh>(mesh_filename, srcDir); }
-
-            shape->setModelMatrix(modelMat.getMatrix());
-            shape->setMaterial(smat);
+            prop.applyProperties(shape, modelMat, this->srcDir);
             scene->pushShape(shape);
-
         } else {
             std::cerr << "Shape not created.\n";
         }

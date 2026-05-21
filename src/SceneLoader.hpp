@@ -51,10 +51,10 @@ private:
     class ShapeProperties {
     public:
         glm::vec3 pos, scl, rot;
-        std::shared_ptr<Material> smat = defaultMaterial;
+        std::shared_ptr<Material> smat;
         std::string mesh_filename;
 
-        ShapeProperties() : pos(0.0f), scl(1.0f), rot(0.0f) {}
+        ShapeProperties() : pos(0.0f), scl(1.0f), rot(0.0f), smat(defaultMaterial) {}
 
         void applyProperties(std::shared_ptr<Shape>& shape, 
                              ModelMatConstr& modelMat, 
