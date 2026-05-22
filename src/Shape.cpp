@@ -35,8 +35,8 @@ Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const {
 
 // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
 vec2 Sphere::computeUV(const vec3& p) const {
-    float u = (1.0 + std::atan2(p.z, p.x)*R_PI)/2;
-    float v = 0.5 + std::asin(p.y)*R_PI;
+    float u = 0.5f + std::atan2(p.z, p.x)*R_PI*0.5f;
+    float v = 0.5f + std::asin(p.y)*R_PI;
     return vec2(u, v);
 }
 
@@ -208,8 +208,9 @@ vec4 Cylinder::computeNormal(const vec3& x0) const {
 }
 
 vec2 Cylinder::computeUV(const vec3& p) const {
-	// TODO: uv for cylinders
-	return vec2(0.0f, 0.0f);
+	float u = 0.5f + std::atan2(p.z, p.x)*R_PI*0.5f;
+	float v = p.y;
+	return vec2(u, v);
 } 
 
 void Cylinder::intersect(const Ray& ray, vector<Hit>& hits) 
@@ -268,8 +269,10 @@ void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool pr
 		for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); ++f) {
 			u_char fv = shape.mesh.num_face_vertices.at(f);
 			// Loop over vertices in face.
-			for (u_char v = 0; v < fv; v++) {
+			// Because of triangulation, fv is always 3.
+			for (u_char v = 0; v < fv; ++v) {
 				tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
+
 				posBuf.push_back(attrib.vertices[3*idx.vertex_index+0]);
 				posBuf.push_back(attrib.vertices[3*idx.vertex_index+1]);
 				posBuf.push_back(attrib.vertices[3*idx.vertex_index+2]);
@@ -285,7 +288,25 @@ void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool pr
 					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+1]);
 				}
 			}
-			index_offset += fv; // b/c of triangulate, offset is always += 3.
+
+			// Only guaranteed to work if triangulate is enabled.
+			// Do flat shading by default
+			if (attrib.normals.empty() && fv == 3) {
+				assert(posBuf.size() >= 9);
+				size_t lastIndex = posBuf.size()-1;
+				float *vt0 = &posBuf.at(lastIndex - 9); 
+				float *vt1 = &posBuf.at(lastIndex - 6); 
+				float *vt2 = &posBuf.at(lastIndex - 3);
+				vec3 edge1 = SUB(vt1, vt0);
+				vec3 edge2 = SUB(vt2, vt0);
+				vec3 norm = glm::cross(edge1, edge2);
+				// Fairly wasteful, but oh well
+				norBuf.push_back(norm.x);
+				norBuf.push_back(norm.y);
+				norBuf.push_back(norm.z);
+			}
+
+			index_offset += fv;
 			// shape.mesh.material_ids[f];
 		}
 	}
@@ -393,20 +414,19 @@ void Mesh::initialize()
 	inv_sphereMat = inverse(sphereMat);
 }
 
-// custom functions for speed; only do operations when needed
+// custom functions for "speed," this is ~50% faster 
 
-// TODO: test replacment with reference writing?
-inline vec3 CROSS(const float *v1, const float *v2) {
+constexpr vec3 CROSS(const float *v1, const float *v2) {
 	return vec3(v1[1]*v2[2]-v1[2]*v2[1],
 				v1[2]*v2[0]-v1[0]*v2[2],
 				v1[0]*v2[1]-v1[1]*v2[0]);
 }
 
-inline float DOT(const float *v1, const float *v2) {
+constexpr float DOT(const float *v1, const float *v2) {
 	return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
 }
 
-inline vec3 SUB(const float *v1, const float *v2) {
+constexpr vec3 SUB(const float *v1, const float *v2) {
 	return vec3(v1[0]-v2[0], 
 				v1[1]-v2[1], 
 				v1[2]-v2[2]);
