@@ -5,7 +5,14 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 const float COLOR_SCALE = 1.0f / 255.0f;
+
+Image::Image(const std::string& file) : filename(file) {
+    // TODO
+}
 
 size_t Image::get_index(uint x, uint y) const {
     if (x < 0 || x >= width) { 

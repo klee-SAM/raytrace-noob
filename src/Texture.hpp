@@ -1,6 +1,8 @@
 #pragma once
 #include "stn.hpp"
 
+#include "Image.hpp"
+
 class Texture {
 public:
     Texture() {};
@@ -15,8 +17,11 @@ public:
     virtual glm::vec3 value(float u, float v, const glm::vec3& p) const = 0;
 
 protected:
-    glm::vec3 color; // temporary until i can load textures 
-    std::vector<char> textureData; // replace with pointer to image?
+    glm::vec3 color; // for flat colors or procedural textures
+
+    // multiple distinct materials could point to the same
+    // image data, so shared ptr it is
+    std::shared_ptr<Image> img;
 };
 
 class ColorTexture : public Texture {

@@ -4,7 +4,8 @@
 class Image {
 public:
     Image(uint w, uint h) : width(w), height(h), comp(3), data(w*h*comp, 0) {}
-    ~Image() { data.clear(); };
+    Image(const std::string& file);
+    ~Image() { data.clear(); }
 
     void setFilename(const std::string &name) { filename = name; }
     uint getWidth() const { return width; }
