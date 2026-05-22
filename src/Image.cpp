@@ -10,8 +10,46 @@
 
 const float COLOR_SCALE = 1.0f / 255.0f;
 
-Image::Image(const std::string& file) : filename(file) {
-    // TODO
+// Filename (aka path) must be set before calling this
+void Image::loadFile() {
+    // Load texture
+	int w, h, ncomps;
+    // get_index() flips the v coordinate, keep this false
+	stbi_set_flip_vertically_on_load(false);
+	u_char* raw_data = stbi_load(filename.c_str(), &w, &h, &ncomps, 0);
+	if (!raw_data) {
+		std::cerr << filename << " not found\n";
+		return;
+	}
+	if (ncomps != 3) {
+		std::cerr << filename << " must have exactly 3 components (RGB)\n";
+	}
+	if ((w & (w - 1)) != 0 || (h & (h - 1)) != 0) {
+		std::cerr << filename << " must be a power of 2; "
+                  << "only square images with power of 2 lengths are supported\n";
+	}
+
+	this->width = w;
+	this->height = h;
+	this->comp = ncomps;
+
+	#ifndef NDEBUG
+	std::clog << "Loaded image with "
+		 << w << " width, " << h << " height, and "
+		 << ncomps << " channels\n"; 
+	#endif
+	
+	// Copy the image data to a texture buffer
+    size_t texBufSize = w * h * ncomps;
+	this->data = std::vector<u_char>(w * h * ncomps, 0);
+	for (size_t i = 0; i < texBufSize; i += ncomps) {
+		for (int c = 0; c < ncomps; ++c) {
+			this->data.at(i + c) = *(raw_data + i + c);
+		}
+	}
+
+	// Free image, since the data is copied elsewhere
+	stbi_image_free(raw_data);
 }
 
 size_t Image::get_index(uint x, uint y) const {

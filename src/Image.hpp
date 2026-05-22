@@ -3,11 +3,17 @@
 
 class Image {
 public:
+    // For constructing output images
     Image(uint w, uint h) : width(w), height(h), comp(3), data(w*h*comp, 0) {}
-    Image(const std::string& file);
+    // For constructing texture images. 
+    Image(const std::string& file) : filename(file) { loadFile(); }
     ~Image() { data.clear(); }
 
+    void loadFile();
+    void loadFile(const std::string& file) { filename = file; loadFile(); } 
+
     void setFilename(const std::string &name) { filename = name; }
+
     uint getWidth() const { return width; }
     uint getHeight() const { return height; }
 
