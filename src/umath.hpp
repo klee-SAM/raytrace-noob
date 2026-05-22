@@ -58,3 +58,5 @@ namespace {
 
 // Returns the number without the integer part (-2.6 -> -0.6)
 constexpr float decimal(float x) { return x - (int)x; }
+// https://stackoverflow.com/questions/1903954/
+constexpr int sgn(float val) { return (0.0f < val) - (val < 0.0f); }
