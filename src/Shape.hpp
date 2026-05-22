@@ -148,13 +148,6 @@ public:
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 private:
 	void filter_intersections(
-		const float &lt_min, 
-		const float &lt_max,
-		const float &rt_min,
-		const float &rt_max,   
-		std::vector<Hit>& hits);
-
-	void filter_intersections(
 		const std::vector<Interval>& l_intervals,
 		const std::vector<Interval>& r_intervals,
 		std::vector<Hit>& hits);

@@ -558,63 +558,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 bool cmp(const Hit& a, const Hit& b) { return a.t < b.t; }
 
-// void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
-// 	// If a transformation is applied to the csg object as a whole,
-// 	// transform it to local space to avoid having to propagate 
-// 	// initial transforms to individual leaves
-// 	// Ray wld_ray;
-// 	// wld_ray.pos = vec3(inv_modelMat*ray.pos);
-// 	// wld_ray_dir = vec3(inv_modelMat*ray.dir);
-
-// 	vector<Hit> rightHits;
-// 	this->left->intersect(ray, hits);
-// 	this->right->intersect(ray, rightHits);
-// 	float lt_min, lt_max, rt_min, rt_max;
-// 	// Take only the first two intersections to determine
-// 	// the interval; taking the last hit when hits.size() > 2
-// 	// lead to some intervals being extended when they
-// 	// should not be (might be bad for donut primitives)
-// 	if (hits.size() < 2) {
-// 		// weird hack to make the weird shadows go away; not good
-// 		lt_min = -1.0f; lt_max = 0.0f;
-// 	} else if (hits.size() == 1) {
-// 		lt_min = hits.at(0).t;
-// 		lt_max = hits.at(0).t;
-// 	} else {
-// 		// there could be multiple "inside" intervals,
-// 		// so just take the closest one
-// 		lt_min = hits.at(0).t;
-// 		lt_max = hits.at(1).t;
-// 	}
-// 	// consider 1 intersections as 0 for now, until
-// 	// filter intersection rewrite
-// 	if (rightHits.size() < 2) {
-// 		rt_min = -1.0f; rt_max = 0.0f;
-// 	} else if (rightHits.size() == 1) {
-// 		rt_min = rightHits.at(0).t;
-// 		rt_max = rightHits.at(0).t;
-// 	} else {
-// 		rt_min = rightHits.at(0).t;
-// 		rt_max = rightHits.at(1).t;
-// 	}
-// 	for (auto& it : rightHits) {
-// 		// ensure that faces in difference csgs are properly lit
-// 		if (operationType == OperationType::Difference) it.n = -it.n;
-// 		// it barely makes a difference whether this copied or not,
-// 		// so just leave this alone
-// 		hits.push_back(std::move(it));
-// 	}
-// 	std::sort(hits.begin(), hits.end(), cmp);
-
-// 	// std::vector<Hit> newHits;
-// 	// filter_intersections(hits, rightHits, newHits);
-// 	// hits = std::move(newHits);
-
-// 	filter_intersections(lt_min, lt_max, rt_min, rt_max, hits);
-// }
-
-void pushIntervals(vector<Interval>& intervals, const vector<Hit>& hits) 
-{
+void pushIntervals(vector<Interval>& intervals, const vector<Hit>& hits) {
 	if (hits.empty()) {
 		intervals.push_back(Interval::empty);
 		return;
@@ -622,13 +566,14 @@ void pushIntervals(vector<Interval>& intervals, const vector<Hit>& hits)
 	
 	uint i = 0;
 	if (hits.size() % 2 == 1) {
-		// first hit originates inside the csg
-		// strange behavior ig
-		intervals.push_back(Interval(-EPSILION, 0.0f));
+		// first hit originates inside the csg, which
+		// occurs with rays other than primary
+		intervals.push_back(Interval(0.0f, hits.at(0).t));
 		i = 1;
 	}
+
 	// assume the hits list is sorted and is for one shape;
-	// each pair represents enter and exit points
+	// each pair represents enter and exit points for primitives
 	for (; i < hits.size(); i += 2) {
 		intervals.push_back(Interval(hits.at(i).t, hits.at(i+1).t));
 	}
@@ -654,65 +599,26 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 	}
 	std::sort(hits.begin(), hits.end(), cmp);
 
-	// std::vector<Hit> newHits;
 	filter_intersections(l_intervals, r_intervals, hits);
-	// hits = std::move(newHits);
-
-	// filter_intersections(lt_min, lt_max, rt_min, rt_max, hits);
 }
 
-bool intersection_allowed(OperationType op, bool inL, bool inR)
-{
+bool intersection_allowed(OperationType op, bool inL, bool inR) {
 	switch (op) {
 	case OperationType::Union:
 		return (inL && !inR) || (!inL && inR);
-		break;
 	case OperationType::Intersection:
 		return (inL && inR); 
-		break;
 	case OperationType::Difference:
 		return (inL && !inR);
-		break;
 	default:
 		break;
 	}
 	return false;
 }
 
-// TODO: since a csg shape can have multiple
-// "inside" intervals, rewrite so that
-// filter_intersections considers all of the
-// inside intervals, instead of just one interval
-// that spans all of a shape's intervals (bad for unions)
-// rewrite to accept vector of intervals, and 
-// iterate through those intervals
-void CSG::filter_intersections(
-	const float &lt_min, 
-	const float &lt_max,
-	const float &rt_min,
-	const float &rt_max,   
-	std::vector<Hit>& hits)
-{	
-	bool inl = false, inr = false; 
-	// unoptimal way to make difference show right shape's faces; hacky
-	float s = this->operationType == OperationType::Difference ? 1.0f : -1.0f;
-	vector<Hit> new_hits;
-	for (auto& hit : hits) {
-		inl = (lt_min - hit.t < EPSILION) && (lt_max - hit.t > s*EPSILION);
-		inr = (rt_min - hit.t < EPSILION) && (rt_max - hit.t > s*EPSILION);
-		// Assume that the given hits list is sorted in ascending order
-		// of t; that is, the first intersection is outside both shapes
-		if (intersection_allowed(this->operationType, inl, inr)) {
-			new_hits.push_back(hit);
-		}
-	}
-	hits = std::move(new_hits);
-}
-
 bool insideIntervalAfter(
-	float t, 
 	const vector<Interval>& intervals,
-	float s = -1.0f) 
+	float t, float s = -1.0f) 
 {
 	for (auto& interval : intervals) {
 		// Don't consider any intervals before this 
@@ -736,8 +642,8 @@ void CSG::filter_intersections(
 	float s = this->operationType == OperationType::Difference ? 1.0f : -1.0f;
 	vector<Hit> new_hits;
 	for (auto& hit : hits) {
-		inl = insideIntervalAfter(hit.t, l_intervals, s);
-		inr = insideIntervalAfter(hit.t, r_intervals, s);
+		inl = insideIntervalAfter(l_intervals, hit.t, s);
+		inr = insideIntervalAfter(r_intervals, hit.t, s);
 		// Assume that the given hits list is sorted in ascending order
 		// of t; that is, the first intersection is outside both shapes
 		if (intersection_allowed(this->operationType, inl, inr)) {
@@ -746,46 +652,3 @@ void CSG::filter_intersections(
 	}
 	hits = std::move(new_hits);
 }
-
-
-
-// bool intersection_allowed2(OperationType op, bool fromL, bool inL, bool inR)
-// {
-// 	switch (op) {
-// 	case OperationType::Union:
-// 		return (fromL && !inR) || (!fromL && !inR);
-// 		break;
-// 	case OperationType::Intersection:
-// 		return (fromL && inR) || (!fromL && inL); 
-// 		break;
-// 	case OperationType::Difference:
-// 		return (fromL && !inR) || (!fromL && inL);
-// 		break;
-// 	default:
-// 		break;
-// 	}
-// 	return false;
-// }
-
-// void CSG::filter_intersections(
-// 	const std::vector<Hit>& lhits,
-// 	const std::vector<Hit>& rhits,
-// 	std::vector<Hit>& newHits)
-// {
-// 	std::vector<Hit> hits = lhits;
-// 	hits.insert(hits.end(), rhits.begin(), rhits.end());
-// 	std::sort(hits.begin(), hits.end(), cmp);
-
-// 	bool inl = false, inr = false;
-// 	for (auto& hit : hits) {
-// 		bool fromL = std::any_of(lhits.begin(), lhits.end(), [&](const Hit& h){
-// 			return fabs(h.t - hit.t) < EPSILION && h.m == hit.m;
-// 		});
-// 		if (intersection_allowed2(operationType, fromL, inl, inr)) {
-// 			newHits.push_back(hit);
-// 		}
-// 		if (fromL) { inl = !inl; }
-// 		else {inr = !inr; }
-// 	}
-
-// }

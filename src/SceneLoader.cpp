@@ -380,25 +380,19 @@ std::shared_ptr<Shape> SceneLoader::createShape(SHAPE_TYPE type)
     switch(type) {
     case SHAPE_TYPE::sphere:
         return make_shared<Sphere>(); 
-        break;
     case SHAPE_TYPE::plane:
         return make_shared<Plane>();
-        break;
     case SHAPE_TYPE::mesh:
         return make_shared<Mesh>();
-        break;
     case SHAPE_TYPE::box:
         return make_shared<Box>();
-        break;
     case SHAPE_TYPE::cylinder: 
         return make_shared<Cylinder>();
-        break;
     case SHAPE_TYPE::csg:
         return make_shared<CSG>();
     default:
         std::cerr << "createShape: unrecognized shape type\n";
         return nullptr;
-        break;
     }
 }
 

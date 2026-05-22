@@ -159,7 +159,6 @@ vec3 Camera::getSkyColor(const Ray& ray) {
         cy = .5*(ray.dir.y)+.5;
         cz = .5*(ray.dir.z)+.5;
         return vec3(cx, cz, cy);
-        break;
     case (Camera::SkyType::Void):
     default:
         return vec3(0.0f);

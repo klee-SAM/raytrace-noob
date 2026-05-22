@@ -3,7 +3,7 @@
         "distance" : 5.0,
         "antialias" : 1,
         "fov" : 45.0,
-        "rotation" : [-30, 22.5, 0],
+        "rotation" : [-45, 22.5, 0],
         "sky" : "haze"
     },
     "materials" : {
@@ -70,7 +70,7 @@
                     "shape" : "cylinder",
                     "material" : "green",
                     "scale": [0.5, 0.5, 0.5],
-                    "rotation": [0,0,0]
+                    "rotation": [90,0,0]
                 },
                 "right" : {
                     "shape" : "csg",
@@ -86,7 +86,7 @@
                         "shape" : "cylinder",
                         "material" : "green",
                         "scale": [0.5, 0.5, 0.5],
-                        "rotation": [90, 0, 0]
+                        "rotation": [0, 0, 0]
                     }
                 }
             }
