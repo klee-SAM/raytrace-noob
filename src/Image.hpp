@@ -12,6 +12,9 @@ public:
     void loadFile();
     void loadFile(const std::string& file) { filename = file; loadFile(); } 
 
+    // Returns true if the data buffer holds at least 1 pixel's worth of information
+    bool isLoaded() { return data.size() > comp; }
+
     void setFilename(const std::string &name) { filename = name; }
 
     uint getWidth() const { return width; }
@@ -38,3 +41,5 @@ private:
 
     size_t get_index(uint x, uint y) const;
 };
+
+const std::shared_ptr<Image> blankImage = std::make_shared<Image>(1U, 1U);

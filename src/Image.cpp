@@ -22,11 +22,15 @@ void Image::loadFile() {
 		return;
 	}
 	if (ncomps != 3) {
-		std::cerr << filename << " must have exactly 3 components (RGB)\n";
+		std::cerr << filename << " must have exactly 3 components (RGB).\n"
+                  << "Image data not loaded.\n";
+        return;
 	}
 	if ((w & (w - 1)) != 0 || (h & (h - 1)) != 0) {
 		std::cerr << filename << " must be a power of 2; "
-                  << "only square images with power of 2 lengths are supported\n";
+                  << "only square images with power of 2 lengths are supported.\n"
+                  << "Image data not loaded.\n";
+        return;
 	}
 
 	this->width = w;
@@ -53,6 +57,10 @@ void Image::loadFile() {
 }
 
 size_t Image::get_index(uint x, uint y) const {
+    if (data.size() < 1) {
+        std::cerr << "Image data not initialized\n";
+        return 0;
+    }
     if (x < 0 || x >= width) { 
         std::cerr << "Column " << x << " out of bounds\n"; 
         return 0;
