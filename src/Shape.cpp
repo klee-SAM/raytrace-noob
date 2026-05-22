@@ -1,5 +1,4 @@
 #include "stn.hpp"
-#include "umath.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
@@ -618,13 +617,20 @@ void pushIntervals(vector<Interval>& intervals, const vector<Hit>& hits)
 {
 	if (hits.empty()) {
 		intervals.push_back(Interval::empty);
-	} else if (hits.size() == 1) {
-		// hit originates inside the csg
-		intervals.push_back(Interval(0.0f, hits.at(0).t));
-	} else {
-		// there could be multiple "inside" intervals
-		// lt_min = hits.at(0).t;
-		// lt_max = hits.at(1).t;
+		return;
+	}
+	
+	uint i = 0;
+	if (hits.size() % 2 == 1) {
+		// first hit originates inside the csg
+		// strange behavior ig
+		intervals.push_back(Interval(-EPSILION, 0.0f));
+		i = 1;
+	}
+	// assume the hits list is sorted and is for one shape;
+	// each pair represents enter and exit points
+	for (; i < hits.size(); i += 2) {
+		intervals.push_back(Interval(hits.at(i).t, hits.at(i+1).t));
 	}
 }
 
@@ -636,18 +642,9 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 	vector<Interval> l_intervals;
 	vector<Interval> r_intervals; 
 	
+	pushIntervals(l_intervals, hits);
+	pushIntervals(r_intervals, rightHits);
 	
-	// consider 1 intersections as 0 for now, until
-	// filter intersection rewrite
-	// if (rightHits.size() < 2) {
-	// 	rt_min = -1.0f; rt_max = 0.0f;
-	// } else if (rightHits.size() == 1) {
-	// 	rt_min = rightHits.at(0).t;
-	// 	rt_max = rightHits.at(0).t;
-	// } else {
-	// 	rt_min = rightHits.at(0).t;
-	// 	rt_max = rightHits.at(1).t;
-	// }
 	for (auto& it : rightHits) {
 		// ensure that faces in difference csgs are properly lit
 		if (operationType == OperationType::Difference) it.n = -it.n;
@@ -658,7 +655,7 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 	std::sort(hits.begin(), hits.end(), cmp);
 
 	// std::vector<Hit> newHits;
-	// filter_intersections(hits, rightHits, newHits);
+	filter_intersections(l_intervals, r_intervals, hits);
 	// hits = std::move(newHits);
 
 	// filter_intersections(lt_min, lt_max, rt_min, rt_max, hits);
@@ -719,7 +716,7 @@ bool insideAnyInterval(
 {
 	for (auto& interval : intervals) {
 		// (rt_min - hit.t < EPSILION) && (rt_max - hit.t > s*EPSILION)
-		return (t - interval.min > -EPSILION) && 
+		return (interval.min - t < EPSILION) && 
 			   (interval.max - t > s*EPSILION);
 	}
 	return false;
