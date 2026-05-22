@@ -21,7 +21,7 @@ public:
     void getPixel(uint x, uint y, u_char& r, u_char& g, u_char& b) const;
 
     // Writes the pixel color at UV coords to the ref. arg. `clr`
-    void Image::getPixel(float u, float v, glm::vec3& clr) const;
+    void getPixel(float u, float v, glm::vec3& clr) const;
 
     void write();
     
@@ -30,5 +30,5 @@ private:
     uint width, height, comp;
     std::vector<u_char> data;
 
-    size_t Image::get_index(uint x, uint y) const;
+    size_t get_index(uint x, uint y) const;
 };

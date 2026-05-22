@@ -242,6 +242,25 @@ void Cylinder::intersect(const Ray& ray, vector<Hit>& hits)
 }
 
 
+
+// custom functions for "speed," this is ~50% faster 
+
+constexpr vec3 CROSS(const float *v1, const float *v2) {
+	return vec3(v1[1]*v2[2]-v1[2]*v2[1],
+				v1[2]*v2[0]-v1[0]*v2[2],
+				v1[0]*v2[1]-v1[1]*v2[0]);
+}
+
+constexpr float DOT(const float *v1, const float *v2) {
+	return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+}
+
+constexpr vec3 SUB(const float *v1, const float *v2) {
+	return vec3(v1[0]-v2[0], 
+				v1[1]-v2[1], 
+				v1[2]-v2[2]);
+}
+
 void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool printVerticesCount) 
 {
     // Load geometry
@@ -412,24 +431,6 @@ void Mesh::initialize()
 {
 	sphereMat = glm::scale(modelMat, vec3(this->boundingRadius));
 	inv_sphereMat = inverse(sphereMat);
-}
-
-// custom functions for "speed," this is ~50% faster 
-
-constexpr vec3 CROSS(const float *v1, const float *v2) {
-	return vec3(v1[1]*v2[2]-v1[2]*v2[1],
-				v1[2]*v2[0]-v1[0]*v2[2],
-				v1[0]*v2[1]-v1[1]*v2[0]);
-}
-
-constexpr float DOT(const float *v1, const float *v2) {
-	return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
-}
-
-constexpr vec3 SUB(const float *v1, const float *v2) {
-	return vec3(v1[0]-v2[0], 
-				v1[1]-v2[1], 
-				v1[2]-v2[2]);
 }
 
 // This assumes that the position buffer size is a 

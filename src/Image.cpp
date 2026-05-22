@@ -17,17 +17,19 @@ Image::Image(const std::string& file) : filename(file) {
 size_t Image::get_index(uint x, uint y) const {
     if (x < 0 || x >= width) { 
         std::cerr << "Column " << x << " out of bounds\n"; 
-        return;
+        return 0;
     }
     if (y < 0 || y >= height) { 
         std::cerr << "Row " << y << " out of bounds\n"; 
-        return;
+        return 0;
     }
 
     y = height - y - 1;
     size_t index = y*width + x;
     assert(index >= 0);
     assert(3*index + 2 < data.size());
+
+    return index;
 }
 
 void Image::getPixel(uint x, uint y, u_char& r, u_char& g, u_char& b) const {

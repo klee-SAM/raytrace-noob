@@ -50,6 +50,6 @@ public:
     virtual ~ImageTexture() = default;
 
     glm::vec3 value(float u, float v, const glm::vec3&) const override {
-
+        return glm::vec3(0.0f);
     }
 };
