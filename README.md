@@ -44,10 +44,9 @@ Adding more features as a learning exercise
 - CMake: (https://cmake.org/download/)
 
 ## Building
-This requires that you set the environment variable `GLM_INCLUDE_DIR` to a copy of the
-GLM library on your system. 
+This requires that you set the environment variable `GLM_INCLUDE_DIR` to a copy of the GLM library on your system. 
 
-These instructions are for Linux. Other platforms may have slightly different build instructions.
+Other platforms may have slightly different build instructions.
 
 1. Create a new `build` folder inside the project folder (which contains CMakeLists.txt)
 2. Do `cmake ..` inside the build folder to create the Makefile.

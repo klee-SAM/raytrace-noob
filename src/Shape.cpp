@@ -559,45 +559,95 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 bool cmp(const Hit& a, const Hit& b) { return a.t < b.t; }
 
-void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
-	// If a transformation is applied to the csg object as a whole,
-	// transform it to local space to avoid having to propagate 
-	// initial transforms to individual leaves
-	// Ray wld_ray;
-	// wld_ray.pos = vec3(inv_modelMat*ray.pos);
-	// wld_ray_dir = vec3(inv_modelMat*ray.dir);
+// void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
+// 	// If a transformation is applied to the csg object as a whole,
+// 	// transform it to local space to avoid having to propagate 
+// 	// initial transforms to individual leaves
+// 	// Ray wld_ray;
+// 	// wld_ray.pos = vec3(inv_modelMat*ray.pos);
+// 	// wld_ray_dir = vec3(inv_modelMat*ray.dir);
 
+// 	vector<Hit> rightHits;
+// 	this->left->intersect(ray, hits);
+// 	this->right->intersect(ray, rightHits);
+// 	float lt_min, lt_max, rt_min, rt_max;
+// 	// Take only the first two intersections to determine
+// 	// the interval; taking the last hit when hits.size() > 2
+// 	// lead to some intervals being extended when they
+// 	// should not be (might be bad for donut primitives)
+// 	if (hits.size() < 2) {
+// 		// weird hack to make the weird shadows go away; not good
+// 		lt_min = -1.0f; lt_max = 0.0f;
+// 	} else if (hits.size() == 1) {
+// 		lt_min = hits.at(0).t;
+// 		lt_max = hits.at(0).t;
+// 	} else {
+// 		// there could be multiple "inside" intervals,
+// 		// so just take the closest one
+// 		lt_min = hits.at(0).t;
+// 		lt_max = hits.at(1).t;
+// 	}
+// 	// consider 1 intersections as 0 for now, until
+// 	// filter intersection rewrite
+// 	if (rightHits.size() < 2) {
+// 		rt_min = -1.0f; rt_max = 0.0f;
+// 	} else if (rightHits.size() == 1) {
+// 		rt_min = rightHits.at(0).t;
+// 		rt_max = rightHits.at(0).t;
+// 	} else {
+// 		rt_min = rightHits.at(0).t;
+// 		rt_max = rightHits.at(1).t;
+// 	}
+// 	for (auto& it : rightHits) {
+// 		// ensure that faces in difference csgs are properly lit
+// 		if (operationType == OperationType::Difference) it.n = -it.n;
+// 		// it barely makes a difference whether this copied or not,
+// 		// so just leave this alone
+// 		hits.push_back(std::move(it));
+// 	}
+// 	std::sort(hits.begin(), hits.end(), cmp);
+
+// 	// std::vector<Hit> newHits;
+// 	// filter_intersections(hits, rightHits, newHits);
+// 	// hits = std::move(newHits);
+
+// 	filter_intersections(lt_min, lt_max, rt_min, rt_max, hits);
+// }
+
+void pushIntervals(vector<Interval>& intervals, const vector<Hit>& hits) 
+{
+	if (hits.empty()) {
+		intervals.push_back(Interval::empty);
+	} else if (hits.size() == 1) {
+		// hit originates inside the csg
+		intervals.push_back(Interval(0.0f, hits.at(0).t));
+	} else {
+		// there could be multiple "inside" intervals
+		// lt_min = hits.at(0).t;
+		// lt_max = hits.at(1).t;
+	}
+}
+
+void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 	vector<Hit> rightHits;
 	this->left->intersect(ray, hits);
 	this->right->intersect(ray, rightHits);
-	float lt_min, lt_max, rt_min, rt_max;
-	// Take only the first two intersections to determine
-	// the interval; taking the last hit when hits.size() > 2
-	// lead to some intervals being extended when they
-	// should not be (might be bad for donut primitives)
-	if (hits.size() < 2) {
-		// weird hack to make the weird shadows go away; not good
-		lt_min = -1.0f; lt_max = 0.0f;
-	} else if (hits.size() == 1) {
-		lt_min = hits.at(0).t;
-		lt_max = hits.at(0).t;
-	} else {
-		// there could be multiple "inside" intervals,
-		// so just take the closest one
-		lt_min = hits.at(0).t;
-		lt_max = hits.at(1).t;
-	}
+
+	vector<Interval> l_intervals;
+	vector<Interval> r_intervals; 
+	
+	
 	// consider 1 intersections as 0 for now, until
 	// filter intersection rewrite
-	if (rightHits.size() < 2) {
-		rt_min = -1.0f; rt_max = 0.0f;
-	} else if (rightHits.size() == 1) {
-		rt_min = rightHits.at(0).t;
-		rt_max = rightHits.at(0).t;
-	} else {
-		rt_min = rightHits.at(0).t;
-		rt_max = rightHits.at(1).t;
-	}
+	// if (rightHits.size() < 2) {
+	// 	rt_min = -1.0f; rt_max = 0.0f;
+	// } else if (rightHits.size() == 1) {
+	// 	rt_min = rightHits.at(0).t;
+	// 	rt_max = rightHits.at(0).t;
+	// } else {
+	// 	rt_min = rightHits.at(0).t;
+	// 	rt_max = rightHits.at(1).t;
+	// }
 	for (auto& it : rightHits) {
 		// ensure that faces in difference csgs are properly lit
 		if (operationType == OperationType::Difference) it.n = -it.n;
@@ -611,7 +661,7 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 	// filter_intersections(hits, rightHits, newHits);
 	// hits = std::move(newHits);
 
-	filter_intersections(lt_min, lt_max, rt_min, rt_max, hits);
+	// filter_intersections(lt_min, lt_max, rt_min, rt_max, hits);
 }
 
 bool intersection_allowed(OperationType op, bool inL, bool inR)
@@ -653,6 +703,40 @@ void CSG::filter_intersections(
 	for (auto& hit : hits) {
 		inl = (lt_min - hit.t < EPSILION) && (lt_max - hit.t > s*EPSILION);
 		inr = (rt_min - hit.t < EPSILION) && (rt_max - hit.t > s*EPSILION);
+		// Assume that the given hits list is sorted in ascending order
+		// of t; that is, the first intersection is outside both shapes
+		if (intersection_allowed(this->operationType, inl, inr)) {
+			new_hits.push_back(hit);
+		}
+	}
+	hits = std::move(new_hits);
+}
+
+bool insideAnyInterval(
+	float t, 
+	const vector<Interval>& intervals,
+	float s = -1.0f) 
+{
+	for (auto& interval : intervals) {
+		// (rt_min - hit.t < EPSILION) && (rt_max - hit.t > s*EPSILION)
+		return (t - interval.min > -EPSILION) && 
+			   (interval.max - t > s*EPSILION);
+	}
+	return false;
+}
+
+void CSG::filter_intersections(
+	const vector<Interval>& l_intervals,
+	const vector<Interval>& r_intervals, 
+	std::vector<Hit>& hits)
+{	
+	bool inl = false, inr = false; 
+	// unoptimal way to make difference show right shape's faces; hacky
+	float s = this->operationType == OperationType::Difference ? 1.0f : -1.0f;
+	vector<Hit> new_hits;
+	for (auto& hit : hits) {
+		inl = insideAnyInterval(hit.t, l_intervals, s);
+		inr = insideAnyInterval(hit.t, r_intervals, s);
 		// Assume that the given hits list is sorted in ascending order
 		// of t; that is, the first intersection is outside both shapes
 		if (intersection_allowed(this->operationType, inl, inr)) {

@@ -154,7 +154,7 @@ private:
 		std::vector<Hit>& hits);
 
 	void filter_intersections(
-		const std::vector<Hit>& lhits,
-		const std::vector<Hit>& rhits,
-		std::vector<Hit>& newHits);
+		const std::vector<Interval>& l_intervals,
+		const std::vector<Interval>& r_intervals,
+		std::vector<Hit>& hits);
 };
