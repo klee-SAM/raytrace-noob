@@ -709,13 +709,17 @@ void CSG::filter_intersections(
 	hits = std::move(new_hits);
 }
 
-bool insideAnyInterval(
+bool insideIntervalAfter(
 	float t, 
 	const vector<Interval>& intervals,
 	float s = -1.0f) 
 {
 	for (auto& interval : intervals) {
-		// (rt_min - hit.t < EPSILION) && (rt_max - hit.t > s*EPSILION)
+		// Don't consider any intervals before this 
+		// distance t in the ray; this is why a
+		// loop over intervals is done 
+		if (t > interval.max) continue;
+
 		return (interval.min - t < EPSILION) && 
 			   (interval.max - t > s*EPSILION);
 	}
@@ -732,8 +736,8 @@ void CSG::filter_intersections(
 	float s = this->operationType == OperationType::Difference ? 1.0f : -1.0f;
 	vector<Hit> new_hits;
 	for (auto& hit : hits) {
-		inl = insideAnyInterval(hit.t, l_intervals, s);
-		inr = insideAnyInterval(hit.t, r_intervals, s);
+		inl = insideIntervalAfter(hit.t, l_intervals, s);
+		inr = insideIntervalAfter(hit.t, r_intervals, s);
 		// Assume that the given hits list is sorted in ascending order
 		// of t; that is, the first intersection is outside both shapes
 		if (intersection_allowed(this->operationType, inl, inr)) {
