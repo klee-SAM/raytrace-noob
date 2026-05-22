@@ -25,6 +25,8 @@ protected:
 	glm::mat4 inv_modelMat;
 	glm::mat4 invT_modelMat;
 
+	glm::mat3 textureMat; // Texture transformation matrix
+
 	std::shared_ptr<Material> material;
 
 	virtual glm::vec2 computeUV(const glm::vec3& point) const { 

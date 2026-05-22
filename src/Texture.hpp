@@ -3,17 +3,48 @@
 
 class Texture {
 public:
-    // glm::mat3 T; // Texture transformation matrix, should be per shape
+    Texture() {};
+    virtual ~Texture() = default;
 
-    Texture();
-    virtual ~Texture();
+    // Load an image file
+    void load(const std::string&);
 
-    void loadImage();
-    void loadColor(const glm::vec3&);
+    // Initialize with a flat color
+    void load(const glm::vec3&);
 
-    glm::vec3 getColor(float u, float v);
+    virtual glm::vec3 value(float u, float v, const glm::vec3& p) const = 0;
 
-private:
+protected:
     glm::vec3 color; // temporary until i can load textures 
-    std::vector<char> textureData;
+    std::vector<char> textureData; // replace with pointer to image?
+};
+
+class ColorTexture : public Texture {
+public:
+    ColorTexture() {};
+    virtual ~ColorTexture() = default;
+
+    glm::vec3 value(float, float, const glm::vec3&) const override { 
+        return color; 
+    }
+};
+
+class SpatialTexture : public Texture {
+public:
+    SpatialTexture() {};
+    virtual ~SpatialTexture() = default;
+
+    glm::vec3 value(float, float, const glm::vec3& p) const override {
+        return glm::vec3(0.0f);
+    }
+};
+
+class ImageTexture : public Texture {
+public: 
+    ImageTexture() {};
+    virtual ~ImageTexture() = default;
+
+    glm::vec3 value(float u, float v, const glm::vec3&) const override {
+
+    }
 };

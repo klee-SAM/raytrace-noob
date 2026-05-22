@@ -1,9 +1,13 @@
 #include "Image.hpp"
 
+#include "umath.hpp"
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-void Image::setPixel(uint x, uint y, u_char r, u_char g, u_char b) {
+const float COLOR_SCALE = 1.0f / 255.0f;
+
+size_t Image::get_index(uint x, uint y) const {
     if (x < 0 || x >= width) { 
         std::cerr << "Column " << x << " out of bounds\n"; 
         return;
@@ -13,12 +17,33 @@ void Image::setPixel(uint x, uint y, u_char r, u_char g, u_char b) {
         return;
     }
 
-    // the origin (0, 0) of the image is the upper left corner, so 
-    // flip the row to make origin be lower left to be consistent
     y = height - y - 1;
     size_t index = y*width + x;
     assert(index >= 0);
     assert(3*index + 2 < data.size());
+}
+
+void Image::getPixel(uint x, uint y, u_char& r, u_char& g, u_char& b) const {
+    size_t index = get_index(x, y);
+    r = data.at(3*index + 0);
+    g = data.at(3*index + 1);
+    b = data.at(3*index + 2);
+}
+
+void Image::getPixel(float u, float v, glm::vec3& clr) const {
+    u = std::fmod(sgn(u)*u, 1.0f);
+    v = std::fmod(sgn(v)*v, 1.0f);
+
+    u_int i = u_int(u*width);
+    u_int j = u_int(v*height);
+
+    u_char r, g, b;
+    getPixel(i, j, r, g, b);
+    clr = glm::vec3(r*COLOR_SCALE, g*COLOR_SCALE, b*COLOR_SCALE);
+}
+
+void Image::setPixel(uint x, uint y, u_char r, u_char g, u_char b) {
+    size_t index = get_index(x, y);
     data.at(3*index + 0) = r;
     data.at(3*index + 1) = g;
     data.at(3*index + 2) = b;
