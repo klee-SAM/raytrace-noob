@@ -31,6 +31,7 @@ void initializeTestScene0(unique_ptr<Scene>& target_scene) {
 
     // Hardcoded. Beware!
     shared_ptr<Texture> example = make_shared<ImageTexture>(RESOURCE_DIR+"exampleTexture.png");
+    shared_ptr<Texture> earth = make_shared<ImageTexture>(RESOURCE_DIR+"earthmap.png");
 
     shared_ptr<Material> blueMat = make_shared<Material>(
         vec3(0.1f, 0.1f, 0.1f),
@@ -41,6 +42,7 @@ void initializeTestScene0(unique_ptr<Scene>& target_scene) {
 
     // hmm...
     blueMat->diffuse = example;
+    greenMat->diffuse = earth;
 
     shared_ptr<Light> lighta = make_shared<Light>(vec3(-2.0f, 1.0f, 1.0f), 0.5);
     shared_ptr<Light> lightb = make_shared<Light>(vec3(2.0f, 4.0f, 4.0f), 0.5);
@@ -53,7 +55,7 @@ void initializeTestScene0(unique_ptr<Scene>& target_scene) {
     MV.translate(vec3(-0.5f, -1.0f, 1.0f));
 	shared_ptr<Sphere> red_sp = make_shared<Sphere>();
     red_sp->setModelMatrix(MV.top());
-	red_sp->setMaterial(redMat);
+	red_sp->setMaterial(greenMat);
 	target_scene->pushShape(red_sp);
     MV.pop();
 	
@@ -61,7 +63,7 @@ void initializeTestScene0(unique_ptr<Scene>& target_scene) {
     MV.translate(vec3(0.5f, -1.0f, -1.0f));
 	shared_ptr<Sphere> green_sp = make_shared<Sphere>();
     green_sp->setModelMatrix(MV.top());
-	green_sp->setMaterial(greenMat);
+	green_sp->setMaterial(redMat);
 	target_scene->pushShape(green_sp);
     MV.pop();
 

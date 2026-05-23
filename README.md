@@ -13,7 +13,7 @@ Adding more features as a learning exercise
 
 #### light interactions
 - [X] Partial BP/Reflect
-- [ ] Texture mapping
+- [X] Texture mapping
 - [X] Refraction
 - [ ] Surface roughness
 - [ ] Ambient occulusion
