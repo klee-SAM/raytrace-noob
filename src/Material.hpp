@@ -4,9 +4,9 @@
 
 class Material {
 public:
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
+    std::shared_ptr<Texture> ambient;
+    std::shared_ptr<Texture> diffuse;
+    std::shared_ptr<Texture> specular;
     float exponent;
 
     float reflCoeff;
@@ -24,9 +24,9 @@ public:
     // we just have a simple boolean check
     // (just check if texture loaded)
 
-    Material() : ambient{glm::vec3(0.0f)}, 
-                 diffuse{glm::vec3(0.0f)}, 
-                 specular{glm::vec3(0.0f)}, 
+    Material() : ambient{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
+                 diffuse{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
+                 specular{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
                  exponent{1.0f}, 
                  reflCoeff{0.0f}, 
                  refrIndex{1.0f}, 
@@ -34,11 +34,15 @@ public:
                  {};
                  
     Material(glm::vec3 amb, glm::vec3 dif, glm::vec3 spe, float exp)
-    : ambient{amb}, diffuse{dif}, specular{spe}, exponent(exp) {}
+    : ambient{std::make_shared<ColorTexture>(amb)}, 
+      diffuse{std::make_shared<ColorTexture>(dif)}, 
+      specular{std::make_shared<ColorTexture>(spe)}, 
+      exponent(exp) {}
 
     virtual ~Material() = default;
 
     void copy(Material& oth) { *this = oth; }
+
 };
 
 static const std::shared_ptr<Material> defaultMaterial = std::make_shared<Material>();

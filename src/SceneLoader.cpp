@@ -225,11 +225,11 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
             };
 
             if (jsonstreq(key, "ambient")) {
-                material->ambient = float3FromToken(value);
+                material->ambient->init(float3FromToken(value));
             } else if (jsonstreq(key, "diffuse")) {
-                material->diffuse = float3FromToken(value);
+                material->diffuse->init(float3FromToken(value));
             } else if (jsonstreq(key, "specular")) {
-                material->specular = float3FromToken(value);
+                material->specular->init(float3FromToken(value));
             } else if (jsonstreq(key, "exponent")) {
                 material->exponent = doubleFromToken(value);
             } else if (isReflectProp()) {

@@ -32,14 +32,21 @@ public:
 
     // Setter function for vec3 to vec4
     inline void setPos(const vec3& p) { pos = vec4(p, 1.0f); }
-    inline void setDir(const vec3& d) { dir = vec4(d, 0.0f); }
+    inline void setDir(const vec3& d) { dir = vec4(d, 0.0f); }  
 };
 
-struct Hit {
-    vec3 x; // hit location
-    vec3 n; // hit normal
-    float t; // dist from origin to hit
-    float u; // texture u coord
-    float v; // texture v coord
-    std::shared_ptr<Material> m;
+class Hit {
+public:
+    vec3 x;      // hit location
+    vec3 n;      // hit normal
+    float t;     // dist from origin to hit
+    float u;     // texture u coord
+    float v;     // texture v coord
+    pMaterial m; // material of hit surface
+
+    // Define getters for lighting components here instead of 
+    // in the material class to avoid needing extra parameters
+    inline vec3 ambient() const { return m->ambient->value(u, v, x); }
+    inline vec3 diffuse() const { return m->diffuse->value(u, v, x); }
+    inline vec3 specular() const { return m->specular->value(u, v, x); }
 };

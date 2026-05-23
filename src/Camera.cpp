@@ -178,14 +178,10 @@ Ray reflectRay(const Ray &ray, const Hit &rec)
 
 // Creates a new ray with a direction dependant on the material's IoR
 // Uses Schlick's approximation of Fresnel's equations for refraction.
-Ray refractRay(
-    const Ray &ray, 
-    const Hit &rec, 
-    float &reflectance,
-    bool backFacing) 
+Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFacing) 
 {
     float n1, n2;
-    float &rf_i = rec.m->refrIndex;
+    const float &rf_i = rec.m->refrIndex;
     vec3 norm = rec.n;
     Ray refrRay;
 
@@ -220,8 +216,6 @@ Ray refractRay(
     // reflectance = std::clamp(fabs(reflectance), 0.0f, 1.0f);
 
     refrRay.setDir( normalize(eta*ray.getDir()) + ((eta*(cosI) - cosT)*norm) );
-    // ig i'll find the math error later
-    // refrRay.dir = glm::refract(ray.dir, norm, eta);
     refrRay.setPos( rec.x + refrRay.getDir()*(float)Camera::EPSILION );
 
     return refrRay;
@@ -285,7 +279,7 @@ vec3 Camera::getRayColor(
               normalize(-ray.dir) : 
               normalize(vec3(cameraPos) - rec.x);
 
-    vec3 bp_clr = rec.m->ambient;
+    vec3 bp_clr = rec.ambient();
     for (auto& light : scene->lights) {
         // Construct a shadow ray for each light, using
         // world coordinates.
@@ -310,7 +304,8 @@ vec3 Camera::getRayColor(
         }
 
         float Li = light->intensity;
-        vec3 kd = rec.m->diffuse, ks = rec.m->specular;
+        vec3 kd = rec.diffuse(), 
+             ks = rec.specular();
         float s = rec.m->exponent;
         vec3 h = normalize(lv + ev);
 

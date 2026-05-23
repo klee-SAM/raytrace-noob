@@ -8,19 +8,6 @@ class Texture {
 public:
     Texture() : color(0.0f), img(blankImage) {};
 
-    // constructors specified here b/c what is polymorphism haha
-
-    // TODO: move this constructors back into more specific classes
-    // because the material vec3 constructor will just call
-    // make_shared<ColorTexture> anyways, and the types of the 
-    // material components will become std::shared_ptr<Texture>,
-    // and I should define functions like getAmbient(u, v, p)
-    // and the like in the Material class
-
-    Texture(const glm::vec3& clr) : color(clr), img(blankImage) { }
-    Texture(const std::string &str) : color(0.0f) { init(str); }
-    Texture(const std::shared_ptr<Image> &img) : color(0.0f) { init(img); } 
-
     virtual ~Texture() = default;
 
     // Load an image file and assigns it to this texture
@@ -35,6 +22,11 @@ public:
     virtual glm::vec3 value(float u, float v, const glm::vec3& p) const = 0;
 
 protected:
+    // ????
+    Texture(const glm::vec3& clr) : color(clr), img(blankImage) { }
+    Texture(const std::string &str) : color(0.0f) { init(str); }
+    Texture(const std::shared_ptr<Image> &img) : color(0.0f) { init(img); } 
+
     glm::vec3 color; // for flat colors or procedural textures
 
     // multiple distinct materials could point to the same
@@ -64,8 +56,8 @@ public:
 class ImageTexture : public Texture {
 public: 
     ImageTexture() {};
-    ImageTexture(const std::string &str) : Texture(str) { }
-    ImageTexture(const std::shared_ptr<Image> &img) : Texture(img) { } 
+    ImageTexture(const std::string &str) : Texture(str) {}
+    ImageTexture(const std::shared_ptr<Image> &img) : Texture(img) {} 
     virtual ~ImageTexture() = default;
 
     glm::vec3 value(float u, float v, const glm::vec3&) const override;
