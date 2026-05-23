@@ -29,6 +29,9 @@ void initializeTestScene0(unique_ptr<Scene>& target_scene) {
         100.0f
     );
 
+    // Hardcoded. Beware!
+    shared_ptr<Texture> example = make_shared<ImageTexture>(RESOURCE_DIR+"exampleTexture.png");
+
     shared_ptr<Material> blueMat = make_shared<Material>(
         vec3(0.1f, 0.1f, 0.1f),
         vec3(0.0f, 0.0f, 1.0f),
@@ -36,8 +39,13 @@ void initializeTestScene0(unique_ptr<Scene>& target_scene) {
         100.0f
     );
 
-    shared_ptr<Light> lighta = make_shared<Light>(vec3(-2.0f, 1.0f, 1.0f), 1.0f);
-	target_scene->lights.push_back(lighta);
+    // hmm...
+    blueMat->diffuse = example;
+
+    shared_ptr<Light> lighta = make_shared<Light>(vec3(-2.0f, 1.0f, 1.0f), 0.5);
+    shared_ptr<Light> lightb = make_shared<Light>(vec3(2.0f, 4.0f, 4.0f), 0.5);
+	target_scene->pushLight(lighta);
+    target_scene->pushLight(lightb);
 	
     MatrixStack MV;
 
@@ -46,7 +54,7 @@ void initializeTestScene0(unique_ptr<Scene>& target_scene) {
 	shared_ptr<Sphere> red_sp = make_shared<Sphere>();
     red_sp->setModelMatrix(MV.top());
 	red_sp->setMaterial(redMat);
-	target_scene->shapes.push_back(red_sp);
+	target_scene->pushShape(red_sp);
     MV.pop();
 	
     MV.push();
@@ -54,7 +62,7 @@ void initializeTestScene0(unique_ptr<Scene>& target_scene) {
 	shared_ptr<Sphere> green_sp = make_shared<Sphere>();
     green_sp->setModelMatrix(MV.top());
 	green_sp->setMaterial(greenMat);
-	target_scene->shapes.push_back(green_sp);
+	target_scene->pushShape(green_sp);
     MV.pop();
 
     MV.push();
@@ -62,7 +70,17 @@ void initializeTestScene0(unique_ptr<Scene>& target_scene) {
 	shared_ptr<Sphere> blue_sp = make_shared<Sphere>();
     blue_sp->setModelMatrix(MV.top());
 	blue_sp->setMaterial(blueMat);
-	target_scene->shapes.push_back(blue_sp);
+	target_scene->pushShape(blue_sp);
+    MV.pop();
+
+    MV.push();
+    MV.translate(vec3(0.0f, 0.0f, -5.0f));
+    MV.rotate(45.0f, vec3(1.0f, 0.0f, 0.0f));
+    MV.rotate(60.0f, vec3(0.0f, 0.0f, 1.0f));
+	shared_ptr<Plane> wall = make_shared<Plane>();
+    wall->setModelMatrix(MV.top());
+	wall->setMaterial(blueMat);
+	target_scene->pushShape(wall);
     MV.pop();
 }
 
@@ -90,8 +108,8 @@ void initializeCSGTestScene(unique_ptr<Scene>& target_scene) {
 
     shared_ptr<Light> lighta = make_shared<Light>(vec3(-2.0f, 2.0f, 2.0f), 0.5f);
     shared_ptr<Light> lightb = make_shared<Light>(vec3(2.0f, -2.0f, 4.0f), 0.5f);
-	target_scene->lights.push_back(lighta);
-    target_scene->lights.push_back(lightb);
+	target_scene->pushLight(lighta);
+    target_scene->pushLight(lightb);
 
     MatrixStack MV;
 
@@ -208,12 +226,15 @@ int main(int argc, char** argv) {
     if (filename == "csgtest") {
         outputname = "csgtest.png";
         initializeCSGTestScene(target_scene);
+    } else if (filename == "testscene0") {
+        outputname = "testscene0.png";
+        camera->setInitDistance(5.0f);
+        initializeTestScene0(target_scene);
     } else {
         SceneLoader sl(RESOURCE_DIR+filename);
         sl.setResourceDirectory(RESOURCE_DIR);
         sl.loadSceneFile(camera, target_scene);
     }
-    
     
     camera->applyProjection(P);
     camera->applyView(MV);
