@@ -6,6 +6,8 @@
 #include "stb_image_write.h"
 
 #define STB_IMAGE_IMPLEMENTATION
+#define STBI_NO_FAILURE_STRINGS
+#define STBI_FAILURE_USERMSG
 #include "stb_image.h"
 
 const float COLOR_SCALE = 1.0f / 255.0f;
@@ -16,9 +18,9 @@ void Image::loadFile() {
 	int w, h, ncomps;
     // get_index() flips the v coordinate, keep this false
 	stbi_set_flip_vertically_on_load(false);
-	u_char* raw_data = stbi_load(filename.c_str(), &w, &h, &ncomps, 0);
+	u_char* raw_data = stbi_load(filename.c_str(), &w, &h, &ncomps, 3);
 	if (!raw_data) {
-		std::cerr << filename << " not found\n";
+		std::cerr << filename << " not found;\n" << stbi_failure_reason() << '\n';
 		return;
 	}
 	if (ncomps != 3) {
@@ -27,7 +29,7 @@ void Image::loadFile() {
         return;
 	}
 
-    // // Arbitrary for this raytracer
+    // // Arbitrary for this raytracer, any reasonable non-zero lengths are fine 
 	// if ((w & (w - 1)) != 0 || (h & (h - 1)) != 0) {
 	// 	std::cerr << filename << " must be a power of 2; "
     //               << "only square images with power of 2 lengths are supported.\n"
@@ -65,10 +67,12 @@ size_t Image::get_index(uint x, uint y) const {
     }
     if (x < 0 || x >= width) { 
         std::cerr << "Column " << x << " out of bounds\n"; 
+        throw std::logic_error("");
         return 0;
     }
     if (y < 0 || y >= height) { 
         std::cerr << "Row " << y << " out of bounds\n"; 
+        throw std::logic_error("");
         return 0;
     }
 
@@ -90,6 +94,12 @@ void Image::getPixel(uint x, uint y, u_char& r, u_char& g, u_char& b) const {
 void Image::getPixel(float u, float v, glm::vec3& clr) const {
     u = std::fmod(sgn(u)*u, 1.0f);
     v = std::fmod(sgn(v)*v, 1.0f);
+
+    // u and v should be in [0, 1] before this
+    assert(u >= 0.0f && v >= 0.0f);
+    // projected images are flipped across the y-axis 
+    // and i can't be bothered, just "unflip" 
+    u = 1.0f - u;
 
     u_int i = u_int(u*width);
     u_int j = u_int(v*height);
