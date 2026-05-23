@@ -123,7 +123,7 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
 }
 
 bool hit(
-    vector<shared_ptr<Shape>>& shapes, 
+    const vector<shared_ptr<Shape>>& shapes, 
     const Ray& ray, 
     const Interval& interval,
     Hit& closestHit) 
@@ -134,7 +134,7 @@ bool hit(
     vector<Hit> temp_hits; // maintain a list of hits for csg
     temp_hits.reserve(16); // magic number
 
-    for (shared_ptr<Shape>& shape : shapes) {
+    for (const shared_ptr<Shape>& shape : shapes) {
         shape->intersect(ray, temp_hits);
         if (temp_hits.empty()) continue;
         for (Hit& hit : temp_hits) {
@@ -229,7 +229,7 @@ vec3 Camera::getRayColor(
 {
     Hit rec;
     vec3 clr = vec3(0.0);
-    if (!hit(scene->shapes, ray, interval, rec)) return getSkyColor(ray);
+    if (!hit(scene->getShapes(), ray, interval, rec)) return getSkyColor(ray);
 
     #ifdef SHOW_NORMALS
     clr = rec.n;
@@ -280,7 +280,7 @@ vec3 Camera::getRayColor(
               normalize(vec3(cameraPos) - rec.x);
 
     vec3 bp_clr = rec.ambient();
-    for (auto& light : scene->lights) {
+    for (auto& light : scene->getLights()) {
         // Construct a shadow ray for each light, using
         // world coordinates.
         vec3 ld = light->pos - rec.x;
@@ -292,7 +292,7 @@ vec3 Camera::getRayColor(
         sray.setDir(lv);
 
         Hit srec;
-        bool behindShape = hit(scene->shapes, sray, Interval(interval.min, tl), srec);
+        bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
         bool shapeIsTransparent = srec.m != nullptr &&
                                   srec.m->transparency > Camera::MINIMUM_COEFF;
 

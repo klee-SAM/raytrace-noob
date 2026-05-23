@@ -15,10 +15,6 @@ public:
 // Should include functions for building acceleration structures
 class Scene {
 public:
-    std::vector<std::shared_ptr<Shape>> shapes;
-    std::vector<std::shared_ptr<Light>> lights;
-    std::unordered_map<std::string, std::shared_ptr<Material>> materials;
-
     inline const std::vector<std::shared_ptr<Shape>>& getShapes() { return shapes; }
 
     inline const std::vector<std::shared_ptr<Light>>& getLights() { return lights; }
@@ -46,4 +42,9 @@ public:
         auto placed = materials.try_emplace(name, std::make_shared<Material>());
         return placed.first->second; // return the material from the key-value pair
     }
+    
+private:
+    std::vector<std::shared_ptr<Shape>> shapes;
+    std::vector<std::shared_ptr<Light>> lights;
+    std::unordered_map<std::string, std::shared_ptr<Material>> materials;
 };
