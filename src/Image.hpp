@@ -9,8 +9,8 @@ public:
     Image(const std::string& file) : filename(file) { loadFile(); }
     ~Image() { data.clear(); }
 
-    void loadFile();
-    void loadFile(const std::string& file) { filename = file; loadFile(); } 
+    bool loadFile(bool suppressNotFoundError = false);
+    bool loadFile(const std::string& file) { filename = file; return loadFile(); } 
 
     // Returns true if the data buffer holds at least 1 pixel's worth of information
     bool isLoaded() { return data.size() > comp; }

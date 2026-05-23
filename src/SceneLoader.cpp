@@ -230,6 +230,11 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
                        jsonstreq(key, "refractionIndex");
             };
 
+            // TODO: support for loading files for components
+            // create a function for that inits given material
+            // with eitehr a vec3 or a file. need to try loading 
+            // from specifi to general yes
+
             if (jsonstreq(key, "ambient")) {
                 material->ambient->init(float3FromToken(value));
             } else if (jsonstreq(key, "diffuse")) {
@@ -415,12 +420,12 @@ void SceneLoader::ShapeProperties::applyProperties(shared_ptr<Shape>& shape)
     // safer
     switch(this->type) {
     case SHAPE_TYPE::mesh:
-        // in srcDir?
-        if (ifstream(loader.srcDir+mesh_filename).good()) 
-            shape = make_shared<Mesh>(mesh_filename, loader.srcDir);
         // in modelDir, subfolder of srcDir?
-        else if (ifstream(loader.modelDir+mesh_filename).good()) 
+        if (ifstream(loader.modelDir+mesh_filename).good()) 
             shape = make_shared<Mesh>(mesh_filename, loader.modelDir);
+        // in srcDir?
+        else if (ifstream(loader.srcDir+mesh_filename).good()) 
+            shape = make_shared<Mesh>(mesh_filename, loader.srcDir);
 
         else std::cerr << "applyProperties: " << mesh_filename << " not found in "
                        << loader.sceneDir << " or " << loader.modelDir << '\n';

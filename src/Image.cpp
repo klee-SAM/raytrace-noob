@@ -13,20 +13,22 @@
 const float COLOR_SCALE = 1.0f / 255.0f;
 
 // Filename (aka path) must be set before calling this
-void Image::loadFile() {
+bool Image::loadFile(bool suppressNotFoundError) {
     // Load texture
 	int w, h, ncomps;
     // get_index() flips the v coordinate, keep this false
 	stbi_set_flip_vertically_on_load(false);
 	u_char* raw_data = stbi_load(filename.c_str(), &w, &h, &ncomps, 3);
 	if (!raw_data) {
-		std::cerr << filename << " not found;\n" << stbi_failure_reason() << '\n';
-		return;
+        if (!suppressNotFoundError) {
+            std::cerr << filename << " not found;\n" << stbi_failure_reason() << '\n';
+        }
+		return false;
 	}
 	if (ncomps != 3) {
 		std::cerr << filename << " must have exactly 3 components (RGB).\n"
                   << "Image data not loaded.\n";
-        return;
+        return false;
 	}
 
     // // Arbitrary for this raytracer, any reasonable non-zero lengths are fine 
@@ -58,6 +60,8 @@ void Image::loadFile() {
 
 	// Free image, since the data is copied elsewhere
 	stbi_image_free(raw_data);
+
+    return true;
 }
 
 size_t Image::get_index(uint x, uint y) const {
