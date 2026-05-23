@@ -18,12 +18,15 @@ dirty attempt at hiding linker errors and compiler warnings */
 class SceneLoader {
 public:
     SceneLoader() : location{""} {}
-    SceneLoader(const std::string& loc) : location{loc} {}
 
-    // for scene.json files
-    void setFileLocation(const std::string& loc) { location = loc; }
+    // Initialize with the resource directory containing
+    // .json, .obj, and .png files.
+    SceneLoader(const std::string& loc) : srcDir{loc} {}
 
-    // for .obj files, must be called before loading scene with meshes
+    // for scene.json files. set the name of the scene file to load from.
+    void setSceneFile(const std::string& name) { location = name; }
+
+    // for all files, must be called before loading scene with meshes or image textures
     void setResourceDirectory(const std::string& loc) { srcDir = loc; }
 
     void loadSceneFile(std::unique_ptr<Camera>& cam, std::unique_ptr<Scene>& scene);
@@ -32,6 +35,10 @@ private:
     std::string location;
     std::ifstream file;
     std::string srcDir;
+
+    std::string sceneDir;
+    std::string textureDir;
+    std::string modelDir;
 
     std::string jsonData;
     

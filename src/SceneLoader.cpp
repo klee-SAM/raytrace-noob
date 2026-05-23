@@ -23,10 +23,16 @@ void SceneLoader::loadSceneFile(std::unique_ptr<Camera>& cam, std::unique_ptr<Sc
         return; 
     }
 
+    sceneDir = srcDir+"scenes/";
+    textureDir = srcDir+"textures/";
+    modelDir = srcDir+"models/";
+
     file.open(location);
+    if (!file.is_open()) file.open(sceneDir+location);
 
     if (!file.is_open()) {
-        std::cerr << "Couldn't open file " << location << '\n';
+        std::cerr << "Couldn't open file " << location << '\n'
+                  << "File not found in data directory or model subdirectory.\n";
         return;
     } else {
         // not great, this is a hacky way to access the entire
@@ -409,7 +415,15 @@ void SceneLoader::ShapeProperties::applyProperties(shared_ptr<Shape>& shape)
     // safer
     switch(this->type) {
     case SHAPE_TYPE::mesh:
-        shape = make_shared<Mesh>(mesh_filename, loader.srcDir);
+        // in srcDir?
+        if (ifstream(loader.srcDir+mesh_filename).good()) 
+            shape = make_shared<Mesh>(mesh_filename, loader.srcDir);
+        // in modelDir, subfolder of srcDir?
+        else if (ifstream(loader.modelDir+mesh_filename).good()) 
+            shape = make_shared<Mesh>(mesh_filename, loader.modelDir);
+
+        else std::cerr << "applyProperties: " << mesh_filename << " not found in "
+                       << loader.sceneDir << " or " << loader.modelDir << '\n';
         break;
     case SHAPE_TYPE::csg:
         if (left == nullptr || right == nullptr) {

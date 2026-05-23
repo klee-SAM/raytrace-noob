@@ -3,14 +3,16 @@
         "distance" : 5.0,
         "antialias" : 1,
         "fov" : 45.0,
-        "rotation" : [0, 0, 0]
+        "rotation" : [0, 0, 0],
+        "sky" : "void"
     },
     "materials" : {
         "red" : {
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [0.75, 0.25, 1.0],
             "specular" : [1.0, 1.0, 0.5],
-            "exponent" : 100.0
+            "exponent" : 100.0,
+            "reflCoeff" : 0.25
         },
         "green" : {
             "ambient" : [0.1, 0.1, 0.1],

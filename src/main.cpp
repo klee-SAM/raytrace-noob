@@ -30,8 +30,10 @@ void initializeTestScene0(unique_ptr<Scene>& target_scene) {
     );
 
     // Hardcoded. Beware!
-    shared_ptr<Texture> example = make_shared<ImageTexture>(RESOURCE_DIR+"exampleTexture.png");
-    shared_ptr<Texture> earth = make_shared<ImageTexture>(RESOURCE_DIR+"earthmap.png");
+    shared_ptr<Texture> example = 
+        make_shared<ImageTexture>(RESOURCE_DIR+"textures/exampleTexture.png");
+    shared_ptr<Texture> earth = 
+        make_shared<ImageTexture>(RESOURCE_DIR+"textures/earthmap.png");
 
     shared_ptr<Material> blueMat = make_shared<Material>(
         vec3(0.1f, 0.1f, 0.1f),
@@ -234,6 +236,7 @@ int main(int argc, char** argv) {
         initializeTestScene0(target_scene);
     } else {
         SceneLoader sl(RESOURCE_DIR+filename);
+        sl.setSceneFile(filename);
         sl.setResourceDirectory(RESOURCE_DIR);
         sl.loadSceneFile(camera, target_scene);
     }
