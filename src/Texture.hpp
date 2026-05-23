@@ -3,13 +3,10 @@
 
 #include "Image.hpp"
 
-// Interface-ish
+// what is this
 class Texture {
 public:
     Texture() : color(0.0f), img(blankImage) {};
-    Texture(const std::string &str) : Texture() { init(str); }
-    Texture(const std::shared_ptr<Image> &img) : Texture() { init(img); } 
-    Texture(const glm::vec3& clr) : Texture() { init(clr); }
 
     virtual ~Texture() = default;
 
@@ -35,34 +32,57 @@ protected:
 class ColorTexture : public Texture {
 public:
     ColorTexture() {};
+    ColorTexture(const glm::vec3& clr) { init(clr); }
     virtual ~ColorTexture() = default;
 
     glm::vec3 value(float, float, const glm::vec3&) const override { return color; }
 };
 
-class SpatialTexture : public Texture {
+class GradientTexture : public Texture {
 public:
-    SpatialTexture() {};
-    virtual ~SpatialTexture() = default;
+    GradientTexture() {};
+    virtual ~GradientTexture() = default;
 
-    glm::vec3 value(float u, float v, const glm::vec3& p) const override {
-        // TODO: Checkers?
-        return glm::vec3(0.0f);
-    }
+    // perhaps a function to generate gradient here
+
+    glm::vec3 value(float u, float v, const glm::vec3& p) const override;
 };
 
 class ImageTexture : public Texture {
 public: 
     ImageTexture() {};
+    ImageTexture(const std::string &str) { init(str); }
+    ImageTexture(const std::shared_ptr<Image> &img) { init(img); } 
     virtual ~ImageTexture() = default;
 
-    glm::vec3 value(float u, float v, const glm::vec3&) const override {
-        #ifndef NDEBUG
-        if (!img->isLoaded()) return glm::vec3(1.0f, 0.0f, 1.0f);
-        #endif 
-        // Just realized that img->getPixel does most of the work haha
-        glm::vec3 pixelColor;
-        img->getPixel(u, v, pixelColor);
-        return pixelColor;
-    }
+    glm::vec3 value(float u, float v, const glm::vec3&) const override;
+};
+
+
+// Spatial Texture
+class CheckerTexture : public Texture {
+public:
+    static const std::shared_ptr<Texture> white;
+    static const std::shared_ptr<Texture> black;
+
+    CheckerTexture() : even(white), odd(black) {};
+
+    CheckerTexture(const glm::vec3& e, const glm::vec3& o) 
+                   : even(std::make_shared<ColorTexture>(e)),
+                     odd(std::make_shared<ColorTexture>(o)) {}
+
+    CheckerTexture(const std::shared_ptr<Texture>& e, 
+                   const std::shared_ptr<Texture>& o) 
+                   : even(e), odd(o) {};
+
+    virtual ~CheckerTexture() = default;
+
+    void setEven(const std::shared_ptr<Texture>& e) { even = e; }
+    void setOdd(const std::shared_ptr<Texture>& o) { odd = o; }
+
+    glm::vec3 value(float u, float v, const glm::vec3& p) const override;
+
+private:
+    std::shared_ptr<Texture> even;
+    std::shared_ptr<Texture> odd;
 };
