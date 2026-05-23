@@ -26,12 +26,14 @@ void Image::loadFile() {
                   << "Image data not loaded.\n";
         return;
 	}
-	if ((w & (w - 1)) != 0 || (h & (h - 1)) != 0) {
-		std::cerr << filename << " must be a power of 2; "
-                  << "only square images with power of 2 lengths are supported.\n"
-                  << "Image data not loaded.\n";
-        return;
-	}
+
+    // // Arbitrary for this raytracer
+	// if ((w & (w - 1)) != 0 || (h & (h - 1)) != 0) {
+	// 	std::cerr << filename << " must be a power of 2; "
+    //               << "only square images with power of 2 lengths are supported.\n"
+    //               << "Image data not loaded.\n";
+    //     return;
+	// }
 
 	this->width = w;
 	this->height = h;
