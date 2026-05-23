@@ -9,7 +9,7 @@ public:
 	Shape() {}
 	virtual ~Shape() = default;
 
-	// Called when the shape needs to compute 
+	// Called when the shape needs to precompute matrices or other members 
 	virtual void initialize() {}
 
 	void setModelMatrix(const glm::mat4& m);
