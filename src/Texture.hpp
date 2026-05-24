@@ -10,13 +10,8 @@ public:
 
     virtual ~Texture() = default;
 
-    // Load an image file and assigns it to this texture
-    void init(const std::string &str) { img = std::make_shared<Image>(str); };
-
-    // Assigns an image to this texture
-    void init(const std::shared_ptr<Image> &img) { this->img = img; };
-
-    // Initialize with a flat color
+    // Initialize with a flat color.
+    // Provided b/c materials are constructed with ColorTextures by default
     void init(const glm::vec3 &clr) { this->color = clr; };
 
     virtual glm::vec3 value(float u, float v, const glm::vec3& p) const = 0;
@@ -24,8 +19,12 @@ public:
 protected:
     // ????
     Texture(const glm::vec3& clr) : color(clr), img(blankImage) { }
-    Texture(const std::string &str) : color(0.0f) { init(str); }
-    Texture(const std::shared_ptr<Image> &img) : color(0.0f) { init(img); } 
+
+    // Load an image file and assigns it to this texture
+    Texture(const std::string &str) : color(0.0f) { img = std::make_shared<Image>(str); }
+
+    // Assigns an image to this texture
+    Texture(const std::shared_ptr<Image> &img) : color(0.0f) { this->img = img; } 
 
     glm::vec3 color; // for flat colors or procedural textures
 
