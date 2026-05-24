@@ -8,26 +8,28 @@ Adding more features as a learning exercise
 #### shapes/objects
 - [x] Infinite cylinders
 - [x] Boxes
-- [x] CSG
 - [ ] Object/Regional Light Attentuation
+    - "fog!"
+- [ ] SDF and sphere tracing
+- [x] CSG
 
 #### light interactions
 - [X] Partial BP/Reflect
 - [X] Texture mapping
 - [X] Refraction
 - [ ] Surface roughness
-- [ ] Ambient occulusion
+    - "multiple reflection rays!"
 - [ ] Area lights
+    - "multiple points!"
+- [ ] Ambient occulusion
 
-#### other effects
+#### camera effects
 - [x] Antialiasing
 - [ ] Motion blur
-- [ ] SDF and sphere tracing
 
 #### optimizations
 - [X] Multithreading
-- [ ] BVH for meshes
-- [ ] BVH for scene
+- [ ] BVH for scenes and meshes
 - [ ] GPU acceleration
 
 #### special
