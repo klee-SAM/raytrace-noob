@@ -244,7 +244,7 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
             } else if (jsonstreq(key, "transparency")) {
                 material->transparency = doubleFromToken(value);
             } else if (!tryLoadMaterialComps(material, key, value)) {
-                std::cerr << "invalid property : " << key << '\n';
+                std::cerr << "invalid property : " << print_token(key) << '\n';
             };
             
             prop_ind += 1 + offsetToNextKey(value); 
