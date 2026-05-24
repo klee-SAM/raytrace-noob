@@ -461,6 +461,8 @@ bool SceneLoader::tryLoadMaterialComps(
         return false;
     }
     else if (isFilename) textureFilePath = textureDir+stringFromToken(value);
+    // TODO: should actually check if the filepath is valid,
+    // and maybe check the srcDir if texture exists in base-level only
 
     if (jsonstreq(key, "ambient")) 
     {

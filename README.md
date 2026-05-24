@@ -35,6 +35,7 @@ Adding more features as a learning exercise
 
 ### misc.
 - [ ] scene format documentation (json)
+- [ ] description format for textures/patterns 
 - [ ] partial .mtl support (tiny_obj_loader)
 
 
