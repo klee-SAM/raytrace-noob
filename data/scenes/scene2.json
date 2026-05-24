@@ -2,9 +2,9 @@
     "camera" : {
         "distance" : 3.0,
         "antialias" : 1,
-        "fov" : 60.0,
+        "fov" : 75.0,
         "sky" : "haze",
-        "rotation" : [90.0, -15.0, 7.5]
+        "rotation" : [90.0, -15.0, 3.75]
     },
     "materials" : {
         "red" : {
@@ -15,8 +15,8 @@
         },
         "green" : {
             "ambient" : [0.1, 0.1, 0.1],
-            "diffuse" : [0.0, 1.0, 0.0],
-            "specular" : [1.0, 0.5, 1.0],
+            "diffuse" : "earthmap.png",
+            "specular" : "specular_clouds.jpg",
             "exponent" : 150.0
         },
         "blue" : {
@@ -43,6 +43,7 @@
             "shape" : "sphere",
             "position" : [0.5, -1.0, -1.0],
             "scale" :    [1.0, 1.0, 1.0],
+            "rotation" : [0, 90, 0],
             "material" : "green"
         },
         {

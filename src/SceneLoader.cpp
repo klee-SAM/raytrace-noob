@@ -185,7 +185,7 @@ int SceneLoader::parseLights(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& s
                         value->type == JSMN_PRIMITIVE) {
                 light->intensity = doubleFromToken(value);
             } else {
-                std::cerr << "invalid property when parsing lights\n";
+                std::cerr << "invalid property when parsing lights: " << key << '\n';
             }
             // Add another 1 to account for the key
             k += 1 + offsetToNextKey(value);
@@ -235,13 +235,7 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
             // with eitehr a vec3 or a file. need to try loading 
             // from specifi to general yes
 
-            if (jsonstreq(key, "ambient")) {
-                material->ambient->init(float3FromToken(value));
-            } else if (jsonstreq(key, "diffuse")) {
-                material->diffuse->init(float3FromToken(value));
-            } else if (jsonstreq(key, "specular")) {
-                material->specular->init(float3FromToken(value));
-            } else if (jsonstreq(key, "exponent")) {
+            if (jsonstreq(key, "exponent")) {
                 material->exponent = doubleFromToken(value);
             } else if (isReflectProp()) {
                 material->reflCoeff = doubleFromToken(value);
@@ -249,7 +243,9 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
                 material->refrIndex = doubleFromToken(value);
             } else if (jsonstreq(key, "transparency")) {
                 material->transparency = doubleFromToken(value);
-            }
+            } else if (!tryLoadMaterialComps(material, key, value)) {
+                std::cerr << "invalid property : " << key << '\n';
+            };
             
             prop_ind += 1 + offsetToNextKey(value); 
         }
@@ -447,6 +443,43 @@ void SceneLoader::ShapeProperties::applyProperties(shared_ptr<Shape>& shape)
     shape->setModelMatrix(modelMat.getMatrix());
     shape->setMaterial(smat);
 };
+
+bool SceneLoader::tryLoadMaterialComps(
+    shared_ptr<Material>& material, 
+    const jsmntok_t *key, 
+    const jsmntok_t *value) 
+{
+    bool isFilename = value->type == JSMN_STRING;
+    bool isFloat3 = value->type == JSMN_ARRAY && 
+                    charIsNumeric((value+1)->start);
+    
+    string textureFilePath;
+
+    if (!isFilename && !isFloat3) {
+        std::cerr << "invalid value type; must be a string or numeric array: "
+                  << print_token(value) << '\n';
+        return false;
+    }
+    else if (isFilename) textureFilePath = textureDir+stringFromToken(value);
+
+    if (jsonstreq(key, "ambient")) 
+    {
+        if (isFloat3) material->ambient->init(float3FromToken(value));
+        else if (isFilename) material->ambient = make_shared<ImageTexture>(textureFilePath);
+    } 
+    else if (jsonstreq(key, "diffuse")) 
+    {
+        if (isFloat3) material->diffuse->init(float3FromToken(value));
+        else if (isFilename) material->diffuse = make_shared<ImageTexture>(textureFilePath);
+    } 
+    else if (jsonstreq(key, "specular")) 
+    {
+        if (isFloat3) material->specular->init(float3FromToken(value));
+        else if (isFilename) material->specular = make_shared<ImageTexture>(textureFilePath);
+    }
+
+    return true;
+}
 
 // Token conversion
 
