@@ -242,7 +242,7 @@ vec3 Camera::getRayColor(
     vec3 reflectClr = vec3(0.0f);
     vec3 refractClr = vec3(0.0f);
 
-    float reflectance = 0.0f;
+    float reflectance = 1.0f; // If the material is not refractive, keep any reflections
     bool reflective = rec.m->reflCoeff > Camera::MINIMUM_COEFF;
     bool refractive = rec.m->transparency > Camera::MINIMUM_COEFF;
 
@@ -314,13 +314,10 @@ vec3 Camera::getRayColor(
         bp_clr += s_transparency * Li * (diff_cont + spec_cont);
     }
 
-    clr += (1.0f - rec.m->reflCoeff)*bp_clr;
+    // not really ideal
+    clr += (1.0f - rec.m->reflCoeff)*(1.0f - rec.m->transparency)*bp_clr;
 
-    if (reflective && refractive) {
-        clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
-    } else {
-        clr += reflectClr + refractClr;
-    }
+    clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
     
     return clr;
 }

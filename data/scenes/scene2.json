@@ -1,17 +1,19 @@
 {
     "camera" : {
-        "distance" : 3.0,
+        "distance" : 4.0,
         "antialias" : 1,
         "fov" : 75.0,
         "sky" : "haze",
-        "rotation" : [90.0, -15.0, 3.75]
+        "rotation" : [45.0, -3.75, 3.75]
     },
     "materials" : {
         "red" : {
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [1.0, 0.0, 0.0],
             "specular" : [1.0, 0.5, 1.0],
-            "exponent" : 150.0
+            "exponent" : 150.0,
+            "refractionIndex" : 1.125,
+            "transparency" : 0.5
         },
         "green" : {
             "ambient" : [0.1, 0.1, 0.1],
