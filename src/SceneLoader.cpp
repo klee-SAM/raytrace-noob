@@ -230,11 +230,6 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
                        jsonstreq(key, "refractionIndex");
             };
 
-            // TODO: support for loading files for components
-            // create a function for that inits given material
-            // with eitehr a vec3 or a file. need to try loading 
-            // from specifi to general yes
-
             if (jsonstreq(key, "exponent")) {
                 material->exponent = doubleFromToken(value);
             } else if (isReflectProp()) {
