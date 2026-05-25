@@ -1,5 +1,5 @@
 # raytrace-noob
-Adding more features as a learning exercise
+Adding more features on a simple raytracer as a learning exercise
 
 ## todo:
 
@@ -8,6 +8,7 @@ Adding more features as a learning exercise
 #### shapes/objects
 - [x] Infinite cylinders
 - [x] Boxes
+- [ ] Tori
 - [ ] Object/Regional Light Attentuation
     - "fog!"
 - [ ] SDF and sphere tracing
@@ -17,7 +18,7 @@ Adding more features as a learning exercise
 - [X] Partial BP/Reflect
 - [X] Texture mapping
 - [X] Refraction
-- [ ] Surface roughness
+- [ ] Reflection roughness
     - "multiple reflection rays!"
 - [ ] Area lights
     - "multiple points!"
