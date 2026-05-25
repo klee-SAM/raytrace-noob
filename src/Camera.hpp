@@ -78,7 +78,8 @@ public:
     void setWorldRotation(const glm::vec3& wld_rot) { world_rotation = wld_rot; }
 
     // Setting samples below 2 disables antialiasing.
-    void setAntialiasSamples(uint count) { samples = count > 1 ? count : 1; }
+    void setAntialiasSamples(uint count) { AAsamples = count > 1 ? count : 1; }
+    void setAmbientOcclusionSamples(uint count) { occlusionSamples = count > 0 ? count : 0; }
 
     enum class SkyType {Void, Haze};
     void setSky(SkyType s) { sky = s; }
@@ -102,7 +103,8 @@ private:
     double zfar = 1000.0f;
     uint width, height;
 
-    uint samples = 1;
+    uint AAsamples = 1;
+    uint occlusionSamples = 0;
     SkyType sky = SkyType::Void;
 
     // variables computed in render()
@@ -111,12 +113,15 @@ private:
     glm::mat4 invP;      // inverse of projection mat
     float sample_scale;
 
-    glm::vec3 getRayColor(
-        const std::unique_ptr<Scene>& scene, const Ray& ray, 
+    glm::vec3 getRayColor(const std::unique_ptr<Scene>& scene, const Ray& ray, 
         const Interval& interval = Interval(EPSILION, MAX_DIST), 
         uint recursiveDepth = 0);
     
     glm::vec3 getSkyColor(const Ray& ray);
     
     Ray castPrimaryRay(uint idx, uint idy, double offsetx = 0.5, double offsety = 0.5);
+
+    float occlusionFactor(const Hit &rec, 
+        const std::unique_ptr<Scene> &scene,
+        const Interval &interval);
 };

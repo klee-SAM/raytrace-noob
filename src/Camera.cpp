@@ -39,11 +39,11 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
     for (uint x = 0; x < width; ++x) {
         vec3 color = vec3(0.0f);
 
-        if (samples <= 1) {
+        if (AAsamples <= 1) {
             Ray cray = castPrimaryRay(x, y);
             color = getRayColor(scene, cray);
         } else {
-            for (uint i = 0; i < samples; ++i) {
+            for (uint i = 0; i < AAsamples; ++i) {
                 double dx = linearRand(0.001f, 0.999f);
                 double dy = linearRand(0.001f, 0.999f);
                 Ray cray = castPrimaryRay(x, y, dx, dy);
@@ -74,7 +74,7 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     cameraPos = C[3]; 
     cameraPos.w = 1.0f;
 
-    sample_scale = 1.0/samples;
+    sample_scale = 1.0/AAsamples;
 
     uint totalCasts = height*width;
 
@@ -122,11 +122,10 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     return image;
 }
 
-bool hit(
-    const vector<shared_ptr<Shape>>& shapes, 
-    const Ray& ray, 
-    const Interval& interval,
-    Hit& closestHit) 
+bool hit(const vector<shared_ptr<Shape>>& shapes, 
+         const Ray& ray, 
+         const Interval& interval,
+         Hit& closestHit) 
 {
     float minDist = interval.max;
     bool intersected_any = false;
@@ -147,6 +146,28 @@ bool hit(
             }
         }
         temp_hits.clear();
+    }
+    return intersected_any;
+}
+
+// Like the above, except this is used
+// for cases where the hit information is unused
+bool hit(const vector<shared_ptr<Shape>>& shapes, 
+         const Ray& ray, 
+         const Interval& interval) 
+{
+    bool intersected_any = false;
+    vector<Hit> temp_hits;
+    temp_hits.reserve(16); // magic number
+
+    for (const shared_ptr<Shape>& shape : shapes) {
+        shape->intersect(ray, temp_hits);
+        if (temp_hits.empty()) continue;
+        for (Hit& hit : temp_hits) {
+            if (!interval.contains(hit.t)) continue;
+            intersected_any = true;
+            break;
+        }
     }
     return intersected_any;
 }
@@ -304,9 +325,6 @@ vec3 Camera::getRayColor(
             s_transparency = srec.m->transparency;
         }
 
-        
-
-
         float Li = light->intensity;
         vec3 kd = rec.diffuse(), 
              ks = rec.specular();
@@ -323,85 +341,63 @@ vec3 Camera::getRayColor(
 
     clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
 
-    float num_occluded = 0.0f;
-    int numSamples = 512;
-    if (recursiveDepth == 0) {
-        // gimpy
-        for (int i = 0; i < numSamples; ++i) {
-            float u1 = glm::linearRand(0.0f, 0.999999f);
-            float u2 = glm::linearRand(0.0f, 0.999999f);
-            vec3 rDir = cosineSampleHemisphere(u1, u2);
-            vec3 T, B;
-            assignONBvec3s(rec.n, T, B);
-            rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);
-
-            Ray aoray;
-            aoray.setPos(rec.x + (float)interval.min*rec.n);
-            aoray.setDir(normalize(rDir));
-
-            Hit aorec;
-            bool occluded = hit(scene->getShapes(), aoray, interval, aorec);
-            if (occluded) ++num_occluded;
-        }
-    }
-    float occlusionFactor = 1.0f - (num_occluded / (float)numSamples);
-    
-    clr *= occlusionFactor;
+    if (occlusionSamples > 0)
+        clr *= occlusionFactor(rec, scene, interval);
 
     return clr;
 }
 
 
 // orthonormal basis (TBN matrix)
-// thank you Duff et al
 void assignONBvec3s(const vec3& n, vec3& b1, vec3& b2) 
-{
+{   // thank you Duff et al
     const float sign = copysignf(1.0f, n.z); // sign should be 1 even when n.z == 0
     const float a = -1.0f / (sign + n.z);
     const float b = n.x * n.y * a;
     b1 = vec3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x);
     b2 = vec3(b, sign + n.y * n.y * a, -n.y);
 }
-// transform to world space
-// newDir = x * T + y * B + z * N
-// normalize(newDir)
 
+// This implements importance sampling.
 // u1 and u2 are random uniform variables
-// thank you rory
 vec3 cosineSampleHemisphere(float u1, float u2) 
-{
+{   // thank you rory
     const float r = sqrt(u1);
     const float theta = 2 * PI * u2;
-
     const float x = r*cos(theta);
     const float y = r*sin(theta);
-
-    return vec3(x, y, sqrt(std::max(0.0f, 1.0f - u1)));
+    // Modification: assume u1 can never go above 1.0f
+    return vec3(x, y, sqrt(1.0f - u1));
 }
 
+// Uses monte carlo integration
+float Camera::occlusionFactor(
+    const Hit &rec, 
+    const unique_ptr<Scene> &scene,
+    const Interval &interval) 
+{
+    float num_occluded = 0.0f;
 
-// float computeOcclusionFactor() 
-// {
-//     float num_occluded = 0.0f;
-//     int numSamples = 512;
-//         // gimpy
-//     for (int i = 0; i < numSamples; ++i) {
-//         float u1 = glm::linearRand(0.0f, 0.999999f);
-//         float u2 = glm::linearRand(0.0f, 0.999999f);
-//         vec3 rDir = cosineSampleHemisphere(u1, u2);
-//         vec3 T, B;
-//         assignONBvec3s(rec.n, T, B);
-//         rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);
+    vec3 T, B;
+    assignONBvec3s(rec.n, T, B);
+    vec3 aorayPos = rec.x + (float)interval.min*rec.n;
 
-//         Ray aoray;
-//         aoray.setPos(rec.x + (float)interval.min*rec.n);
-//         aoray.setDir(normalize(rDir));
+    // Reuse the ray object, yes?
+    Ray aoray;
+    aoray.setPos(aorayPos);
 
-//         Hit aorec;
-//         bool occluded = hit(scene->getShapes(), aoray, interval, aorec);
-//         if (occluded) ++num_occluded;
-//     }
-//     float occlusionFactor = 1.0f - (num_occluded / (float)numSamples);
+    for (uint i = 0; i < occlusionSamples; ++i) {
+        float u1 = glm::linearRand(0.0f, 0.999999f);
+        float u2 = glm::linearRand(0.0f, 0.999999f);
+        vec3 rDir = cosineSampleHemisphere(u1, u2);
+        
+        rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);        
+        aoray.setDir(normalize(rDir));
+
+        bool occluded = hit(scene->getShapes(), aoray, interval);
+        if (occluded) ++num_occluded;
+    }
+    float occlusionCoeff = 1.0f - (num_occluded / (float)occlusionSamples);
     
-//     clr *= occlusionFactor;
-// }
+    return occlusionCoeff;
+}
