@@ -114,9 +114,13 @@ private:
     float sample_scale;
 
     glm::vec3 getRayColor(const std::unique_ptr<Scene>& scene, const Ray& ray, 
-        const Interval& interval = Interval(EPSILION, MAX_DIST), 
-        uint recursiveDepth = 0);
+                          const Interval& interval = Interval(EPSILION, MAX_DIST), 
+                          uint recursiveDepth = 0);
     
+    glm::vec3 getReflectionColor(const std::unique_ptr<Scene> &scene,
+                                 const Ray &ray, const Hit &rec, 
+                                 const Interval &interval, uint recursions);
+
     glm::vec3 getSkyColor(const Ray& ray);
     
     Ray castPrimaryRay(uint idx, uint idy, double offsetx = 0.5, double offsety = 0.5);

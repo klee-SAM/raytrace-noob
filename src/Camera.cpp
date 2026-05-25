@@ -249,11 +249,27 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
     return refrRay;
 }
 
-vec3 Camera::getRayColor(
-    const unique_ptr<Scene>& scene, 
-    const Ray& ray, 
-    const Interval& interval, 
-    uint recursiveDepth) 
+// increments recursion counter for subsequent calls to getRayColor()
+vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
+                                const Ray &ray, const Hit &hit,
+                                const Interval &interval, 
+                                uint recursions) 
+{
+    vec3 reflClr = getRayColor(scene, reflectRay(ray, hit), interval, recursions+1);
+    for (uint r = 1; r < hit.m->reflRoughness; ++r) {
+        Ray nearRay; nearRay.pos = ray.pos;
+        nearRay.setDir(normalize(ray.getDir() + glm::sphericalRand(0.01f)));
+        reflClr += getRayColor(scene, reflectRay(nearRay, hit), interval, recursions+1);
+    }
+    // reflRoughness must be at least 1.
+    reflClr /= hit.m->reflRoughness;
+    return reflClr;
+}
+
+vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, 
+                         const Ray& ray, 
+                         const Interval& interval, 
+                         uint recursiveDepth) 
 {
     Hit rec;
     vec3 clr = vec3(0.0);
@@ -284,7 +300,7 @@ vec3 Camera::getRayColor(
     // avoids massively expensive and unnecessary computation (3x increase)
     if (reflective && !back_face) { 
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
-        reflectClr = getRayColor(scene, reflectRay(ray, rec), interval, recursiveDepth+1);
+        reflectClr = getReflectionColor(scene, ray, rec, interval, recursiveDepth+1);
         reflectClr *= rec.m->reflCoeff;
     }   
 
@@ -377,10 +393,9 @@ vec3 cosineSampleHemisphere(float u1, float u2)
 }
 
 // Uses monte carlo integration
-float Camera::occlusionFactor(
-    const Hit &rec, 
-    const unique_ptr<Scene> &scene,
-    const Interval &interval) 
+float Camera::occlusionFactor(const Hit &rec, 
+                              const unique_ptr<Scene> &scene,
+                              const Interval &interval) 
 {
     float num_occluded = 0.0f;
 
@@ -396,7 +411,7 @@ float Camera::occlusionFactor(
         float u1 = glm::linearRand(0.0f, 0.999999f);
         float u2 = glm::linearRand(0.0f, 0.999999f);
         vec3 rDir = cosineSampleHemisphere(u1, u2);
-        
+        // Transform the sampled vector from tangent to world space
         rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);        
         aoray.setDir(normalize(rDir));
 
