@@ -103,8 +103,8 @@ private:
     double zfar = 1000.0f;
     uint width, height;
 
-    uint AAsamples = 1;
-    uint occlusionSamples = 0;
+    uint AAsamples = 1;         // must be at least 1
+    uint occlusionSamples = 0;  // actual count is divided by AA samples
     SkyType sky = SkyType::Void;
 
     // variables computed in render()

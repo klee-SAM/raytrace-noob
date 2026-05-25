@@ -74,7 +74,13 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     cameraPos = C[3]; 
     cameraPos.w = 1.0f;
 
+    assert(AAsamples > 0);
     sample_scale = 1.0/AAsamples;
+
+    // Divide by the AAsamples, because having occlusionSamples * AAsamples rays
+    // per pixel is too much for a simple toy raytracer
+    uint actualOcclusionSamples = std::min(1U, (occlusionSamples / AAsamples));
+    occlusionSamples = occlusionSamples > 0 ? actualOcclusionSamples : 0;
 
     uint totalCasts = height*width;
 
