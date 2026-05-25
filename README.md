@@ -22,6 +22,7 @@ Adding more features as a learning exercise
 - [ ] Area lights
     - "multiple points!"
 - [ ] Ambient occulusion
+    - "monte carlo random hemisphere ray sampling!"
 
 #### camera effects
 - [x] Antialiasing
