@@ -13,7 +13,8 @@ public:
     float refrIndex;    // RI of material going from inside the material to a vacuum
     float transparency; // 1.0 is full refraction; 0.0 is no refraction
 
-    uint reflRoughness; // 1 ray is smooth reflection, 2+ for rougher reflection 
+    uint reflSamples; // 1 ray is smooth reflection, 2+ for sampling rough reflections 
+    float fuzz;       // reflection roughness; 0.0 indicates no roughness
 
     std::shared_ptr<Texture> texture;
     // float textureOpacity; // may or may not be implemented
@@ -25,7 +26,8 @@ public:
                  reflCoeff{0.0f}, 
                  refrIndex{1.0f}, 
                  transparency{0.0f},
-                 reflRoughness{1U}
+                 reflSamples{1U},
+                 fuzz{0.05f}
                  {};
                  
     Material(glm::vec3 amb, glm::vec3 dif, glm::vec3 spe, float exp)

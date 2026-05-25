@@ -47,7 +47,7 @@
         {
             "shape" : "cylinder",
             "position" : [-1, 0.0, 1.5],
-            "scale" : [0.125,1,0.125],
+            "scale" : [0.25,1,0.25],
             "material" : "yellow"
         },
         {
@@ -100,7 +100,9 @@
             "diffuse" : [0.0, 1.0, 1.0],
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0,
-            "reflCoeff" : 0.5
+            "reflCoeff" : 0.5,
+            "reflectionSamples" : 8,
+            "fuzz" : 0.1
         },
         "yellow" : {
             "ambient" : [0.1, 0.1, 0.1],

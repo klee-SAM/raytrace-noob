@@ -249,20 +249,21 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
     return refrRay;
 }
 
-// increments recursion counter for subsequent calls to getRayColor()
+// this does not increment `recursions` when it recursively calls
+// check to make sure that the recursion count is incremented when calling this
 vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
                                 const Ray &ray, const Hit &hit,
                                 const Interval &interval, 
                                 uint recursions) 
 {
-    vec3 reflClr = getRayColor(scene, reflectRay(ray, hit), interval, recursions+1);
-    for (uint r = 1; r < hit.m->reflRoughness; ++r) {
+    vec3 reflClr = getRayColor(scene, reflectRay(ray, hit), interval, recursions);
+    for (uint r = 1; r < hit.m->reflSamples; ++r) {
         Ray nearRay; nearRay.pos = ray.pos;
-        nearRay.setDir(normalize(ray.getDir() + glm::sphericalRand(0.01f)));
-        reflClr += getRayColor(scene, reflectRay(nearRay, hit), interval, recursions+1);
+        nearRay.setDir(normalize(ray.getDir() + glm::sphericalRand(hit.m->fuzz)));
+        reflClr += getRayColor(scene, reflectRay(nearRay, hit), interval, recursions);
     }
-    // reflRoughness must be at least 1.
-    reflClr /= hit.m->reflRoughness;
+    // reflSamples must be at least 1.
+    reflClr /= hit.m->reflSamples;
     return reflClr;
 }
 
