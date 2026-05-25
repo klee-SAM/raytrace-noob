@@ -21,8 +21,7 @@ Adding more features as a learning exercise
     - "multiple reflection rays!"
 - [ ] Area lights
     - "multiple points!"
-- [ ] Ambient occulusion
-    - "monte carlo random hemisphere ray sampling!"
+- [X] Ambient occulusion
 
 #### camera effects
 - [x] Antialiasing
@@ -39,6 +38,7 @@ Adding more features as a learning exercise
 ### misc.
 - [ ] scene format documentation (json)
 - [ ] description format for textures/patterns 
+- [ ] ambient occlusion settings
 - [ ] partial .mtl support (tiny_obj_loader)
 
 
@@ -65,9 +65,20 @@ Other platforms may have slightly different build instructions.
 
 - Raytracing in One Weekend series (https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 - The Ray Tracer Challenge: (https://pragprog.com/titles/jbtracer/the-ray-tracer-challenge/)
-- cpp_multithreading: (https://github.com/wasimusu/cpp_multithreading)
+- Physically Based Rendering: (https://pbr-book.org/4ed/contents)
+- Scratchapixel lessons: (https://www.scratchapixel.com/index.html) 
 
 ## Other links:
+
+### Multithreading
+- cpp_multithreading: (https://github.com/wasimusu/cpp_multithreading)
 - https://stackoverflow.com/questions/15278343/c11-thread-safe-queue
-- https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle
+
+### Reflections/Refractions
 - https://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf
+
+### Ambient Occlusion
+- https://computergraphics.stackexchange.com/questions/7985/
+- https://research.pixar.com/docs/2017.Others.DBCHKLV.pdf
+- https://jcgt.org/published/0006/01/02/paper.pdf
+- https://www.rorydriscoll.com/2009/01/07/better-sampling/
