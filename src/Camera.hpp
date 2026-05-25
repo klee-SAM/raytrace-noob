@@ -43,8 +43,8 @@ public:
 class Camera {
 public:
     // I could make these modifible via json files
-    static constexpr double EPSILION = 5E-3; // having a low epsilion value does not bode well with meshes
-    static constexpr double MAX_DIST = std::numeric_limits<float>::max();
+    static constexpr float EPSILION = 5E-3f; // having a low epsilion value does not bode well with meshes
+    static constexpr float MAX_DIST = std::numeric_limits<float>::max();
     static constexpr uint MAX_RECURSIONS = 7;
     static constexpr float MINIMUM_COEFF = 0.005f;
 

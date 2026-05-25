@@ -151,7 +151,8 @@ bool hit(
     return intersected_any;
 }
 
-vec3 Camera::getSkyColor(const Ray& ray) {
+vec3 Camera::getSkyColor(const Ray& ray) 
+{
     float cx, cy, cz;
     switch(this->sky) {
     case (Camera::SkyType::Haze):
@@ -172,7 +173,7 @@ Ray reflectRay(const Ray &ray, const Hit &rec)
     Ray reflRay; 
     // ray.dir - 2.0f * dot(rec.n, ray.dir) * rec.n
     reflRay.setDir(glm::reflect(ray.getDir(), rec.n));
-    reflRay.setPos(rec.x + reflRay.getDir()*(float)Camera::EPSILION);
+    reflRay.setPos(rec.x + reflRay.getDir()*Camera::EPSILION);
     return reflRay;
 }
 
@@ -303,6 +304,9 @@ vec3 Camera::getRayColor(
             s_transparency = srec.m->transparency;
         }
 
+        
+
+
         float Li = light->intensity;
         vec3 kd = rec.diffuse(), 
              ks = rec.specular();
@@ -318,6 +322,86 @@ vec3 Camera::getRayColor(
     clr += (1.0f - rec.m->reflCoeff)*(1.0f - rec.m->transparency)*bp_clr;
 
     clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
+
+    float num_occluded = 0.0f;
+    int numSamples = 512;
+    if (recursiveDepth == 0) {
+        // gimpy
+        for (int i = 0; i < numSamples; ++i) {
+            float u1 = glm::linearRand(0.0f, 0.999999f);
+            float u2 = glm::linearRand(0.0f, 0.999999f);
+            vec3 rDir = cosineSampleHemisphere(u1, u2);
+            vec3 T, B;
+            assignONBvec3s(rec.n, T, B);
+            rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);
+
+            Ray aoray;
+            aoray.setPos(rec.x + (float)interval.min*rec.n);
+            aoray.setDir(normalize(rDir));
+
+            Hit aorec;
+            bool occluded = hit(scene->getShapes(), aoray, interval, aorec);
+            if (occluded) ++num_occluded;
+        }
+    }
+    float occlusionFactor = 1.0f - (num_occluded / (float)numSamples);
     
+    clr *= occlusionFactor;
+
     return clr;
 }
+
+
+// orthonormal basis (TBN matrix)
+// thank you Duff et al
+void assignONBvec3s(const vec3& n, vec3& b1, vec3& b2) 
+{
+    const float sign = copysignf(1.0f, n.z); // sign should be 1 even when n.z == 0
+    const float a = -1.0f / (sign + n.z);
+    const float b = n.x * n.y * a;
+    b1 = vec3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x);
+    b2 = vec3(b, sign + n.y * n.y * a, -n.y);
+}
+// transform to world space
+// newDir = x * T + y * B + z * N
+// normalize(newDir)
+
+// u1 and u2 are random uniform variables
+// thank you rory
+vec3 cosineSampleHemisphere(float u1, float u2) 
+{
+    const float r = sqrt(u1);
+    const float theta = 2 * PI * u2;
+
+    const float x = r*cos(theta);
+    const float y = r*sin(theta);
+
+    return vec3(x, y, sqrt(std::max(0.0f, 1.0f - u1)));
+}
+
+
+// float computeOcclusionFactor() 
+// {
+//     float num_occluded = 0.0f;
+//     int numSamples = 512;
+//         // gimpy
+//     for (int i = 0; i < numSamples; ++i) {
+//         float u1 = glm::linearRand(0.0f, 0.999999f);
+//         float u2 = glm::linearRand(0.0f, 0.999999f);
+//         vec3 rDir = cosineSampleHemisphere(u1, u2);
+//         vec3 T, B;
+//         assignONBvec3s(rec.n, T, B);
+//         rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);
+
+//         Ray aoray;
+//         aoray.setPos(rec.x + (float)interval.min*rec.n);
+//         aoray.setDir(normalize(rDir));
+
+//         Hit aorec;
+//         bool occluded = hit(scene->getShapes(), aoray, interval, aorec);
+//         if (occluded) ++num_occluded;
+//     }
+//     float occlusionFactor = 1.0f - (num_occluded / (float)numSamples);
+    
+//     clr *= occlusionFactor;
+// }
