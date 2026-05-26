@@ -18,8 +18,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [X] Partial BP/Reflect
 - [X] Texture mapping
 - [X] Refraction
-- [ ] Reflection roughness
-    - "multiple reflection rays!"
+- [X] Reflection roughness
 - [ ] Area lights
     - "multiple points!"
 - [X] Ambient occulusion
@@ -40,6 +39,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] scene format documentation (json)
 - [ ] description format for textures/patterns 
 - [ ] ambient occlusion settings
+    - ambient occlusion should be enabled by specifying more settings on the sky (i.e. sky brightness), and it should replace or add onto the material ambient (or more appropriately emissive) term  
 - [ ] partial .mtl support (tiny_obj_loader)
 
 
