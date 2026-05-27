@@ -79,7 +79,7 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
 
     // Divide by the AAsamples, because having occlusionSamples * AAsamples rays
     // per pixel is too much for a simple toy raytracer
-    uint actualOcclusionSamples = std::min(1U, (occlusionSamples / AAsamples));
+    uint actualOcclusionSamples = std::max(1U, (occlusionSamples / AAsamples));
     occlusionSamples = occlusionSamples > 0 ? actualOcclusionSamples : 0;
 
     uint totalCasts = height*width;
@@ -313,7 +313,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
         // the cosI and norm are negated after checks
         if (back_face) rec.n = -rec.n;  
         // If the above line is not nested in this if statement,
-        // Bright specks may appear on meshes w/ backface culling enabled. 
+        // bright specks may appear on meshes w/ backface culling enabled. 
         refractClr = getRayColor(scene, refractRay(ray, rec, reflectance, back_face), 
                               interval, recursiveDepth+1);
         refractClr *= rec.m->transparency;
@@ -325,6 +325,12 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
               normalize(vec3(cameraPos) - rec.x);
 
     vec3 bp_clr = rec.ambient();
+    if (occlusionSamples > 0) {
+        // the maximum is arbitrary, but it should be small 
+        // so that faraway objects are not considered
+        bp_clr *= occlusionFactor(rec, scene, Interval(interval.min, 0.5f));
+    }
+
     for (auto& light : scene->getLights()) {
         // Construct a shadow ray for each light, using
         // world coordinates.
@@ -363,9 +369,6 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
     clr += (1.0f - rec.m->reflCoeff)*(1.0f - rec.m->transparency)*bp_clr;
 
     clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
-
-    if (occlusionSamples > 0)
-        clr *= occlusionFactor(rec, scene, interval);
 
     return clr;
 }
