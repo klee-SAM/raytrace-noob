@@ -39,7 +39,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] scene format documentation (json)
 - [ ] description format for textures/patterns 
 - [ ] ambient occlusion settings
-    - ambient occlusion should be enabled by specifying more settings on the sky (i.e. sky brightness), and it should replace or add onto the material ambient (or more appropriately emissive) term  
+    - ambient occlusion should be enabled by specifying more settings on the sky (i.e. sky brightness), and it should replace or add onto the material ambient term  
 - [ ] partial .mtl support (tiny_obj_loader)
 
 
