@@ -92,7 +92,7 @@ private:
     RowQueue r_queue;
 
     glm::vec3 translation; // Relative translation, which is indirectly used in computing cameraPos
-    glm::vec3 rotation;    // Relative rotation
+    glm::vec3 rotation;    // Relative rotation of the camera to itself.
 
     // Rotate the scene around the origin by angles specified in each axis in radians.
     glm::vec3 world_rotation; 
@@ -105,6 +105,7 @@ private:
 
     uint AAsamples = 1;         // must be at least 1
     uint occlusionSamples = 0;  // actual count is divided by AA samples
+    bool divideAObyAA = true;   // whether to divide # AO samples by # AA samples
     SkyType sky = SkyType::Void;
 
     // variables computed in render()

@@ -80,7 +80,8 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     // Divide by the AAsamples, because having occlusionSamples * AAsamples rays
     // per pixel is too much for a simple toy raytracer
     uint actualOcclusionSamples = std::max(1U, (occlusionSamples / AAsamples));
-    occlusionSamples = occlusionSamples > 0 ? actualOcclusionSamples : 0;
+    bool useReducedOcclSamp = occlusionSamples > 0 && divideAObyAA;
+    occlusionSamples = useReducedOcclSamp ? actualOcclusionSamples : 0;
 
     uint totalCasts = height*width;
 
