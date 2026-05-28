@@ -31,7 +31,7 @@ Adding more features on a simple raytracer as a learning exercise
 #### optimizations
 - [X] Multithreading
 - [ ] BVH for scenes and meshes
-    - use a kd-tree for 
+    - use a kd-tree for meshes
 - [ ] GPU acceleration
 
 #### special
