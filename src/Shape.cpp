@@ -132,47 +132,15 @@ void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
 }
 
 
-struct Pair { double min, max; };	
 
-void swap(float &a, float &b) { float tmp = a; a = b; b = tmp; }
 
-// A better way to check aabb is in 
-// https://tavianator.com/2015/ray_box_nan.html,
-// but i'll wait until i actually have to implement
-// bounding boxes
-Pair checkAxis(float pos, float dir) {
-	float inv_dir = 1.0f / dir;
-	float t0 = (-1 - pos) * inv_dir;
-	float t1 = (1 - pos) * inv_dir;
-	float tmin = glm::min(t0, t1);
-	float tmax = glm::max(t0, t1);
-	
-	// float tmin, tmax;
-	// if (std::abs(dir) < EPSILION) {
-	// 	// Direction is effectively 0,
-	// 	// but do this to preserve signs
-	// 	tmin = tmin_num*INF;
-	// 	tmax = tmax_num*INF;
-	// } else {
-		// tmin = tmin_num*inv_dir;
-		// tmax = tmax_num*inv_dir;
-	// }
-	// if (tmin > tmax) swap(tmin, tmax);
-	Pair p; p.min = tmin; p.max = tmax;
-	return p;
-}
-
-// https://blog.johnnovak.net/2016/10/22/the-nim-ray-tracer-project-part-4-calculating-box-normals/
 vec4 Box::computeNormal(const vec3& p) const {
-	// Assume values range from [-1, 1]; do reciprocal so that values
-	// close to 1 do not get truncated to 0 (total hack)
-	// float r_maxc = 1.0f/std::max(std::max(abs(p.x), abs(p.y)), abs(p.z));
 	// epsilion just high enough to avoid precision problems
-	constexpr float bias = 1.0f + 10*EPSILION; 
+	constexpr float bias = 1.0f + 100*EPSILION; 
 	float cx = static_cast<int>(p.x*bias);
 	float cy = static_cast<int>(p.y*bias);
 	float cz = static_cast<int>(p.z*bias);
-	// only hits at corners are not normal, which is fine
+	// only hits at corners are not normal, which is rare
 	return vec4(cx, cy, cz, 0.0f);
 }
 
@@ -183,10 +151,11 @@ vec2 Box::computeUV(const glm::vec3& p) const {
 	// to get the UV. this is temporary
 	float maxc = std::max(std::max(abs(p.x), abs(p.y)), abs(p.z));
 	float u, v;
-	if (abs(p.x) == maxc) u = decimal(p.y), v = decimal(p.z);
-	if (abs(p.y) == maxc) u = decimal(p.x), v = decimal(p.z);
-	else 				  u = decimal(p.x), v = decimal(p.y);
-	return vec2(u, v);
+	// flip on p.z for un-mirroring 
+	if (abs(p.x) == maxc) 	   u = -p.z, v = p.y;
+	else if (abs(p.y) == maxc) u = p.x, v = p.z;
+	else 				  	   u = p.x, v = p.y;
+	return vec2(0.5f*u-0.5f, 0.5f*v-0.5f);
 };
 
 // Axis-aligned bounding box intersection
@@ -197,33 +166,21 @@ void Box::intersect(const Ray& ray, vector<Hit>& hits) {
 	vec3 vx = vec3(inv_modelMat*ray.dir);
 	vec3 vk = normalize(vx);
 
-	float tmin = 0.0f, tmax = INF;
-	vec3 inv_dir = vec3(1.0f / vk.x, 1.0f / vk.y, 1.0f / vk.z);
-
 	// https://tavianator.com/2022/ray_box_boundary.html
 	// manual loop unrolling haha
 
-	float tx0 = (-1.0f - pk.x) * inv_dir.x;
-	float tx1 = (1.0f - pk.x) * inv_dir.x;
-	tmin = glm::min(glm::max(tx0, tmin), glm::max(tx1, tmin));
-	tmax = glm::max(glm::min(tx0, tmax), glm::min(tx1, tmax));
+	// incrementally update the tmin and tmax values
+	// based on the prev/initial values, accounting for 
+	// NANs and INFs implicitly
 
-	float ty0 = (-1.0f - pk.y) * inv_dir.y;
-	float ty1 = (1.0f - pk.y) * inv_dir.y;
-	tmin = glm::min(glm::max(ty0, tmin), glm::max(ty1, tmin));
-	tmax = glm::max(glm::min(ty0, tmax), glm::min(ty1, tmax));
-	
-	float tz0 = (-1.0f - pk.z) * inv_dir.z;
-	float tz1 = (1.0f - pk.z) * inv_dir.z;
-	tmin = glm::min(glm::max(tz0, tmin), glm::max(tz1, tmin));
-	tmax = glm::max(glm::min(tz0, tmax), glm::min(tz1, tmax));
-
-	// Pair tx = checkAxis(pk.x, vk.x);
-	// Pair ty = checkAxis(pk.y, vk.y);
-	// Pair tz = checkAxis(pk.z, vk.z);
-
-	// float tmin = std::max(std::max(tx.min, ty.min), tz.min);
-	// float tmax = std::min(std::min(tx.max, ty.max), tz.max);
+	float tmin = 0.0f, tmax = INF;
+	vec3 inv_dir = vec3(1.0f / vk.x, 1.0f / vk.y, 1.0f / vk.z);
+	for (int i = 0; i < 3; ++i) {
+		float t0 = (-1.0f - (&pk.x)[i]) * (&inv_dir.x)[i]; // evil syntax
+		float t1 = (1.0f - (&pk.x)[i]) * (&inv_dir.x)[i];
+		tmin = glm::min(glm::max(t0, tmin), glm::max(t1, tmin));
+		tmax = glm::max(glm::min(t0, tmax), glm::min(t1, tmax));
+	}
 
 	if (tmax < tmin) return;
 

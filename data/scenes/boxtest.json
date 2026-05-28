@@ -1,7 +1,7 @@
 {
     "camera" : {
         "distance" : 5.0,
-        "antialias" : 8,
+        "antialias" : 1,
         "fov" : 45.0,
         "rotation" : [150, 22.5, 0]
     },
@@ -13,8 +13,8 @@
             "exponent" : 100.0
         },
         "green" : {
-            "ambient" : [0.1, 0.1, 0.1],
-            "diffuse" : [0.0, 1.0, 0.0],
+            "ambient" : [0.1, 0.2, 0.1],
+            "diffuse" : "exampleTexture.png",
             "specular" : [1.0, 1.0, 1.0],
             "exponent" : 100.0
         },
