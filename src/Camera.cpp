@@ -274,7 +274,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
                          uint recursiveDepth) 
 {
     Hit rec;
-    vec3 clr = vec3(0.0);
+    vec3 clr = vec3(0.0f);
     if (!hit(scene->getShapes(), ray, interval, rec)) return getSkyColor(ray);
 
     #ifdef SHOW_NORMALS
@@ -321,9 +321,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
     }
 
     // The eye vector does not point to the camera when reflecting/refracting
-    vec3 ev = recursiveDepth > 0 ? 
-              normalize(-ray.dir) : 
-              normalize(vec3(cameraPos) - rec.x);
+    vec3 ev = -ray.dir;
 
     vec3 bp_clr = rec.ambient();
     if (occlusionSamples > 0) {
