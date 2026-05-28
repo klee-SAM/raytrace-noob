@@ -12,6 +12,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] Object/Regional Light Attentuation
     - "fog!"
 - [ ] SDF and sphere tracing
+    - create a 
 - [x] CSG
 
 #### light interactions
@@ -30,6 +31,7 @@ Adding more features on a simple raytracer as a learning exercise
 #### optimizations
 - [X] Multithreading
 - [ ] BVH for scenes and meshes
+    - use a kd-tree for 
 - [ ] GPU acceleration
 
 #### special
@@ -39,7 +41,8 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] scene format documentation (json)
 - [ ] description format for textures/patterns 
 - [ ] ambient occlusion settings
-    - ambient occlusion should be enabled by specifying more settings on the sky (i.e. sky brightness), and it should replace or add onto the material ambient term  
+    - ambient occlusion should be enabled by specifying more settings on the sky (i.e. sky brightness)
+    - settings on number of samples per ray (rm auto reducing AO samples, replace with note instead)
 - [ ] partial .mtl support (tiny_obj_loader)
 
 

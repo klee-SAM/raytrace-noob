@@ -1,7 +1,7 @@
 {
     "camera" : {
         "distance" : 5.0,
-        "antialias" : 1,
+        "antialias" : 8,
         "fov" : 45.0,
         "rotation" : [150, 22.5, 0]
     },
@@ -38,9 +38,9 @@
     "shapes" : [
         {
             "shape" : "box",
-            "position" : [1.25, 0.0, 1.0],
+            "position" : [1.25, 1.5, 4],
             "scale" : [0.5, 0.625, 0.75],
-            "rotation" : [0, 22.5, 0],
+            "rotation" : [22.5, 37.5, 0],
             "material" : "blue"
         },
         {
