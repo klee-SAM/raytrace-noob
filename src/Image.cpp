@@ -96,17 +96,20 @@ void Image::getPixel(uint x, uint y, u_char& r, u_char& g, u_char& b) const {
 }
 
 void Image::getPixel(float u, float v, glm::vec3& clr) const {
-    u = std::fmod(sgn(u)*u, 1.0f);
-    v = std::fmod(sgn(v)*v, 1.0f);
+    // u = std::fmod(sgn(u)*u, 1.0f);
+    // v = std::fmod(sgn(u)*u, 1.0f);
+    u = glm::fract(u);
+    v = glm::fract(v);
 
     // u and v should be in [0, 1] before this
     assert(u >= 0.0f && v >= 0.0f);
+    assert(u <= 1.0f && v <= 1.0f);
     // projected images are flipped across the y-axis 
     // and i can't be bothered, just "unflip" 
     u = 1.0f - u;
 
-    u_int i = u_int(u*width);
-    u_int j = u_int(v*height);
+    u_int i = u_int(u*(width-1));
+    u_int j = u_int(v*(height-1));
 
     u_char r, g, b;
     getPixel(i, j, r, g, b);

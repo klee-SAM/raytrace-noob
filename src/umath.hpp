@@ -57,6 +57,8 @@ namespace {
 }
 
 // Returns the number without the integer part (-2.6 -> -0.6)
-constexpr float decimal(float x) { return x - (int)x; }
+constexpr float decimal(float x) { return x - static_cast<int>(x); }
+// Like decimal, but returns a positive number instead
+constexpr float fract(float x) { return x - std::floor(x); }
 // https://stackoverflow.com/questions/1903954/
 constexpr int sgn(float val) { return (0.0f < val) - (val < 0.0f); }
