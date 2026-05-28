@@ -7,17 +7,11 @@ class Light {
 public:
     glm::vec3 pos;
     float intensity;
-    Light() : pos{glm::vec3(0.0f)}, intensity(1.0f) {}
-    Light(glm::vec3 p, float i) : pos{p}, intensity(i) {} 
-    virtual ~Light() = default;
-};
-
-class SphericalLight : public Light {
-public:
     float radius;
-    SphericalLight() : Light(), radius(1.0f) {}
-    SphericalLight(glm::vec3 p, float i, float r) 
-    : Light(p, i), radius(r) {} 
+    Light() : pos{glm::vec3(0.0f)}, intensity(1.0f), radius(0.0f) {}
+    Light(glm::vec3 p, float i) : pos{p}, intensity(i), radius(0.0f) {} 
+    Light(glm::vec3 p, float i, float r) : Light(p, i) { radius = r; }
+    virtual ~Light() = default;
 };
 
 // Should include functions for building acceleration structures
