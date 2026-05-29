@@ -132,23 +132,23 @@ namespace {
         float n_sqrt;
     public:
         sampleSphere(int N) { n_sqrt = ceil(sqrt(N)); }
-        // clanker code
+        // spherical mapping, but stratified uniforms
+        // leads to a less noisy but weaker result
         inline glm::vec3 operator()()
         {
-            float u_jit = (i + prand::rand()) / (n_sqrt*n_sqrt);
-            float v_jit = (j + prand::rand()) / (n_sqrt*n_sqrt);
+            float r1 = (i + prand::rand()) / (n_sqrt*n_sqrt);
+            float r2 = (j + prand::rand()) / (n_sqrt*n_sqrt);
             
             float next_j = fmod(j+1, n_sqrt); j = next_j;
             if (next_j < EPSILION) i = fmod(i+1, n_sqrt);
 
-            float z = 1.0f - 2.0 * u_jit;
-            
-            float phi = 2.0 * PI * v_jit;
-            
-            float r = glm::sqrt(1.0f - z*z);
-            float x = r * cos(phi);
-            float y = r * sin(phi);
+            float z = 1.0f - 2.0 * r1;
+            float phi = 2.0 * PI * r2;
+            float sin_theta = std::sqrt(1.0f - z*z);
+            float x = sin_theta * cos(phi);
+            float y = sin_theta * sin(phi);
             return glm::vec3(x, y, z);
         }
     };
+    
 }
