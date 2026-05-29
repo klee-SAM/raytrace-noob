@@ -16,13 +16,13 @@ void Camera::applyView(MatrixStack& MS) {
     MS.rotate(rotation.x, vec3(0.0f, 1.0f, 0.0f));
 }
 
-Ray Camera::castPrimaryRay(uint idx, uint idy, double offsetx, double offsety) {
+Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) {
     // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
 
-    double ndc_y = 2*((double)idy + offsety)/((double)height) - 1.0;
-    double ndc_x = 2*((double)idx + offsetx)/((double)width) - 1.0;
+    float ndc_y = 2*((float)idy + offsety)/((float)height) - 1.0;
+    float ndc_x = 2*((float)idx + offsetx)/((float)width) - 1.0;
 
-    glm::vec4 coord((float)ndc_x, (float)ndc_y, -1.0f, 1.0f); // px coord
+    glm::vec4 coord(ndc_x, ndc_y, -1.0f, 1.0f); // px coord
     coord = invP*coord; // eye coord
     coord.w = 1.0f;
     coord = glm::normalize(C*coord - cameraPos); // n_pw
@@ -34,6 +34,8 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, double offsetx, double offsety) {
     return cray;
 }
 
+
+
 void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, uint y) 
 {
     for (uint x = 0; x < width; ++x) {
@@ -44,8 +46,9 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
             color = getRayColor(scene, cray);
         } else {
             for (uint i = 0; i < AAsamples; ++i) {
-                double dx = linearRand(0.001f, 0.999f);
-                double dy = linearRand(0.001f, 0.999f);
+                vec2 offset = prand::poissonDiskRand();
+                float dx = 0.5f*offset.x + 0.5f;
+                float dy = 0.5f*offset.y + 0.5f;
                 Ray cray = castPrimaryRay(x, y, dx, dy);
                 color += getRayColor(scene, cray);
             }

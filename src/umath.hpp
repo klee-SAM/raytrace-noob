@@ -1,14 +1,16 @@
 #pragma once
 #include "stn.hpp"
 
+typedef glm::vec2 vec2;
+
 // Utility math functions and classes
 
 namespace CONSTANTS {
-    constexpr double PI = 3.14159265358979323846;
-    constexpr double R_PI = 1.0/PI;
+    constexpr float PI = 3.14159265358979323846f;
+    constexpr float R_PI = 1.0f / PI;
 
-    constexpr double INF = std::numeric_limits<double>::infinity();
-    constexpr double EPSILION = glm::epsilon<float>();
+    constexpr float INF = std::numeric_limits<float>::infinity();
+    constexpr float EPSILION = glm::epsilon<float>();
 }
 
 class ModelMatConstr {
@@ -62,3 +64,36 @@ constexpr float decimal(float x) { return x - static_cast<int>(x); }
 constexpr float fract(float x) { return x - std::floor(x); }
 // https://stackoverflow.com/questions/1903954/
 constexpr int sgn(float val) { return (0.0f < val) - (val < 0.0f); }
+
+// Pseudo-random generation using lookup tables. 
+namespace prand {
+    // Much faster than randomly generating for
+    // each ray, and less noise. However, this 
+    // means that sampling beyond 18 per instance
+    // doesn't lead to better results
+    constexpr uint N = 18;
+    static constexpr vec2 poissonDisk[N] = {
+        vec2(-0.220147, 0.976896),
+        vec2(-0.735514, 0.693436),
+        vec2(-0.200476, 0.310353),
+        vec2( 0.180822, 0.454146),
+        vec2( 0.292754, 0.937414),
+        vec2( 0.564255, 0.207879),
+        vec2( 0.178031, 0.024583),
+        vec2( 0.613912,-0.205936),
+        vec2(-0.385540,-0.070092),
+        vec2( 0.962838, 0.378319),
+        vec2(-0.886362, 0.032122),
+        vec2(-0.466531,-0.741458),
+        vec2( 0.006773,-0.574796),
+        vec2(-0.739828,-0.410584),
+        vec2( 0.590785,-0.697557),
+        vec2(-0.081436,-0.963262),
+        vec2( 1.000000,-0.100160),
+        vec2( 0.622430, 0.680868)
+    };
+    
+    static std::atomic<uint> i = 0;
+
+    constexpr inline vec2 poissonDiskRand() { return poissonDisk[i++ % N]; }   
+}

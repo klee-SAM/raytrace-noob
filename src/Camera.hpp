@@ -124,7 +124,7 @@ private:
 
     glm::vec3 getSkyColor(const Ray& ray);
     
-    Ray castPrimaryRay(uint idx, uint idy, double offsetx = 0.5, double offsety = 0.5);
+    Ray castPrimaryRay(uint idx, uint idy, float offsetx = 0.5f, float offsety = 0.5f);
 
     float occlusionFactor(const Hit &rec, 
         const std::unique_ptr<Scene> &scene,
