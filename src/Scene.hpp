@@ -7,11 +7,24 @@ class Light {
 public:
     glm::vec3 pos;
     float intensity;
-    float radius;
     Light() : pos{glm::vec3(0.0f)}, intensity(1.0f), radius(0.0f) {}
     Light(glm::vec3 p, float i) : pos{p}, intensity(i), radius(0.0f) {} 
-    Light(glm::vec3 p, float i, float r) : Light(p, i) { radius = r; }
+    Light(glm::vec3 p, float i, float r) : Light(p, i) { setRadius(r); }
     virtual ~Light() = default;
+
+    // arbitrary dynamic formula for area light sampling; max samples 
+    // are done when light has a radius of 0.25 or more
+    inline void setRadius(float r) {
+        radius = r; 
+        constexpr int MAX_SAMPLES = 64;
+        int calcSamp = MAX_SAMPLES*sqrt(r);
+        samples = std::clamp(calcSamp, 2, MAX_SAMPLES);
+    }
+    inline const float& getRadius() const { return radius; }
+    inline const int& getSamples() const { return samples; }
+private:
+    float radius;
+    int samples = 1;
 };
 
 // Should include functions for building acceleration structures

@@ -94,5 +94,10 @@ namespace prand {
         vec2( 0.622430, 0.680868)
     };
 
-    constexpr inline vec2 poissonDisk(size_t index) { return poissonDiskData[index % N]; }   
+    constexpr inline vec2 poissonDisk(size_t index) { return poissonDiskData[index % N]; }
+    
+    static constexpr float r_RAND_MAX = 1.0f / static_cast<float>(RAND_MAX);
+    inline float rand() {
+        return static_cast<float>(std::rand()) * r_RAND_MAX;
+    }   
 }

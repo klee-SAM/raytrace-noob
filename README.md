@@ -11,8 +11,6 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] Tori
 - [ ] Object/Regional Light Attentuation
     - "fog!"
-- [ ] SDF and sphere tracing
-    - create a 
 - [x] CSG
 
 #### light interactions
@@ -20,8 +18,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [X] Texture mapping
 - [X] Refraction
 - [X] Reflection roughness
-- [ ] Area lights
-    - "multiple points!"
+- [X] Area lights
 - [X] Ambient occulusion
 
 #### camera effects
@@ -32,9 +29,11 @@ Adding more features on a simple raytracer as a learning exercise
 - [X] Multithreading
 - [ ] BVH for scenes and meshes
     - use a kd-tree for meshes
-- [ ] GPU acceleration
+- [ ] GPU acceleration (triangles)
 
 #### special
+- [ ] SDF and sphere tracing
+    - create a fractal
 - [ ] Monte Carlo path tracing
 
 ### misc.
