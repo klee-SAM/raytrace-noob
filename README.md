@@ -39,9 +39,7 @@ Adding more features on a simple raytracer as a learning exercise
 ### misc.
 - [ ] scene format documentation (json)
 - [ ] description format for textures/patterns 
-- [ ] ambient occlusion settings
-    - ambient occlusion should be enabled by specifying more settings on the sky (i.e. sky brightness)
-    - settings on number of samples per ray (rm auto reducing AO samples, replace with note instead)
+- [x] ambient occlusion settings
 - [ ] partial .mtl support (tiny_obj_loader)
 
 
@@ -87,5 +85,7 @@ Other platforms may have slightly different build instructions.
 - https://www.rorydriscoll.com/2009/01/07/better-sampling/
 
 ## Area lighting
-- https://jcgt.org/published/0008/01/04/paper.pdf (unused)
+- https://jcgt.org/published/0008/01/04/paper.pdf
+- https://github.com/Andrew-Helmer/pmj-cpp/tree/master/sample_generation
+- https://abau.io/blog/sample_patterns/
 - https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-lighting/introduction-to-lighting-spherical-light-cone-sampling.html

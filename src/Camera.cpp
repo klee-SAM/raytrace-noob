@@ -5,6 +5,8 @@
 using namespace std;
 using namespace glm;
 
+typedef const vector<shared_ptr<Shape>>& ShapesVector;
+
 // Arbitrary size, but computing these numbers
 // beforehand saves actual seconds
 prand::uniformRand randGen(50'000U);
@@ -88,9 +90,9 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
 
     // Divide by the AAsamples, because having occlusionSamples * AAsamples rays
     // per pixel is too much for a simple toy raytracer
-    uint actualOcclusionSamples = std::max(1U, (occlusionSamples / AAsamples));
-    bool useReducedOcclSamp = occlusionSamples > 0 && divideAObyAA;
-    occlusionSamples = useReducedOcclSamp ? actualOcclusionSamples : 0;
+    // uint actualOcclusionSamples = std::max(1U, (occlusionSamples / AAsamples));
+    // bool useReducedOcclSamp = occlusionSamples > 0 && divideAObyAA;
+    // occlusionSamples = useReducedOcclSamp ? actualOcclusionSamples : 0;
 
     uint totalCasts = height*width;
 
@@ -138,10 +140,9 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     return image;
 }
 
-bool hit(const vector<shared_ptr<Shape>>& shapes, 
-         const Ray& ray, 
-         const Interval& interval,
-         Hit& closestHit) 
+// TODO: experiment with caring only about the first hit
+// (i.e breaking early)
+bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& closestHit) 
 {
     float minDist = interval.max;
     bool intersected_any = false;
@@ -168,9 +169,7 @@ bool hit(const vector<shared_ptr<Shape>>& shapes,
 
 // Like the above, except this is used
 // for cases where the hit information is unused
-bool hit(const vector<shared_ptr<Shape>>& shapes, 
-         const Ray& ray, 
-         const Interval& interval) 
+bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval) 
 {
     bool intersected_any = false;
     vector<Hit> temp_hits;
@@ -277,6 +276,7 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
     return reflClr;
 }
 
+// Whitted-style ray-tracing, but sometimes amalmagated
 vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, 
                          const Ray& ray, 
                          const Interval& interval, 
@@ -332,11 +332,11 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
     // The eye vector does not point to the camera when reflecting/refracting
     vec3 ev = -ray.dir;
 
-    vec3 bp_clr = rec.ambient();
-    if (occlusionSamples > 0) {
+    vec3 bp_clr = rec.ambient() + globalAmbient;
+    if (occlusionSamples > 0 && recursiveDepth < 2) {
         // the maximum is arbitrary, but it should be small 
         // so that faraway objects are not considered
-        bp_clr *= occlusionFactor(rec, scene, Interval(interval.min, 0.5f));
+        bp_clr *= occlusionFactor(rec, scene, Interval(interval.min, occludingRadius));
     }
 
     for (auto& light : scene->getLights()) {
@@ -404,6 +404,8 @@ float Camera::occlusionFactor(const Hit &rec,
     return occlusionCoeff;
 }
 
+// Used for sampling points on spherical area lights
+// at a somewhat reasonable efficiency
 class sampleCone {
 private:
     glm::vec3 dx, dy;
@@ -441,8 +443,7 @@ public:
     }
 };
 
-
-
+// Randomly samples points on area lights depending on their radius.
 float Camera::shadowFactor(const shared_ptr<Light>& light, 
                            const Hit &rec, 
                            const unique_ptr<Scene> &scene,

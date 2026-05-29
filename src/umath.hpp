@@ -115,6 +115,12 @@ namespace prand {
         }
         inline float rand() { return dataPoints.at(i++ % dataPoints.size()); } 
     };
+
+    // class pmj02 {
+    // private:
+
+    // public:
+    // };
 }
 
 // orthonormal basis (TBN matrix)

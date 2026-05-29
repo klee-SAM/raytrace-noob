@@ -138,9 +138,20 @@ int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::unique_ptr
             cam->setInitDistance(initDist);  
         } else if (jsonstreq(key, "antialias")) {
             int samples = intFromToken(value);
-            samples = samples < 0 ? 0 : samples;
+            samples = samples < 1 ? 1 : samples;
             cam->setAntialiasSamples((uint)samples);
-        } else if (jsonstreq(key, "fov")) {
+        } else if (jsonstreq(key, "ambientSamples")) {
+            int samples = intFromToken(value);
+            samples = samples < 0 ? 0 : samples;
+            cam->setAmbientOcclusionSamples((uint)samples);
+        } else if (jsonstreq(key, "ambientColor")) {
+            vec3 clr = float3FromToken(value);
+            cam->setGlobalAmbientColor(clr);  
+        } else if (jsonstreq(key, "occlusionRadius")) {
+            double occlRadius = doubleFromToken(value);
+            cam->setAmbientOccludingRadius(occlRadius);
+        }
+        else if (jsonstreq(key, "fov")) {
             float fov = doubleFromToken(value);
             cam->setFOV(fov);
         } else if (jsonstreq(key, "sky")) {
@@ -223,7 +234,8 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
             // alternate names for the same property
             auto isReflectProp = [&key, this]() {
                 return jsonstreq(key, "reflCoeff") ||
-                       jsonstreq(key, "reflectance");
+                       jsonstreq(key, "reflectance") ||
+                       jsonstreq(key, "reflective");
             };
 
             auto isRefractProp = [&key, this]() {

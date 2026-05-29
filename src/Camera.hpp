@@ -79,7 +79,11 @@ public:
 
     // Setting samples below 2 disables antialiasing.
     void setAntialiasSamples(uint count) { AAsamples = count > 1 ? count : 1; }
+    // Ambient occlusion samples are taken for every color ray, including
+    // anti-aliasing rays; recommended to reduce AO samples if increasing AA rays
     void setAmbientOcclusionSamples(uint count) { occlusionSamples = count > 0 ? count : 0; }
+    void setGlobalAmbientColor(const glm::vec3& clr) { globalAmbient = clr; }
+    void setAmbientOccludingRadius(float r) { occludingRadius = r; }
 
     enum class SkyType {Void, Haze};
     void setSky(SkyType s) { sky = s; }
@@ -103,9 +107,10 @@ private:
     double zfar = 1000.0f;
     uint width, height;
 
-    uint AAsamples = 1;         // must be at least 1
-    uint occlusionSamples = 0;  // actual count is divided by AA samples
-    bool divideAObyAA = true;   // whether to divide # AO samples by # AA samples
+    uint AAsamples = 1;                        // must be at least 1
+    uint occlusionSamples = 0;                 // actual count is divided by AA samples
+    glm::vec3 globalAmbient = glm::vec3(0.0f); // global ambient color.
+    float occludingRadius = 0.25f;
     SkyType sky = SkyType::Void;
 
     // variables computed in render()
