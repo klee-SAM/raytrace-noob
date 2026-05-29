@@ -41,19 +41,23 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
     for (uint x = 0; x < width; ++x) {
         vec3 color = vec3(0.0f);
 
-        if (AAsamples <= 1) {
-            Ray cray = castPrimaryRay(x, y);
-            color = getRayColor(scene, cray);
-        } else {
-            for (uint i = 0; i < AAsamples; ++i) {
-                vec2 offset = prand::poissonDiskRand();
-                float dx = 0.5f*offset.x + 0.5f;
-                float dy = 0.5f*offset.y + 0.5f;
-                Ray cray = castPrimaryRay(x, y, dx, dy);
-                color += getRayColor(scene, cray);
-            }
-            color *= sample_scale;
+        Ray cray = castPrimaryRay(x, y);
+        color = getRayColor(scene, cray);
+        
+        for (uint i = 1; i < AAsamples; ++i) {
+            vec2 offset;
+            if (AAsamples > prand::N) {
+                offset.x = linearRand(0.001f, 0.999f);
+                offset.y = linearRand(0.001f, 0.999f);
+            } else offset = 0.5f*prand::poissonDisk(i);
+            
+            float dx = offset.x + 0.5f;
+            float dy = offset.y + 0.5f;
+            Ray cray = castPrimaryRay(x, y, dx, dy);
+            color += getRayColor(scene, cray);
         }
+
+        color *= sample_scale;
         
         image->setPixel(x, y, color);
     }

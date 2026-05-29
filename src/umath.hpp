@@ -71,8 +71,9 @@ namespace prand {
     // each ray, and less noise. However, this 
     // means that sampling beyond 18 per instance
     // doesn't lead to better results
-    constexpr uint N = 18;
-    static constexpr vec2 poissonDisk[N] = {
+    constexpr size_t N = 18;
+    // Thank you professor sueda
+    static constexpr vec2 poissonDiskData[N] = {
         vec2(-0.220147, 0.976896),
         vec2(-0.735514, 0.693436),
         vec2(-0.200476, 0.310353),
@@ -92,8 +93,6 @@ namespace prand {
         vec2( 1.000000,-0.100160),
         vec2( 0.622430, 0.680868)
     };
-    
-    static std::atomic<uint> i = 0;
 
-    constexpr inline vec2 poissonDiskRand() { return poissonDisk[i++ % N]; }   
+    constexpr inline vec2 poissonDisk(size_t i) { return poissonDiskData[i % N]; }   
 }
