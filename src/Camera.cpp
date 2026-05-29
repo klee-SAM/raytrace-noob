@@ -5,6 +5,10 @@
 using namespace std;
 using namespace glm;
 
+// Arbitrary size, but computing these numbers
+// beforehand saves actual seconds
+prand::uniformRand randGen(50'000U);
+
 void Camera::applyProjection(MatrixStack& MS) {
     MS.mult(perspective(fovy, aspectRatio, znear, zfar));
 }
@@ -384,8 +388,8 @@ float Camera::occlusionFactor(const Hit &rec,
     aoray.setPos(aorayPos);
 
     for (uint i = 0; i < occlusionSamples; ++i) {
-        float u1 = glm::linearRand(0.0f, 0.999999f);
-        float u2 = glm::linearRand(0.0f, 0.999999f);
+        float u1 = randGen.rand();
+        float u2 = randGen.rand();
         vec3 rDir = cosineSampleHemisphere(u1, u2);
         // Transform the sampled vector from tangent to world space
         rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);        
@@ -416,7 +420,7 @@ public:
 
         // Faster to generate less random variables
         float r1 = 0.5f*prand::poissonDisk(j).x+0.5f;
-        float r2 = prand::rand();
+        float r2 = randGen.rand();
         
         float next_j = fmod(j+1, n_sqrt); j = next_j;
         if (next_j < EPSILION) i = fmod(i+1, n_sqrt);
@@ -446,6 +450,8 @@ public:
         return std::cos(phi)*sin_alpha*dx + std::sin(phi)*sin_alpha*dy + cos_alpha*dz;
     }
 };
+
+
 
 float Camera::shadowFactor(const shared_ptr<Light>& light, 
                            const Hit &rec, 

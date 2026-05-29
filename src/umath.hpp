@@ -99,7 +99,22 @@ namespace prand {
     static constexpr float r_RAND_MAX = 1.0f / static_cast<float>(RAND_MAX);
     inline float rand() {
         return static_cast<float>(std::rand()) * r_RAND_MAX;
-    }   
+    }
+
+    class uniformRand {
+    private:
+        // Because of multithreading, this is very random order
+        std::atomic<size_t> i;
+        std::vector<float> dataPoints;
+    public:
+        uniformRand(size_t N) : i(0U) {
+            dataPoints.reserve(N);
+            for (size_t i = 0; i < N; ++i) {
+                dataPoints.push_back(prand::rand());
+            }
+        }
+        inline float rand() { return dataPoints.at(i++ % dataPoints.size()); } 
+    };
 }
 
 // orthonormal basis (TBN matrix)
@@ -123,33 +138,3 @@ inline glm::vec3 cosineSampleHemisphere(float u1, float u2)
     // Modification: assume u1 can never go above 1.0f
     return glm::vec3(x, y, sqrt(1.0f - u1));
 }
-
-/* Old code that may or may not be useful later
-namespace {
-    class sampleSphere {
-    private:
-        float i = 0.0f;
-        float j = 0.0f;
-        float n_sqrt;
-    public:
-        sampleSphere(int N) { n_sqrt = ceil(sqrt(N)); }
-        // spherical mapping, but stratified uniforms
-        // leads to a less noisy but weaker result
-        inline glm::vec3 operator()()
-        {
-            float r1 = (i + prand::rand()) / (n_sqrt*n_sqrt);
-            float r2 = (j + prand::rand()) / (n_sqrt*n_sqrt);
-            
-            float next_j = fmod(j+1, n_sqrt); j = next_j;
-            if (next_j < EPSILION) i = fmod(i+1, n_sqrt);
-
-            float z = 1.0f - 2.0 * r1;
-            float phi = 2.0 * PI * r2;
-            float sin_theta = std::sqrt(1.0f - z*z);
-            float x = sin_theta * cos(phi);
-            float y = sin_theta * sin(phi);
-            return glm::vec3(x, y, z);
-        }
-    };
-}
-*/
