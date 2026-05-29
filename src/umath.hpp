@@ -101,3 +101,25 @@ namespace prand {
         return static_cast<float>(std::rand()) * r_RAND_MAX;
     }   
 }
+
+// orthonormal basis (TBN matrix)
+inline void assignONBvec3s(const glm::vec3& n, glm::vec3& b1, glm::vec3& b2) 
+{   // thank you Duff et al
+    const float sign = copysignf(1.0f, n.z); // sign should be 1 even when n.z == 0
+    const float a = -1.0f / (sign + n.z);
+    const float b = n.x * n.y * a;
+    b1 = glm::vec3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x);
+    b2 = glm::vec3(b, sign + n.y * n.y * a, -n.y);
+}
+
+// This implements importance sampling.
+// u1 and u2 are random uniform variables
+inline glm::vec3 cosineSampleHemisphere(float u1, float u2) 
+{   // thank you rory
+    const float r = sqrt(u1);
+    const float theta = 2 * PI * u2;
+    const float x = r*cos(theta);
+    const float y = r*sin(theta);
+    // Modification: assume u1 can never go above 1.0f
+    return glm::vec3(x, y, sqrt(1.0f - u1));
+}

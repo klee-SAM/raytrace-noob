@@ -340,18 +340,58 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
         // world coordinates.
         vec3 ld = light->pos - rec.x;
         vec3 lv = normalize(ld);
+        float tl = length(ld);
 
-        float lightVisibility = shadowFactor(light, rec, scene, interval);
+        Ray sray;
+        sray.setPos(rec.x + (float)interval.min*rec.n);
+        sray.setDir(lv);
+
+        Hit srec;
+
+        auto getShadowContrib = [&]() {   
+            bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
+            bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
+
+            // 1.0f is fully lit by default, which is when point has unobstructed path to light
+            float s_transparency = !behindShape; // if behind, return value from 0.0f to 1.0f
+            if (isTrns) s_transparency = glm::clamp(srec.m->transparency, 0.0f, 1.0f);
+            return s_transparency;
+        };
 
         float Li = light->intensity;
         vec3 kd = rec.diffuse(), 
              ks = rec.specular();
         float s = rec.m->exponent;
-        vec3 h = normalize(lv + ev);
 
-        auto diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
-        auto spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
-        bp_clr += lightVisibility * Li * (diff_cont + spec_cont);
+        auto getLighting = [&](const vec3& lv) {
+            vec3 h = normalize(lv + ev);
+
+            auto diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
+            auto spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
+            return diff_cont + spec_cont;
+        };
+
+        // float lightVisibility = shadowFactor(light, rec, scene, interval);
+        float lightVisibility = getShadowContrib();
+        vec3 clrSamples = getLighting(lv);
+
+        vec3 T, B;
+        assignONBvec3s(lv, T, B);
+
+        for (int i = 1; i < light->getSamples(); ++i) {
+            float u1 = prand::rand();
+            float u2 = prand::rand();
+            vec3 rnd = cosineSampleHemisphere(u1, u2);
+            vec3 offset = light->getRadius() * vec3(rnd.x*T + rnd.y*B + rnd.z*lv);
+            vec3 new_ld = light->pos + offset - rec.x;
+            vec3 new_lv = normalize(new_ld);
+            tl = length(new_ld);
+            sray.setDir(new_lv);
+            lightVisibility += getShadowContrib();
+            clrSamples += getLighting(new_lv);
+        }
+        lightVisibility = lightVisibility / (float)light->getSamples(); 
+        bp_clr += lightVisibility * Li * clrSamples / (float)light->getSamples();
     }
 
     // not really ideal
@@ -360,29 +400,6 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
     clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
 
     return clr;
-}
-
-
-// orthonormal basis (TBN matrix)
-void assignONBvec3s(const vec3& n, vec3& b1, vec3& b2) 
-{   // thank you Duff et al
-    const float sign = copysignf(1.0f, n.z); // sign should be 1 even when n.z == 0
-    const float a = -1.0f / (sign + n.z);
-    const float b = n.x * n.y * a;
-    b1 = vec3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x);
-    b2 = vec3(b, sign + n.y * n.y * a, -n.y);
-}
-
-// This implements importance sampling.
-// u1 and u2 are random uniform variables
-vec3 cosineSampleHemisphere(float u1, float u2) 
-{   // thank you rory
-    const float r = sqrt(u1);
-    const float theta = 2 * PI * u2;
-    const float x = r*cos(theta);
-    const float y = r*sin(theta);
-    // Modification: assume u1 can never go above 1.0f
-    return vec3(x, y, sqrt(1.0f - u1));
 }
 
 // Uses monte carlo integration
@@ -443,8 +460,6 @@ float Camera::shadowFactor(const shared_ptr<Light>& light,
 
     float occlusion = getShadowContrib();
 
-    // lots of branching, but i also don't have time for a better implementation
-    // because atp it would be premature optimization
     if (light->getRadius() < MINIMUM_COEFF) { return occlusion; }
 
     vec3 T, B;
@@ -457,7 +472,7 @@ float Camera::shadowFactor(const shared_ptr<Light>& light,
         vec3 offset = light->getRadius() * vec3(rnd.x*T + rnd.y*B + rnd.z*lv);
         vec3 new_ld = light->pos + offset - rec.x;
         vec3 new_lv = normalize(new_ld);
-        float tl = length(new_ld);
+        tl = length(new_ld);
         sray.setDir(new_lv);
         occlusion += getShadowContrib();
     }
