@@ -340,23 +340,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
         // world coordinates.
         vec3 ld = light->pos - rec.x;
         vec3 lv = normalize(ld);
-        // float tl = length(ld);
-
-        // Ray sray;
-        // sray.setPos(rec.x + (float)interval.min*rec.n);
-        // sray.setDir(lv);
-
-        // Hit srec;
-        // bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
-        // bool shapeIsTransparent = srec.m != nullptr &&
-        //                           srec.m->transparency > Camera::MINIMUM_COEFF;
 
         float lightVisibility = shadowFactor(light, rec, scene, interval);
-
-        // if (behindShape) {
-        //     if (!shapeIsTransparent) continue;
-        //     s_transparency = srec.m->transparency;
-        // }
 
         float Li = light->intensity;
         vec3 kd = rec.diffuse(), 
@@ -464,19 +449,12 @@ float Camera::shadowFactor(const shared_ptr<Light>& light,
 
     vec3 T, B;
     assignONBvec3s(lv, T, B);
-
-    auto rotMat = glm::lookAt(vec3(0.0f), lv, vec3(0.0f, 0.0f, 1.0f));
-    
     
     for (int i = 1; i < light->getSamples(); ++i) {
         float u1 = prand::rand();
         float u2 = prand::rand();
         vec3 rnd = cosineSampleHemisphere(u1, u2);
-        // is this mathematically correct for orienting a disk 
-        // perpendicular to the light vector?
         vec3 offset = light->getRadius() * vec3(rnd.x*T + rnd.y*B + rnd.z*lv);
-        // vec3 offset = vec3(rotMat*vec4(rnd, 0.0f, 1.0f));
-        // vec3 offset = light->getRadius()*normalize(vec3(rnd.x*T + rnd.y*B));
         ld = light->pos + offset - rec.x;
         lv = normalize(ld);
         tl = length(ld);
@@ -485,4 +463,12 @@ float Camera::shadowFactor(const shared_ptr<Light>& light,
     }
 
     return occlusion / (float)light->getSamples();
+}
+
+vec3 lighting(const shared_ptr<Light>& light, 
+              const Hit &rec, 
+              const unique_ptr<Scene> &scene,
+              const Interval &interval) 
+{
+
 }
