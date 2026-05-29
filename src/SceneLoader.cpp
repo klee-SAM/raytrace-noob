@@ -181,9 +181,10 @@ int SceneLoader::parseLights(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& s
             const jsmntok_t *key = l_tok+k, *value = l_tok+k+1;
             if (jsonstreq(key, "position") && value->type == JSMN_ARRAY) {
                 light->pos = float3FromToken(value);
-            } else if (jsonstreq(key, "intensity") && 
-                        value->type == JSMN_PRIMITIVE) {
+            } else if (jsonstreq(key, "intensity") && value->type == JSMN_PRIMITIVE) {
                 light->intensity = doubleFromToken(value);
+            } else if (jsonstreq(key, "radius") && value->type == JSMN_PRIMITIVE) {
+                light->radius = doubleFromToken(value);
             } else {
                 std::cerr << "invalid property when parsing lights: " << key << '\n';
             }

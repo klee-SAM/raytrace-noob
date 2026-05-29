@@ -1,0 +1,59 @@
+{
+    "camera" : {
+        "distance" : 5.0,
+        "antialias" : 1,
+        "fov" : 45.0
+    },
+    "materials" : {
+        "red" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [1.0, 0.0, 0.0],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0,
+            "reflCoeff" : 0.25
+        },
+        "green" : {
+            "ambient" : [0.1, 0.2, 0.1],
+            "diffuse" : "earthmap.png",
+            "specular" : "specular_clouds.jpg",
+            "exponent" : 100.0
+        },
+        "blue" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.7, 0.7, 1.0],
+            "specular" : [0.0, 0.0, 0.0],
+            "exponent" : 0.0
+        }
+    },
+    "lights" : [
+        { 
+            "position": [1.0, 2.0, 2.0], 
+            "intensity": 0.5,
+            "radius" : 0.0625
+        }, 
+        {
+            "position": [-1.0, 2.0, -1.0],
+            "intensity": 0.5,
+            "radius" : 0.0125
+        }
+    ],
+    "shapes" : [
+        {
+            "shape" : "sphere",
+            "position" : [0.5, 0.0, 0.5],
+            "scale" : [0.5, 0.6, 0.2],
+            "material" : "red"
+        },
+        {
+            "shape" : "sphere",
+            "position" : [-0.5, 0.0, -0.5],
+            "scale" :    [1.0, 1.0, 1.0],
+            "material" : "green"
+        },
+        {
+            "shape" : "plane",
+            "position" : [0.0, -1.0, 0.0],
+            "material" : "blue"
+        }
+    ]
+}

@@ -34,8 +34,6 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) {
     return cray;
 }
 
-
-
 void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, uint y) 
 {
     for (uint x = 0; x < width; ++x) {
@@ -342,23 +340,23 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
         // world coordinates.
         vec3 ld = light->pos - rec.x;
         vec3 lv = normalize(ld);
-        float tl = length(ld);
+        // float tl = length(ld);
 
-        Ray sray;
-        sray.setPos(rec.x + (float)interval.min*rec.n);
-        sray.setDir(lv);
+        // Ray sray;
+        // sray.setPos(rec.x + (float)interval.min*rec.n);
+        // sray.setDir(lv);
 
-        Hit srec;
-        bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
-        bool shapeIsTransparent = srec.m != nullptr &&
-                                  srec.m->transparency > Camera::MINIMUM_COEFF;
+        // Hit srec;
+        // bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
+        // bool shapeIsTransparent = srec.m != nullptr &&
+        //                           srec.m->transparency > Camera::MINIMUM_COEFF;
 
-        float s_transparency = 1.0f;
+        float lightVisibility = shadowFactor(light, rec, scene, interval);
 
-        if (behindShape) {
-            if (!shapeIsTransparent) continue;
-            s_transparency = srec.m->transparency;
-        }
+        // if (behindShape) {
+        //     if (!shapeIsTransparent) continue;
+        //     s_transparency = srec.m->transparency;
+        // }
 
         float Li = light->intensity;
         vec3 kd = rec.diffuse(), 
@@ -368,7 +366,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
 
         auto diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
         auto spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
-        bp_clr += s_transparency * Li * (diff_cont + spec_cont);
+        bp_clr += lightVisibility * Li * (diff_cont + spec_cont);
     }
 
     // not really ideal
@@ -433,15 +431,10 @@ float Camera::occlusionFactor(const Hit &rec,
     return occlusionCoeff;
 }
 
-auto getShadowContrib = [](const Hit& srec, bool bs, bool trns) {
-    float transparency = 1.0f - glm::clamp(srec.m->transparency, 0.0f, 1.0f);
-    return bs * (!trns ? 1.0f : 1.0f - transparency);
-};
-
-float shadow(const shared_ptr<Light>& light, 
-             const Hit &rec, 
-             const unique_ptr<Scene> &scene,
-             const Interval &interval) 
+float Camera::shadowFactor(const shared_ptr<Light>& light, 
+                           const Hit &rec, 
+                           const unique_ptr<Scene> &scene,
+                           const Interval &interval) 
 {
     vec3 ld = light->pos - rec.x;
     vec3 lv = normalize(ld);
@@ -452,27 +445,43 @@ float shadow(const shared_ptr<Light>& light,
     sray.setDir(lv);
 
     Hit srec;
-    bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
-    bool shapeIsTransparent = srec.m->transparency > Camera::MINIMUM_COEFF;
+
+    auto getShadowContrib = [&]() {   
+        bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
+        bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
+
+        // 1.0f is fully lit by default, which is when point has unobstructed path to light
+        float s_transparency = !behindShape; // if behind, return value from 0.0f to 1.0f
+        if (isTrns) s_transparency = glm::clamp(srec.m->transparency, 0.0f, 1.0f);
+        return s_transparency;
+    };
+
+    float occlusion = getShadowContrib();
 
     // lots of branching, but i also don't have time for a better implementation
     // because atp it would be premature optimization
     if (light->radius < EPSILION) {
-        // 0 extra samples if pointlight
-        if (!behindShape) return 1.0f; // fully lit by default
-        else return (!shapeIsTransparent) ? 0.0f : srec.m->transparency;
+        // // 0 extra samples if pointlight
+        // if (!behindShape) return 1.0f; 
+        // else return (!shapeIsTransparent) ? 0.0f : srec.m->transparency;
+        return occlusion;
     }
 
-    float occlusion = getShadowContrib(srec, behindShape, shapeIsTransparent);
+    vec3 T, B;
+    assignONBvec3s(lv, T, B);
 
-    const int numSamples = 8; 
-    
+    // arbitrary dynamic formula for area light sampling; max samples 
+    // are done when light has a radius of 0.25 or more
+    const int numSamples = 16 * glm::clamp(2*sqrt(light->radius), 0.05f, 1.0f); 
     for (int i = 1; i < numSamples; ++i) {
-        sray.setDir(lv+glm::ballRand(light->radius));
-        behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
-        shapeIsTransparent = srec.m->transparency > Camera::MINIMUM_COEFF;
-        occlusion += getShadowContrib(srec, behindShape, shapeIsTransparent);
+        vec2 rnd = light->radius*prand::poissonDisk(i);
+        vec3 offset = vec3(rnd.x*T + rnd.y*B);
+
+        sray.setDir(normalize(lv+offset));
+        // behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
+        // shapeIsTransparent = srec.m->transparency > Camera::MINIMUM_COEFF;
+        occlusion += getShadowContrib();
     }
 
-    return 1.0f - (occlusion / (float)numSamples);
+    return occlusion / (float)numSamples;
 }
