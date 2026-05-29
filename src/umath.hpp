@@ -94,5 +94,5 @@ namespace prand {
         vec2( 0.622430, 0.680868)
     };
 
-    constexpr inline vec2 poissonDisk(size_t i) { return poissonDiskData[i % N]; }   
+    constexpr inline vec2 poissonDisk(size_t index) { return poissonDiskData[index % N]; }   
 }
