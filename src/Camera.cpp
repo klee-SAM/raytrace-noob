@@ -460,26 +460,20 @@ float Camera::shadowFactor(const shared_ptr<Light>& light,
 
     // lots of branching, but i also don't have time for a better implementation
     // because atp it would be premature optimization
-    if (light->radius < EPSILION) {
-        // // 0 extra samples if pointlight
-        // if (!behindShape) return 1.0f; 
-        // else return (!shapeIsTransparent) ? 0.0f : srec.m->transparency;
-        return occlusion;
-    }
+    if (light->radius < MINIMUM_COEFF) { return occlusion; }
 
     vec3 T, B;
     assignONBvec3s(lv, T, B);
 
     // arbitrary dynamic formula for area light sampling; max samples 
     // are done when light has a radius of 0.25 or more
-    const int numSamples = 16 * glm::clamp(2*sqrt(light->radius), 0.05f, 1.0f); 
+    const int numSamples = 18 * glm::clamp(2*sqrt(light->radius), 0.05f, 1.0f); 
     for (int i = 1; i < numSamples; ++i) {
         vec2 rnd = light->radius*prand::poissonDisk(i);
+        // is this mathematically correct for orienting a disk 
+        // perpendicular to the light vector?
         vec3 offset = vec3(rnd.x*T + rnd.y*B);
-
         sray.setDir(normalize(lv+offset));
-        // behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
-        // shapeIsTransparent = srec.m->transparency > Camera::MINIMUM_COEFF;
         occlusion += getShadowContrib();
     }
 
