@@ -130,5 +130,6 @@ private:
                           const Interval &interval);
 
     float shadowFactor(const std::shared_ptr<Light>& light, const Hit &rec, 
-                       const std::unique_ptr<Scene> &scene, const Interval &interval);
+                       const std::unique_ptr<Scene> &scene, const Interval &interval,
+                       bool);
 };

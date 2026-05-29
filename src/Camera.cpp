@@ -349,7 +349,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
         sray.setPos(rec.x + (float)interval.min*rec.n);
         sray.setDir(lv);
         Hit srec;
-        float lightVisibility = shadowFactor(light, rec, scene, interval);
+        // Boolean parameter to cull the number of neglible rays casted for shadows 
+        float lightVisibility = shadowFactor(light, rec, scene, interval, recursiveDepth < 2);
         
         float Li = light->intensity;
         vec3 kd = rec.diffuse(), 
@@ -405,25 +406,14 @@ float Camera::occlusionFactor(const Hit &rec,
 
 class sampleCone {
 private:
-    float i = 0.0f;
-    float j = 0.0f;
-    float n_sqrt;
     glm::vec3 dx, dy;
 public:
     // Akalin's method, ty scratchapixel for saving me from this area light torment nexus
-    sampleCone(int N) { n_sqrt = ceil(sqrt(N)); }
+    sampleCone(int N) { }
     inline glm::vec3 operator()(const glm::vec3 &ld, const float radius) {
-        // Stratifying in this way makes the penumbra much less
-        // noticable than is warranted
-        // float r1 = (i + prand::rand()) / (n_sqrt*n_sqrt);
-        // float r2 = (j + prand::rand()) / (n_sqrt*n_sqrt);
-
         // Faster to generate less random variables
-        float r1 = 0.5f*prand::poissonDisk(j).x+0.5f;
+        float r1 = randGen.rand();
         float r2 = randGen.rand();
-        
-        float next_j = fmod(j+1, n_sqrt); j = next_j;
-        if (next_j < EPSILION) i = fmod(i+1, n_sqrt);
 
         glm::vec3 dz = ld;
         float dz_len_2 = glm::dot(dz, dz);
@@ -456,7 +446,8 @@ public:
 float Camera::shadowFactor(const shared_ptr<Light>& light, 
                            const Hit &rec, 
                            const unique_ptr<Scene> &scene,
-                           const Interval &interval) 
+                           const Interval &interval,
+                           bool sampleArea = true) 
 {
     vec3 ld = light->pos - rec.x;
     vec3 lv = normalize(ld);
@@ -483,7 +474,7 @@ float Camera::shadowFactor(const shared_ptr<Light>& light,
 
     float visibleLight = getShadowContrib();
 
-    if (light->getRadius() < MINIMUM_COEFF) { return visibleLight; }
+    if (light->getRadius() < MINIMUM_COEFF || !sampleArea) { return visibleLight; }
 
     
     auto sampler = sampleCone(light->getSamples());
