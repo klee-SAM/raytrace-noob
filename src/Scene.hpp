@@ -13,7 +13,7 @@ public:
     virtual ~Light() = default;
 
     // arbitrary dynamic formula for area light sampling; max samples 
-    // are done when light has a radius of 0.25 or more
+    // are done when light has a radius of 1 or more
     inline void setRadius(float r) {
         radius = r; 
         constexpr int MAX_SAMPLES = 64;

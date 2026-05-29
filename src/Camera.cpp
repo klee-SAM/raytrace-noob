@@ -455,10 +455,10 @@ float Camera::shadowFactor(const shared_ptr<Light>& light,
         float u2 = prand::rand();
         vec3 rnd = cosineSampleHemisphere(u1, u2);
         vec3 offset = light->getRadius() * vec3(rnd.x*T + rnd.y*B + rnd.z*lv);
-        ld = light->pos + offset - rec.x;
-        lv = normalize(ld);
-        tl = length(ld);
-        sray.setDir(lv);
+        vec3 new_ld = light->pos + offset - rec.x;
+        vec3 new_lv = normalize(new_ld);
+        float tl = length(new_ld);
+        sray.setDir(new_lv);
         occlusion += getShadowContrib();
     }
 

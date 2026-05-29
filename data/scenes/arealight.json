@@ -13,7 +13,7 @@
             "reflCoeff" : 0.25
         },
         "green" : {
-            "ambient" : [0.1, 0.2, 0.1],
+            "ambient" : [0.1, 0.15, 0.1],
             "diffuse" : "earthmap.png",
             "specular" : "specular_clouds.jpg",
             "exponent" : 100.0
@@ -29,12 +29,12 @@
         { 
             "position": [1.0, 2.0, 2.0], 
             "intensity": 0.5,
-            "radius" : 0.0625
+            "radius" : 0.25
         }, 
         {
             "position": [-1.0, 2.0, -1.0],
             "intensity": 0.5,
-            "radius" : 0.0625
+            "radius" : 0.25
         }
     ],
     "shapes" : [
