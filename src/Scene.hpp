@@ -13,11 +13,11 @@ public:
     virtual ~Light() = default;
 
     // arbitrary dynamic formula for area light sampling; max samples 
-    // are done when light has a radius of 8 or more
+    // are done when light has a radius of 1 or more
     inline void setRadius(float r) {
         radius = r; 
         constexpr int MAX_SAMPLES = 64;
-        int calcSamp = MAX_SAMPLES*sqrt(0.5f*r);
+        int calcSamp = MAX_SAMPLES*sqrt(r);
         samples = std::clamp(calcSamp, 1, MAX_SAMPLES);
     }
     inline const float& getRadius() const { return radius; }

@@ -85,3 +85,7 @@ Other platforms may have slightly different build instructions.
 - https://research.pixar.com/docs/2017.Others.DBCHKLV.pdf
 - https://jcgt.org/published/0006/01/02/paper.pdf
 - https://www.rorydriscoll.com/2009/01/07/better-sampling/
+
+## Area lighting
+- https://jcgt.org/published/0008/01/04/paper.pdf (unused)
+- https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-lighting/introduction-to-lighting-spherical-light-cone-sampling.html

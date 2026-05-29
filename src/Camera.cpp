@@ -399,6 +399,54 @@ float Camera::occlusionFactor(const Hit &rec,
     return occlusionCoeff;
 }
 
+class sampleCone {
+private:
+    float i = 0.0f;
+    float j = 0.0f;
+    float n_sqrt;
+    glm::vec3 dx, dy;
+public:
+    // Akalin's method, ty scratchapixel for saving me from this area light torment nexus
+    sampleCone(int N) { n_sqrt = ceil(sqrt(N)); }
+    inline glm::vec3 operator()(const glm::vec3 &ld, const float radius) {
+        // Stratifying in this way makes the penumbra much less
+        // noticable than is warranted
+        // float r1 = (i + prand::rand()) / (n_sqrt*n_sqrt);
+        // float r2 = (j + prand::rand()) / (n_sqrt*n_sqrt);
+
+        // Faster to generate less random variables
+        float r1 = 0.5f*prand::poissonDisk(j).x+0.5f;
+        float r2 = prand::rand();
+        
+        float next_j = fmod(j+1, n_sqrt); j = next_j;
+        if (next_j < EPSILION) i = fmod(i+1, n_sqrt);
+
+        glm::vec3 dz = ld;
+        float dz_len_2 = glm::dot(dz, dz);
+        float dz_len = std::sqrt(dz_len_2);
+        dz /= -dz_len;
+
+        assignONBvec3s(dz, dx, dy);
+
+        float sin_theta_max_2 = radius * radius / dz_len_2;
+        float sin_theta_max = std::sqrt(sin_theta_max_2);
+        float cos_theta_max = std::sqrt(std::max(0.f, 1.f - sin_theta_max_2));
+
+        float cos_theta = 1.f + (cos_theta_max - 1.f) * r1;
+        float sin_theta_2 = 1.f - cos_theta * cos_theta;
+
+        float cos_alpha = (sin_theta_2 / sin_theta_max) + 
+            cos_theta * std::sqrt(1.f - sin_theta_2 / sin_theta_max_2);
+        float sin_alpha = std::sqrt(1.f - cos_alpha * cos_alpha);
+        float phi = 2 * PI * r2;
+
+        // PDFs are useful for path tracing, but not for this Whitted-hybrid tracer 
+        // float pdf 1.f / (2.f * PI * (1.f - cos_theta_max));
+
+        return std::cos(phi)*sin_alpha*dx + std::sin(phi)*sin_alpha*dy + cos_alpha*dz;
+    }
+};
+
 float Camera::shadowFactor(const shared_ptr<Light>& light, 
                            const Hit &rec, 
                            const unique_ptr<Scene> &scene,
@@ -427,22 +475,22 @@ float Camera::shadowFactor(const shared_ptr<Light>& light,
         return s_transparency;
     };
 
-    float occlusion = getShadowContrib();
+    float visibleLight = getShadowContrib();
 
-    if (light->getRadius() < MINIMUM_COEFF) { return occlusion; }
+    if (light->getRadius() < MINIMUM_COEFF) { return visibleLight; }
 
-    vec3 T, B;
-    assignONBvec3s(lv, T, B);
-    auto sampler = sampleSphere(light->getSamples());
+    
+    auto sampler = sampleCone(light->getSamples());
     
     for (int i = 1; i < light->getSamples(); ++i) {
-        vec3 offset = light->getRadius() * sampler();
-        vec3 new_ld = light->pos + offset - rec.x;
+        vec3 offset = sampler(ld, light->getRadius());
+        vec3 new_ld = light->pos + offset*light->getRadius() - rec.x;
         vec3 new_lv = normalize(new_ld);
         tl = length(new_ld);
         sray.setDir(new_lv);
-        occlusion += getShadowContrib();
+        
+        visibleLight += getShadowContrib();
     }
 
-    return occlusion / (float)light->getSamples();
+    return visibleLight / (float)light->getSamples();
 }

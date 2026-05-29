@@ -124,6 +124,7 @@ inline glm::vec3 cosineSampleHemisphere(float u1, float u2)
     return glm::vec3(x, y, sqrt(1.0f - u1));
 }
 
+/* Old code that may or may not be useful later
 namespace {
     class sampleSphere {
     private:
@@ -150,5 +151,5 @@ namespace {
             return glm::vec3(x, y, z);
         }
     };
-    
 }
+*/

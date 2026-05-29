@@ -29,12 +29,12 @@
         { 
             "position": [1.0, 2.0, 2.0], 
             "intensity": 0.5,
-            "radius" : 0.25
+            "radius" : 0.125
         }, 
         {
             "position": [-1.0, 2.0, -1.0],
             "intensity": 0.5,
-            "radius" : 0.25
+            "radius" : 0.125
         }
     ],
     "shapes" : [
