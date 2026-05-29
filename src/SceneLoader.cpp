@@ -485,6 +485,11 @@ bool SceneLoader::tryLoadMaterialComps(
         if (isFloat3) material->specular->init(float3FromToken(value));
         else if (isFilename) material->specular = make_shared<ImageTexture>(textureFilePath);
     }
+    else if (jsonstreq(key, "emissive"))
+    {
+        if (isFloat3) material->emissive->init(float3FromToken(value));
+        else if (isFilename) material->emissive = make_shared<ImageTexture>(textureFilePath);
+    }
 
     return true;
 }

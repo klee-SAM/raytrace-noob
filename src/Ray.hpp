@@ -49,4 +49,5 @@ public:
     inline vec3 ambient() const { return m->ambient->value(u, v, x); }
     inline vec3 diffuse() const { return m->diffuse->value(u, v, x); }
     inline vec3 specular() const { return m->specular->value(u, v, x); }
+    inline vec3 emissive() const { return m->emissive->value(u, v, x); }
 };

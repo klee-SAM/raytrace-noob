@@ -351,10 +351,13 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
         auto getShadowContrib = [&]() {   
             bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
             bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
+            bool isEmiss = srec.m && dot(srec.emissive(), srec.emissive()) > 0.0f;
 
             // 1.0f is fully lit by default, which is when point has unobstructed path to light
             float s_transparency = !behindShape; // if behind, return value from 0.0f to 1.0f
-            if (isTrns) s_transparency = glm::clamp(srec.m->transparency, 0.0f, 1.0f);
+            if (isEmiss) s_transparency = 1.0f;
+            else if (isTrns) s_transparency = glm::clamp(srec.m->transparency, 0.0f, 1.0f);
+
             return s_transparency;
         };
 
@@ -378,11 +381,15 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
         vec3 T, B;
         assignONBvec3s(lv, T, B);
 
+        auto sampler = sampleSphere(light->getSamples());
+
         for (int i = 1; i < light->getSamples(); ++i) {
-            float u1 = prand::rand();
-            float u2 = prand::rand();
-            vec3 rnd = cosineSampleHemisphere(u1, u2);
-            vec3 offset = light->getRadius() * vec3(rnd.x*T + rnd.y*B + rnd.z*lv);
+            // float u1 = prand::rand();
+            // float u2 = prand::rand();
+            // vec3 rnd = cosineSampleHemisphere(u1, u2);
+            vec3 rnd = sampler();
+            vec3 offset = light->getRadius() * rnd;
+            // vec3 offset = glm::ballRand(light->getRadius());
             vec3 new_ld = light->pos + offset - rec.x;
             vec3 new_lv = normalize(new_ld);
             tl = length(new_ld);
@@ -390,6 +397,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
             lightVisibility += getShadowContrib();
             clrSamples += getLighting(new_lv);
         }
+
         lightVisibility = lightVisibility / (float)light->getSamples(); 
         bp_clr += lightVisibility * Li * clrSamples / (float)light->getSamples();
     }
@@ -398,6 +406,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
     clr += (1.0f - rec.m->reflCoeff)*(1.0f - rec.m->transparency)*bp_clr;
 
     clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
+
+    clr += rec.emissive();
 
     return clr;
 }

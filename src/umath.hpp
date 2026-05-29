@@ -123,3 +123,32 @@ inline glm::vec3 cosineSampleHemisphere(float u1, float u2)
     // Modification: assume u1 can never go above 1.0f
     return glm::vec3(x, y, sqrt(1.0f - u1));
 }
+
+namespace {
+    class sampleSphere {
+    private:
+        float i = 0.0f;
+        float j = 0.0f;
+        float n_sqrt;
+    public:
+        sampleSphere(int N) { n_sqrt = ceil(sqrt(N)); }
+        // clanker code
+        inline glm::vec3 operator()()
+        {
+            float u_jit = (i + prand::rand()) / (n_sqrt*n_sqrt);
+            float v_jit = (j + prand::rand()) / (n_sqrt*n_sqrt);
+            
+            float next_j = fmod(j+1, n_sqrt); j = next_j;
+            if (next_j < EPSILION) i = fmod(i+1, n_sqrt);
+
+            float z = 1.0f - 2.0 * u_jit;
+            
+            float phi = 2.0 * PI * v_jit;
+            
+            float r = glm::sqrt(1.0f - z*z);
+            float x = r * cos(phi);
+            float y = r * sin(phi);
+            return glm::vec3(x, y, z);
+        }
+    };
+}

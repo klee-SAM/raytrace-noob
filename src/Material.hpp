@@ -7,6 +7,7 @@ public:
     std::shared_ptr<Texture> ambient;
     std::shared_ptr<Texture> diffuse;
     std::shared_ptr<Texture> specular;
+    std::shared_ptr<Texture> emissive;
     float exponent;
 
     float reflCoeff;    // 1.0 is full reflection; 0.0 is no reflection
@@ -22,6 +23,7 @@ public:
     Material() : ambient{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
                  diffuse{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
                  specular{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
+                 emissive{std::make_shared<ColorTexture>(glm::vec3(0.0f))},
                  exponent{1.0f}, 
                  reflCoeff{0.0f}, 
                  refrIndex{1.0f}, 
