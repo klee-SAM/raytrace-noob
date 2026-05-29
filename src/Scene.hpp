@@ -18,7 +18,7 @@ public:
         radius = r; 
         constexpr int MAX_SAMPLES = 64;
         int calcSamp = MAX_SAMPLES*sqrt(r);
-        samples = std::clamp(calcSamp, 2, MAX_SAMPLES);
+        samples = std::clamp(calcSamp, 1, MAX_SAMPLES);
     }
     inline const float& getRadius() const { return radius; }
     inline const int& getSamples() const { return samples; }

@@ -464,11 +464,3 @@ float Camera::shadowFactor(const shared_ptr<Light>& light,
 
     return occlusion / (float)light->getSamples();
 }
-
-vec3 lighting(const shared_ptr<Light>& light, 
-              const Hit &rec, 
-              const unique_ptr<Scene> &scene,
-              const Interval &interval) 
-{
-
-}
