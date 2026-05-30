@@ -150,8 +150,7 @@ int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::unique_ptr
         } else if (jsonstreq(key, "occlusionRadius")) {
             double occlRadius = doubleFromToken(value);
             cam->setAmbientOccludingRadius(occlRadius);
-        }
-        else if (jsonstreq(key, "fov")) {
+        } else if (jsonstreq(key, "fov")) {
             float fov = doubleFromToken(value);
             cam->setFOV(fov);
         } else if (jsonstreq(key, "sky")) {
@@ -164,6 +163,15 @@ int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::unique_ptr
             // [yaw, pitch, roll]
             vec3 rot = float3FromToken(value);
             cam->setRotation(rot);
+        } else if (jsonstreq(key, "from")) {
+            vec3 eye = float3FromToken(value);
+            cam->setCameraPos(eye);
+        } else if (jsonstreq(key, "to")) {
+            vec3 center = float3FromToken(value);
+            cam->setLookAtPos(center);
+        } else if (jsonstreq(key, "up")) {
+            vec3 up = float3FromToken(value);
+            cam->setUpVector(up);
         }
 
         // if the value-token is not a primitive,

@@ -25,10 +25,13 @@ void Camera::applyView(MatrixStack& MS) {
     MS.rotate(rotation.y, vec3(1.0f, 0.0f, 0.0f));
     MS.rotate(rotation.x, vec3(0.0f, 1.0f, 0.0f));
 
-    auto toWorldSpaceMat = glm::inverse(MS.top());
+    // inverse of view matrix so that the 
+    // center, eye, and up vectors are 
+    // specified wrt old transforms
+    auto cameraMat = glm::inverse(MS.top());
     center = this->lookAtPos;
-    eye = toWorldSpaceMat * vec4(position, 1.f);
-    upVec = toWorldSpaceMat * vec4(camUpVec, 0.f);
+    eye = cameraMat * vec4(position, 1.f);
+    upVec = cameraMat * vec4(camUpVec, 0.f);
 
     lookAtMat = glm::lookAt(eye, center, upVec);
     MS.pop();
