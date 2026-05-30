@@ -18,6 +18,8 @@ void Shape::setModelMatrix(const mat4& m) {
 
 Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const {
 	vec3 wld_x = vec3(modelMat*vec4(x, 1.0f));
+	// Use the inverse transpose to ensure that the normals
+	// face the correct direction for nonuniform scales.
 	vec3 wld_n = normalize(vec3(invT_modelMat*computeNormal(x)));
 	float wld_t = t/length(vx);
 
@@ -58,7 +60,6 @@ void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
 	den = 1.0f/(2.0f*a);
 
 	if (d > 0.0f) {
-		
 		float t0 = (-b - glm::sqrt(d))*den; 
 		float t1 = (-b + glm::sqrt(d))*den;
 
@@ -70,21 +71,6 @@ void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
 		Hit h1 = toWorldSpaceHit(x1, vx, t1);
 		hits.push_back(h1);
 	}
-	// We can do the same calculations for a unit sphere
-	// because of the transformations to local space
-
-	// However, we want to only push the hits in world space.
-	// Know that x' = n' for a unit sphere.
-
-	// When transforming the normals, use the inverse transpose
-	// for handling nonuniform scales
-
-	// worth reiterating: the denominator for t is
-	// the length of the unnormalized v'.
-
-	// If instead use the normalized v, then the given
-	// t value for the sphere will be incorrect, leading to
-	// other objects clipping the sphere, or otherwise
 }
 
 
@@ -167,8 +153,6 @@ void Box::intersect(const Ray& ray, vector<Hit>& hits) {
 	vec3 vk = normalize(vx);
 
 	// https://tavianator.com/2022/ray_box_boundary.html
-	// manual loop unrolling haha
-
 	// incrementally update the tmin and tmax values
 	// based on the prev/initial values, accounting for 
 	// NANs and INFs implicitly

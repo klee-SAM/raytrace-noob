@@ -9,7 +9,8 @@ public:
 	Shape() {}
 	virtual ~Shape() = default;
 
-	// Called when the shape needs to precompute matrices or other members 
+	// Called when the shape needs to precompute matrices or other members
+	// TODO: bounding box function 
 	virtual void initialize() {}
 
 	void setModelMatrix(const glm::mat4& m);
@@ -25,6 +26,11 @@ protected:
 	glm::mat4 inv_modelMat;
 	glm::mat4 invT_modelMat;
 
+	// For moving objects; contains the transforms for an
+	// object at the end of the time interval, which
+	// is decomposed by lerp()
+	glm::mat4 finalModelMat;
+
 	glm::mat3 textureMat; // Texture transformation matrix
 
 	std::shared_ptr<Material> material;
@@ -39,6 +45,14 @@ protected:
 		const glm::vec3& x, // hit position
 		const glm::vec3& vx, // unnormalized ray dir
 		float t) const;
+
+	Hit toWorldSpaceHit(
+		const glm::vec3& x, // hit position
+		const glm::vec3& vx, // unnormalized ray dir
+		const glm::mat4 &model,
+		float t) const;
+
+	void lerp(const float time, glm::mat4 &model);
 };
 
 /* Represents a sphere.

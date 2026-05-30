@@ -11,6 +11,8 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] Tori
 - [ ] Object/Regional Light Attentuation
     - "fog!"
+    - calculate distance traveled through fog material object, 
+    - then comp-wise multiply color by attenuation based on distance
 - [x] CSG
 
 #### light interactions

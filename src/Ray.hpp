@@ -15,14 +15,18 @@ public:
     vec4 pos;
     vec4 dir;
     vec4 clr; // Stores the color from a previous computation
+    float time;
 
-    Ray() : pos{vec4(0.0f, 0.0f, 0.0f, 1.0f)}, dir{vec4(0.0f)} {}
-    Ray(const vec3 &pos, const vec3 &dir) 
-    : pos{vec4(pos, 1.0f)}, dir{vec4(dir, 0.0f)} {}
-    Ray(const vec4 &pos, const vec4 &dir) : pos{pos}, dir{dir} {
-        // Ensure ray invariants
-        this->pos.w = 1.0f; this->dir.w = 0.0f;
-    }
+    // Ensures ray invariants
+    Ray(const vec4 &pos, const vec4 &dir, float tm) 
+     : pos{pos}, dir{dir}, time(tm) {
+        this->pos.w = 1.0f; this->dir.w = 0.0f; }
+
+    Ray(const vec3 &pos, const vec3 &dir, float tm = 0.f)
+     : Ray(vec4(pos, 1.f), vec4(dir, 0.f), tm) {}
+
+    Ray(const vec3 &pos, const vec3 &dir) : Ray(pos, dir, 0.f) {}
+    Ray() : Ray(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f), 0.f) {}
 
     virtual ~Ray() = default;
 
@@ -46,6 +50,7 @@ public:
 
     // Define getters for lighting components here instead of 
     // in the material class to avoid needing extra parameters
+    // However, these can segfault if m isn't checked for nullptr
     inline vec3 ambient() const { return m->ambient->value(u, v, x); }
     inline vec3 diffuse() const { return m->diffuse->value(u, v, x); }
     inline vec3 specular() const { return m->specular->value(u, v, x); }
