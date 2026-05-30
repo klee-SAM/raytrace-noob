@@ -55,17 +55,6 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
                 offset.y = randGen.rand();
             } else offset = 0.5f*prand::poissonDisk(i);
             
-            // rotate the small distribution so
-            // contribution is still possible
-            // float alp = static_cast<float>(i / prand::N);
-            // float cos_a = std::cos(alp);
-            // float sin_a = std::sin(alp);
-            // offset = 0.5f*prand::poissonDisk(i);
-            // // rotation matrix
-            // float ox = offset.x*cos_a - offset.y*sin_a;
-            // float oy = offset.x*sin_a + offset.y*cos_a;
-            // offset = vec2(ox, oy);
-            
             float dx = offset.x + 0.5f;
             float dy = offset.y + 0.5f;
             Ray cray = castPrimaryRay(x, y, dx, dy);
