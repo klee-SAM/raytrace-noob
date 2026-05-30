@@ -48,8 +48,11 @@ public:
     static constexpr uint MAX_RECURSIONS = 7;
     static constexpr float MINIMUM_COEFF = 0.005f;
 
-    Camera() : aspectRatio(1.0), fovy(glm::radians(45.0)), width(1), height(1) { }
-    Camera(uint w, uint h) : fovy{glm::radians(45.0)}, width{w}, height{h} {
+    Camera() : position(0.f), lookAtPos(0.f), camUpVec{0.f, 1.f, 0.f},
+               aspectRatio(1.0), fovy(glm::radians(45.0)), 
+               width(1), height(1) { }
+    Camera(uint w, uint h) : Camera() {
+        this->width = w; this->height = h;
         this->aspectRatio = (double)width/(double)height;
     }
     // fov is in degrees
@@ -72,10 +75,22 @@ public:
 
     void setAspect(double a) { aspectRatio = a; }
     void setFOV(double FOVdeg) { fovy = glm::radians(FOVdeg); }
+
+    // Provided for compatibility; don't use these
     void setInitDistance(double dist) { translation.z = -std::abs(dist); }
     void setTranslation(const glm::vec3& pos) { translation = pos; }
     void setRotation(const glm::vec3& rot) { rotation = rot; }
-    void setWorldRotation(const glm::vec3& wld_rot) { world_rotation = wld_rot; }
+
+    void setCameraPos(const glm::vec3& pos) { position = pos; }
+    void setLookAtPos(const glm::vec3& pos) { lookAtPos = pos; }
+    // As a failsafe, make the up vector face in the +y axis
+    // if the magnitude of upVec is 0.
+    void setUpVector(const glm::vec3& upVec) { 
+        if (glm::length(upVec) < CONSTANTS::EPSILION) {
+            std::cerr << "Provided up vector has a length near zero\n";
+            camUpVec = glm::normalize(upVec+vec3(0.f, EPSILION, 0.f)); 
+        } else { camUpVec = glm::normalize(upVec); }
+    }
 
     // Setting samples below 2 disables antialiasing.
     void setAntialiasSamples(uint count) { AAsamples = count > 1 ? count : 1; }
@@ -95,11 +110,14 @@ public:
 private:
     RowQueue r_queue;
 
-    glm::vec3 translation; // Relative translation, which is indirectly used in computing cameraPos
-    glm::vec3 rotation;    // Relative rotation of the camera to itself.
-
+    // Relative translation, which is indirectly used in computing cameraPos
+    glm::vec3 translation;
     // Rotate the scene around the origin by angles specified in each axis in radians.
-    glm::vec3 world_rotation; 
+    glm::vec3 rotation; 
+
+    glm::vec3 position;    // Position of the camera in world-space
+    glm::vec3 lookAtPos;   // position the camera looks at in world-space      
+    glm::vec3 camUpVec;    // Up vector of the camera. 
 
     double aspectRatio;
     double fovy; // radians

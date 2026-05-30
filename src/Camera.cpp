@@ -15,11 +15,25 @@ void Camera::applyProjection(MatrixStack& MS) {
     MS.mult(perspective(fovy, aspectRatio, znear, zfar));
 }
 void Camera::applyView(MatrixStack& MS) {
+    glm::mat4 lookAtMat;
+    glm::vec3 center, eye, upVec;
+
+    MS.push();
     MS.translate(translation);
     // yaw, pitch, then roll
     MS.rotate(rotation.z, vec3(0.0f, 0.0f, 1.0f));
     MS.rotate(rotation.y, vec3(1.0f, 0.0f, 0.0f));
     MS.rotate(rotation.x, vec3(0.0f, 1.0f, 0.0f));
+
+    auto toWorldSpaceMat = glm::inverse(MS.top());
+    center = this->lookAtPos;
+    eye = toWorldSpaceMat * vec4(position, 1.f);
+    upVec = toWorldSpaceMat * vec4(camUpVec, 0.f);
+
+    lookAtMat = glm::lookAt(eye, center, upVec);
+    MS.pop();
+
+    MS.mult(lookAtMat);
 }
 
 Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) {
