@@ -65,20 +65,39 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         Ray cray = castPrimaryRay(x, y);
         color = getRayColor(scene, cray);
         
+        // breakpoints have experimentally OK magic numbers
+        uint breakpoint = std::max(AAsamples / 4, 8U);
+        float r_samplesDone = sample_scale;
         for (uint i = 1; i < AAsamples; ++i) {
             vec2 offset;
             if (AAsamples > prand::N) {
                 offset.x = randGen.rand();
                 offset.y = randGen.rand();
-            } else offset = 0.5f*prand::poissonDisk(i);
+            } else  {
+                offset = 0.5f*prand::poissonDisk(i);
+                offset.x += 0.5f;
+                offset.y += 0.5f;
+            }
             
-            float dx = offset.x + 0.5f;
-            float dy = offset.y + 0.5f;
+            float dx = offset.x,
+                  dy = offset.y;
             Ray cray = castPrimaryRay(x, y, dx, dy);
-            color += getRayColor(scene, cray);
+            vec3 rayColor = getRayColor(scene, cray);
+            color += rayColor;
+
+            if (i < breakpoint) continue; 
+            
+            // Stop sampling this pixel if the contribution
+            // of the new sample is < 2 values for all comps
+            auto eqCmp = glm::epsilonEqual(color, 
+                static_cast<float>(i+1)*rayColor, 2.f/255.f);
+            if (eqCmp.r && eqCmp.g && eqCmp.b) {
+                r_samplesDone = 1.f / static_cast<float>(i + 1);
+                break;
+            }
         }
 
-        color *= sample_scale;
+        color *= r_samplesDone;
         
         image->setPixel(x, y, color);
     }
