@@ -51,9 +51,20 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         for (uint i = 1; i < AAsamples; ++i) {
             vec2 offset;
             if (AAsamples > prand::N) {
-                offset.x = linearRand(0.001f, 0.999f);
-                offset.y = linearRand(0.001f, 0.999f);
+                offset.x = randGen.rand();
+                offset.y = randGen.rand();
             } else offset = 0.5f*prand::poissonDisk(i);
+            
+            // rotate the small distribution so
+            // contribution is still possible
+            // float alp = static_cast<float>(i / prand::N);
+            // float cos_a = std::cos(alp);
+            // float sin_a = std::sin(alp);
+            // offset = 0.5f*prand::poissonDisk(i);
+            // // rotation matrix
+            // float ox = offset.x*cos_a - offset.y*sin_a;
+            // float oy = offset.x*sin_a + offset.y*cos_a;
+            // offset = vec2(ox, oy);
             
             float dx = offset.x + 0.5f;
             float dy = offset.y + 0.5f;
@@ -336,7 +347,9 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
     if (occlusionSamples > 0 && recursiveDepth < 2) {
         // the maximum is arbitrary, but it should be small 
         // so that faraway objects are not considered
-        bp_clr *= occlusionFactor(rec, scene, Interval(interval.min, occludingRadius));
+        float occlFac = occlusionFactor(rec, scene, Interval(interval.min, occludingRadius));
+        // sqrt is a hack that makes the shadows softer
+        bp_clr *= std::sqrt(occlFac);
     }
 
     for (auto& light : scene->getLights()) {

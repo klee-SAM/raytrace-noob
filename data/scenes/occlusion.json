@@ -6,7 +6,7 @@
         "sky" : "haze",
         "ambientColor" : [0.2, 0.0, 0.2],
         "ambientSamples" : 32,
-        "occlusionRadius" : 0.125
+        "occlusionRadius" : 0.25
     },
     "materials" : {
         "red" : {

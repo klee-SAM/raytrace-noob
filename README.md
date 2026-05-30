@@ -40,6 +40,8 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] scene format documentation (json)
 - [ ] description format for textures/patterns 
 - [x] ambient occlusion settings
+- [ ] control of area light sample count
+- [ ] pmj02 random number generation
 - [ ] partial .mtl support (tiny_obj_loader)
 
 
