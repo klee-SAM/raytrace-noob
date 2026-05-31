@@ -1,4 +1,5 @@
 #include "Camera.hpp"
+#include "prand.hpp"
 
 // #define SHOW_NORMALS
 
@@ -6,10 +7,6 @@ using namespace std;
 using namespace glm;
 
 typedef const vector<shared_ptr<Shape>>& ShapesVector;
-
-// Arbitrary size, but computing these numbers
-// beforehand saves actual seconds
-prand::uniformRand randGen(50'000U);
 
 void Camera::applyProjection(MatrixStack& MS) {
     MS.mult(perspective(fovy, aspectRatio, znear, zfar));
@@ -70,14 +67,9 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         float r_samplesDone = sample_scale;
         for (uint i = 1; i < AAsamples; ++i) {
             vec2 offset;
-            if (AAsamples > prand::N) {
-                offset.x = randGen.rand();
-                offset.y = randGen.rand();
-            } else  {
-                offset = 0.5f*prand::poissonDisk(i);
-                offset.x += 0.5f;
-                offset.y += 0.5f;
-            }
+            offset = 0.5f*diskRandGen.rand();
+            offset.x += 0.5f;
+            offset.y += 0.5f;
             
             float dx = offset.x,
                   dy = offset.y;
@@ -427,8 +419,8 @@ float Camera::occlusionFactor(const Hit &rec,
     aoray.setPos(aorayPos);
 
     for (uint i = 0; i < occlusionSamples; ++i) {
-        float u1 = randGen.rand();
-        float u2 = randGen.rand();
+        float u1 = unifRandGen.rand();
+        float u2 = unifRandGen.rand();
         vec3 rDir = cosineSampleHemisphere(u1, u2);
         // Transform the sampled vector from tangent to world space
         rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);        
@@ -452,8 +444,8 @@ public:
     sampleCone(int N) { }
     inline glm::vec3 operator()(const glm::vec3 &ld, const float radius) {
         // Faster to generate less random variables
-        float r1 = randGen.rand();
-        float r2 = randGen.rand();
+        float r1 = unifRandGen.rand();
+        float r2 = unifRandGen.rand();
 
         glm::vec3 dz = ld;
         float dz_len_2 = glm::dot(dz, dz);
