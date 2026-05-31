@@ -46,7 +46,17 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] pmj02 random number generation
 - [ ] partial .mtl support (tiny_obj_loader)
 - [x] lookat
+- [ ] move mesh buffers to another object
+    - allows for sharing of mesh data between objects
 
+
+- Using SoA for better cache locality
+    - Requires moving common data to single SoA
+    - Needs rework to inserting scene shapes
+    - Need to rework how intersect functions access data
+    - Takes substanial effort in reworking the entire raytracer
+    - a BVH would yield good results for less effort
+    - could be promising, but this is a maybe
 
 
 ## Dependencies
