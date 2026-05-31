@@ -62,6 +62,7 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) {
     Ray cray; 
     cray.pos = cameraPos;
     cray.dir = coord;
+    cray.time = unifRandGen->rand();
 
     return cray;
 }

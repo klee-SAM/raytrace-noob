@@ -51,6 +51,8 @@ Adding more features on a simple raytracer as a learning exercise
 
 
 - Using SoA for better cache locality
+    - w/o SOA, performance decreases by linearly significant
+     amount if i add more data to hold b/c cache misses
     - Requires moving common data to single SoA
     - Needs rework to inserting scene shapes
     - Need to rework how intersect functions access data
