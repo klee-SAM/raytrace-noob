@@ -1,7 +1,7 @@
 {
     "camera" : {
         "distance" : 4.0,
-        "antialias" : 1,
+        "antialias" : 16,
         "fov" : 75.0,
         "sky" : "haze",
         "rotation" : [45.0, -3.75, 3.75]

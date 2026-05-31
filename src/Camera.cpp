@@ -8,6 +8,15 @@ using namespace glm;
 
 typedef const vector<shared_ptr<Shape>>& ShapesVector;
 
+// Arbitrary size, but computing these numbers
+// beforehand saves actual seconds
+std::unique_ptr<prand::uniformRand> unifRandGen = 
+    std::make_unique<prand::uniformRand>(RAND_GEN_SIZE);
+std::unique_ptr<prand::diskRand> diskRandGen = 
+    std::make_unique<prand::diskRand>(RAND_GEN_SIZE);
+
+
+
 void Camera::applyProjection(MatrixStack& MS) {
     MS.mult(perspective(fovy, aspectRatio, znear, zfar));
 }
@@ -66,13 +75,9 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         uint breakpoint = std::max(AAsamples / 4, 8U);
         float r_samplesDone = sample_scale;
         for (uint i = 1; i < AAsamples; ++i) {
-            vec2 offset;
-            offset = 0.5f*diskRandGen.rand();
-            offset.x += 0.5f;
-            offset.y += 0.5f;
+            vec2 offset = 0.5f*diskRandGen->rand(i) + vec2(0.5f);
             
-            float dx = offset.x,
-                  dy = offset.y;
+            float dx = offset.x, dy = offset.y;
             Ray cray = castPrimaryRay(x, y, dx, dy);
             vec3 rayColor = getRayColor(scene, cray);
             color += rayColor;
@@ -115,12 +120,6 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
 
     assert(AAsamples > 0);
     sample_scale = 1.0/AAsamples;
-
-    // Divide by the AAsamples, because having occlusionSamples * AAsamples rays
-    // per pixel is too much for a simple toy raytracer
-    // uint actualOcclusionSamples = std::max(1U, (occlusionSamples / AAsamples));
-    // bool useReducedOcclSamp = occlusionSamples > 0 && divideAObyAA;
-    // occlusionSamples = useReducedOcclSamp ? actualOcclusionSamples : 0;
 
     uint totalCasts = height*width;
 
@@ -419,8 +418,8 @@ float Camera::occlusionFactor(const Hit &rec,
     aoray.setPos(aorayPos);
 
     for (uint i = 0; i < occlusionSamples; ++i) {
-        float u1 = unifRandGen.rand();
-        float u2 = unifRandGen.rand();
+        float u1 = unifRandGen->rand();
+        float u2 = unifRandGen->rand();
         vec3 rDir = cosineSampleHemisphere(u1, u2);
         // Transform the sampled vector from tangent to world space
         rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);        
@@ -444,8 +443,8 @@ public:
     sampleCone(int N) { }
     inline glm::vec3 operator()(const glm::vec3 &ld, const float radius) {
         // Faster to generate less random variables
-        float r1 = unifRandGen.rand();
-        float r2 = unifRandGen.rand();
+        float r1 = unifRandGen->rand();
+        float r2 = unifRandGen->rand();
 
         glm::vec3 dz = ld;
         float dz_len_2 = glm::dot(dz, dz);

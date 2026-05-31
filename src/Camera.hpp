@@ -48,7 +48,8 @@ public:
     static constexpr uint MAX_RECURSIONS = 7;
     static constexpr float MINIMUM_COEFF = 0.005f;
 
-    Camera() : position(0.f), lookAtPos(0.f), camUpVec{0.f, 1.f, 0.f},
+    Camera() : translation(0.f), rotation(0.f),
+               position(0.f), lookAtPos(0.f), camUpVec{0.f, 1.f, 0.f},
                aspectRatio(1.0), fovy(glm::radians(45.0)), 
                width(1), height(1) { }
     Camera(uint w, uint h) : Camera() {

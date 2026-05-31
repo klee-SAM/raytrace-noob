@@ -37,6 +37,7 @@ namespace prand
     };
     constexpr inline vec2 poissonDisk(size_t index) { return poissonDiskData[index % N]; }
 
+    
     template <typename T>
     class genRand 
     {
@@ -50,6 +51,8 @@ namespace prand
         genRand() : i(0U) {}
         genRand(size_t size) : genRand() { dataPoints.reserve(N); }
         inline T rand() { return dataPoints.at(i++ % dataPoints.size()); }
+        // Slightly faster than not providing an index
+        inline T rand(size_t j) { return dataPoints.at(j % dataPoints.size()); }
     };
 
     class uniformRand : public genRand<float> 
@@ -87,8 +90,3 @@ namespace prand
     // public:
     // };
 }
-
-// Arbitrary size, but computing these numbers
-// beforehand saves actual seconds
-prand::uniformRand unifRandGen(RAND_GEN_SIZE);
-prand::diskRand diskRandGen(RAND_GEN_SIZE);
