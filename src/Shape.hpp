@@ -28,10 +28,20 @@ protected:
 
 	// For moving objects; contains the transforms for an
 	// object at the end of the time interval, which
-	// is decomposed by lerp()
-	glm::mat4 finalModelMat;
+	// is used by lerp() to easily compose a new matrix
+	// (also performance decreases by linearly significant
+	// amount if i add more data to hold)
+	// glm::vec3 m_translation;
+	// glm::vec3 m_rotation;
+	// glm::vec3 m_scale;
 
-	glm::mat3 textureMat; // Texture transformation matrix
+	// determines if new matrices need to be constructed
+	// for this object
+	// TODO: does increasing branching with this make
+	// things better or worse?
+	// bool moving;
+
+	// glm::mat3 textureMat; // Texture transformation matrix
 
 	std::shared_ptr<Material> material;
 

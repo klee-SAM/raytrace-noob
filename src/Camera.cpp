@@ -171,8 +171,6 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     return image;
 }
 
-// TODO: experiment with caring only about the first hit
-// (i.e breaking early)
 bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& closestHit) 
 {
     float minDist = interval.max;
