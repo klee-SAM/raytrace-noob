@@ -30,7 +30,7 @@ protected:
 	// object at the end of the time interval, which
 	// is used by lerp() to easily compose a new matrix
 	// (also performance decreases by linearly significant
-	// amount if i add more data to hold)
+	// amount if i add more data to hold b/c cache misses)
 	// glm::vec3 m_translation;
 	// glm::vec3 m_rotation;
 	// glm::vec3 m_scale;
