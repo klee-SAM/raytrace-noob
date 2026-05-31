@@ -10,6 +10,9 @@ typedef const vector<shared_ptr<Shape>>& ShapesVector;
 
 // Arbitrary size, but computing these numbers
 // beforehand saves actual seconds
+// initializing the vectors on the heap instead of
+// stack is better when low or no antialiasing done 
+// (1.3 sec w/o unique and 1.0 sec w/ unique)
 std::unique_ptr<prand::uniformRand> unifRandGen = 
     std::make_unique<prand::uniformRand>(RAND_GEN_SIZE);
 std::unique_ptr<prand::diskRand> diskRandGen = 
@@ -75,6 +78,7 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         uint breakpoint = std::max(AAsamples / 4, 8U);
         float r_samplesDone = sample_scale;
         for (uint i = 1; i < AAsamples; ++i) {
+            // Branching isn't great if it doesn't lead to early breaks
             vec2 offset = 0.5f*diskRandGen->rand(i) + vec2(0.5f);
             
             float dx = offset.x, dy = offset.y;
