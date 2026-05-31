@@ -85,23 +85,17 @@ protected:
  * The 2nd and 4th columns of the model matrix are used for
  * the plane's normal and position respectively, which allows
  * for flexibility when using a MatrixStack for transforms. 
+ * Normal: modelMat[1] = glm::vec4(r, 0.0f);
+ * Position: modelMat[3] = glm::vec4(r, 1.0f);
  */
 class Plane : public Shape {
 public:
 	Plane() {}
 	virtual ~Plane() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
-	void setNormal(const glm::vec3& r) { 
-        modelMat[1] = glm::vec4(r, 0.0f);
-        computeUVvectors(r); 
-    }
-    void setPosition(const glm::vec3& r) { modelMat[3] = glm::vec4(r, 1.0f); }
-	
 	virtual void initialize() override;
 private:
     glm::vec3 uvec, vvec;
-	glm::vec3 normal;
-    void computeUVvectors(const glm::vec3& n);
 };
 
 class Box : public Shape {

@@ -75,8 +75,13 @@ void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
 
 
 
-void Plane::computeUVvectors(const glm::vec3& normal) {
-    // https://computergraphics.stackexchange.com/questions/8382
+// Assume that the plane isn't rotating over time,
+// so set uvec and vvec only "once" knowing that
+// the normal is finalized; compute UV vectors
+void Plane::initialize() { 
+	// https://computergraphics.stackexchange.com/questions/8382
+	vec3 normal = vec3(modelMat[1]);
+
     vec3 a = cross(normal, vec3(1, 0, 0));
     vec3 b = cross(normal, vec3(0, 1, 0));
     vec3 max_ab = dot(a, a) < dot(b, b) ? b : a;
@@ -86,19 +91,13 @@ void Plane::computeUVvectors(const glm::vec3& normal) {
     vvec = cross(normal, uvec);
 }
 
-// Assume that the plane isn't rotating over time,
-// so set uvec and vvec only "once" knowing that
-// the normal is finalized
-void Plane::initialize() {
-	this->normal = vec3(modelMat[1]);
-	computeUVvectors(this->normal);
-}
-
 // The rotation of the plane is used as the normal
 void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
-	vec3 &n = normal;
+	vec3 n = vec3(modelMat[1]);
 	// Compute the distance from the ray origin using:
-	float t = dot(n, vec3(modelMat[3])-ray.getPos()) / dot(n, ray.getDir());
+	float num = dot(n, vec3(modelMat[3])-ray.getPos());
+	float den = dot(n, ray.getDir());
+	float t = num / den; 
 
 	// and the position of intersection by
 	vec3 offset = t*ray.dir;
