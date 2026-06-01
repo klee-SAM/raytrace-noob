@@ -366,33 +366,22 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
     if (occlusionSamples > 0 && recursiveDepth < 2) {
         // the maximum is arbitrary, but it should be small 
         // so that faraway objects are not considered
-        float occlFac = occlusionFactor(rec, scene, Interval(interval.min, occludingRadius));
+        vec3 occlFac = occlusionFactor(rec, scene, Interval(interval.min, occludingRadius));
         // sqrt is a hack that makes the shadows softer
-        bp_clr *= std::sqrt(occlFac);
+        bp_clr.r *= std::sqrt(occlFac.r);
+        bp_clr.g *= std::sqrt(occlFac.g);
+        bp_clr.b *= std::sqrt(occlFac.b); 
     }
 
     for (auto& light : scene->getLights()) {
-        // Construct a shadow ray for each light, using
-        // world coordinates.
         vec3 ld = light->pos - rec.x;
         vec3 lv = normalize(ld);
-
-        Ray sray;
-        sray.setPos(rec.x + (float)interval.min*rec.n);
-        sray.setDir(lv);
-        Hit srec;
+        // Construct shadow rays for each light, using world coordinates.
         // Boolean parameter to cull the number of neglible rays casted for shadows 
         float lightVisibility = shadowFactor(light, rec, scene, interval, recursiveDepth < 2);
-        
-        float Li = light->intensity;
-        vec3 kd = rec.diffuse(), 
-             ks = rec.specular();
-        float s = rec.m->exponent;
 
-        vec3 h = normalize(lv + ev);
-        auto diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
-        auto spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
-        bp_clr += lightVisibility * Li * (diff_cont + spec_cont);
+        float Li = light->intensity;
+        bp_clr += lightVisibility * Li * lightingFactor(rec, lv, ev);
     }
 
     // not really ideal
@@ -405,12 +394,24 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
     return clr;
 }
 
-// Uses monte carlo integration
-float Camera::occlusionFactor(const Hit &rec, 
-                              const unique_ptr<Scene> &scene,
-                              const Interval &interval) 
+vec3 Camera::lightingFactor(const Hit &rec, const vec3 &lv, const vec3 &ev)
 {
-    float num_occluded = 0.0f;
+    vec3 kd = rec.diffuse(), 
+         ks = rec.specular();
+    float s = rec.m->exponent;
+
+    vec3 h = normalize(lv + ev);
+    auto diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
+    auto spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
+    return (diff_cont + spec_cont);
+}
+
+// Uses monte carlo integration
+vec3 Camera::occlusionFactor(const Hit &rec, 
+                             const unique_ptr<Scene> &scene,
+                             const Interval &interval) 
+{
+    vec3 lightAbsorption(0.f);
 
     vec3 T, B;
     assignONBvec3s(rec.n, T, B);
@@ -428,10 +429,14 @@ float Camera::occlusionFactor(const Hit &rec,
         rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);        
         aoray.setDir(normalize(rDir));
 
-        bool occluded = hit(scene->getShapes(), aoray, interval);
-        if (occluded) ++num_occluded;
+        Hit aoHit;
+        bool occluded = hit(scene->getShapes(), aoray, interval, aoHit);
+        if (occluded && aoHit.m) {
+            float atten = glm::clamp(aoHit.t / (float)interval.max, 0.f, 1.f);
+            lightAbsorption += vec3(1.f) - aoHit.diffuse() * atten;
+        }
     }
-    float occlusionCoeff = 1.0f - (num_occluded / (float)occlusionSamples);
+    vec3 occlusionCoeff = vec3(1.f) - (lightAbsorption / (float)occlusionSamples);
     
     return occlusionCoeff;
 }

@@ -1,0 +1,67 @@
+{
+    "camera" : {
+        "antialias" : 1,
+        "fov" : 45.0,
+        "from": [2, 0.5, 5],
+        "to" : [0, 0, 0]
+    },
+    "materials" : {
+        "red" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [1.0, 0.5, 0.5],
+            "specular" : [0.0, 0.0, 0.0],
+            "exponent" : 100.0
+        },
+        "green" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.5, 1.0, 0.5],
+            "specular" : [0.0, 0.0, 0.0],
+            "exponent" : 100.0
+        },
+        "blue" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.0, 0.0, 0.0],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
+        },
+        "white" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [1.0, 1.0, 1.0],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
+        }
+    },
+    "lights" : [
+        { 
+            "position": [-1.0, 3.0, 5.0], 
+            "intensity": 1.0
+        }
+    ],
+    "shapes" : [
+        {
+            "shape" : "plane",
+            "position" : [0.0, 0.0, -6.0],
+            "rotation" : [90, 0.0, 0.0],
+            "material" : "red"
+        },
+        {
+            "shape" : "plane",
+            "position" : [0.5, -1.0, -1.0],
+            "scale" :    [1.0, 1.0, 1.0],
+            "material" : "green"
+        },
+        {
+            "shape" : "box",
+            "position" : [-0.5, -0.4, 0.0],
+            "scale" :    [0.25, 0.25, 0.25],
+            "rotation" : [45, 45, 0.0],
+            "material" : "white"
+        },
+        {
+            "shape" : "sphere",
+            "position" : [0.5, -0.75, 0.0],
+            "scale" :    [0.25, 0.25, 0.25],
+            "material" : "white"
+        }
+    ]
+}

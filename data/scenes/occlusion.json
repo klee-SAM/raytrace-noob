@@ -1,10 +1,11 @@
 {
     "camera" : {
         "distance" : 5.0,
+        "rotation" : [-55, 0, 0],
         "antialias" : 1,
         "fov" : 60.0,
         "sky" : "haze",
-        "ambientColor" : [0.2, 0.0, 0.2],
+        "ambientColor" : [0.15, 0.15, 0.15],
         "ambientSamples" : 32,
         "occlusionRadius" : 0.25
     },
@@ -23,12 +24,12 @@
         },
         "blue" : {
             "ambient" : [0.0, 0.0, 0.0],
-            "diffuse" : [0.0, 0.0, 1.0],
-            "specular" : [1.0, 1.0, 0.5],
+            "diffuse" : "earthmap.png",
+            "specular" : "specular_clouds.jpg",
             "exponent" : 100.0
         },
         "white" : {
-            "ambient" : [-0.15, 0.05, 0.5],
+            "ambient" : [0.05, 0.05, 0.05],
             "diffuse" : [0.9, 0.9, 0.7],
             "specular" : [0.0, 0.0, 0.0],
             "exponent" : 1.0
@@ -36,8 +37,8 @@
     },
     "lights" : [
         { 
-            "position": [1.0, 1.0, 5.0], 
-            "intensity": 0.125
+            "position": [10.0, 1.0, 2.0], 
+            "intensity": 0.25
         }
     ],
     "shapes" : [
@@ -45,25 +46,25 @@
             "shape" : "sphere",
             "position" : [-0.5, -1.0, 1.0],
             "scale" : [1.0, 1.0, 1.0],
-            "material" : "red"
+            "material" : "white"
         },
         {
             "shape" : "sphere",
             "position" : [0.5, -1.0, -1.0],
             "scale" :    [1.0, 1.0, 1.0],
-            "material" : "green"
+            "material" : "blue"
         },
         {
             "shape" : "sphere",
-            "position" : [0.0, 1.0, 0.0],
+            "position" : [0.0, 0.75, 0.0],
             "scale" :    [1.0, 1.0, 1.0],
-            "material" : "blue"
+            "material" : "green"
         },
         {
             "shape" : "plane",
             "position" : [0.0, -2.0, 0.0],
             "scale" :    [1.0, 1.0, 1.0],
-            "material" : "white"
+            "material" : "red"
         }
     ]
 }

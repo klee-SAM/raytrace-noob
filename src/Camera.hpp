@@ -150,7 +150,11 @@ private:
     
     Ray castPrimaryRay(uint idx, uint idy, float offsetx = 0.5f, float offsety = 0.5f);
 
-    float occlusionFactor(const Hit &rec, const std::unique_ptr<Scene> &scene,
+    glm::vec3 lightingFactor(const Hit &rec, 
+                             const glm::vec3 &lv, 
+                             const glm::vec3 &eyeVec);
+
+    glm::vec3 occlusionFactor(const Hit &rec, const std::unique_ptr<Scene> &scene,
                           const Interval &interval);
 
     float shadowFactor(const std::shared_ptr<Light>& light, const Hit &rec, 
