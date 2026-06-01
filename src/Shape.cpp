@@ -58,6 +58,21 @@ glm::mat4 Shape::modelMatLerp(const float time) const {
 	return model;
 }
 
+/* what to do
+i would probably have to change most of the intersection functions 
+for each of the shapes to get() the model matrix for a current
+timestamp before testing. toWorldSpaceHit() should be overloaded with an extra
+parameter(s) modelMat (and inv_modelMat), and the inverse
+transpose should not be stored (just compute it if there's a hit)
+
+NOTE: i should probably test using boolean hacks to avoid an ifstatement
+so to generically using getModelMatrix(float tm), but for now i
+should just use the bool moving to pick which of the getModel()
+methods to use
+
+https://stackoverflow.com/questions/11227809
+*/
+
 
 
 // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere

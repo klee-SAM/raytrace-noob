@@ -199,23 +199,22 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
 
 // Like the above, except this is used
 // for cases where the hit information is unused
-bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval) 
-{
-    bool intersected_any = false;
-    vector<Hit> temp_hits;
-    temp_hits.reserve(16); // magic number
-
-    for (const shared_ptr<Shape>& shape : shapes) {
-        shape->intersect(ray, temp_hits);
-        if (temp_hits.empty()) continue;
-        for (Hit& hit : temp_hits) {
-            if (!interval.contains(hit.t)) continue;
-            intersected_any = true;
-            break;
-        }
-    }
-    return intersected_any;
-}
+// bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval) 
+// {
+//     bool intersected_any = false;
+//     vector<Hit> temp_hits;
+//     temp_hits.reserve(16); // magic number
+//     for (const shared_ptr<Shape>& shape : shapes) {
+//         shape->intersect(ray, temp_hits);
+//         if (temp_hits.empty()) continue;
+//         for (Hit& hit : temp_hits) {
+//             if (!interval.contains(hit.t)) continue;
+//             intersected_any = true;
+//             break;
+//         }
+//     }
+//     return intersected_any;
+// }
 
 vec3 Camera::getSkyColor(const Ray& ray) 
 {
