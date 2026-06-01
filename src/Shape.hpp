@@ -14,8 +14,8 @@ public:
 	virtual void initialize() {}
 
 	void setModelMatrix(const glm::mat4& m);
-	const glm::mat4& getModelMatrix() const { return modelMat; }
-	const glm::mat4& getModelMatrix(float tm) const { return modelMatLerp(tm); }
+	glm::mat4 getModelMatrix() const { return modelMat; }
+	glm::mat4 getModelMatrix(float tm) const { return modelMatLerp(tm); }
 	void setMaterial(const std::shared_ptr<Material>& mat) { material = mat; }
 
 	virtual void intersect(const Ray& ray, std::vector<Hit>& hits) = 0;
@@ -25,7 +25,7 @@ protected:
     // used as precomputed matrices
 	glm::mat4 modelMat;
 	glm::mat4 inv_modelMat;
-	glm::mat4 invT_modelMat;
+	// glm::mat4 invT_modelMat;
 
 	// For moving objects; contains the transforms for an
 	// object at the end of the time interval, which

@@ -13,14 +13,14 @@ using namespace CONSTANTS;
 void Shape::setModelMatrix(const mat4& m) {
 	modelMat = m;
 	inv_modelMat = inverse(m);
-	invT_modelMat = inverse(transpose(m));
+	// invT_modelMat = transpose(inverse(m));
 }
 
 Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const {
 	vec3 wld_x = vec3(modelMat*vec4(x, 1.0f));
 	// Use the inverse transpose to ensure that the normals
 	// face the correct direction for nonuniform scales.
-	vec3 wld_n = normalize(vec3(invT_modelMat*computeNormal(x)));
+	vec3 wld_n = normalize(vec3(transpose(inv_modelMat)*computeNormal(x)));
 	float wld_t = t/length(vx);
 
 	Hit h; 
@@ -69,6 +69,10 @@ NOTE: i should probably test using boolean hacks to avoid an ifstatement
 so to generically using getModelMatrix(float tm), but for now i
 should just use the bool moving to pick which of the getModel()
 methods to use
+
+when i eventually get motion blur sorta working, i should test
+whether removing precomputed inverse helps or reduces performance
+but for now, i should keep it 
 
 https://stackoverflow.com/questions/11227809
 */
@@ -572,7 +576,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 			// Because of floating-point error, the interpolated normal is no longer
 			// normalized, so explicitly normalize it again.
-			wld_n = normalize(vec3(invT_modelMat*vec4(nx, ny, nz, 0.0f)));
+			wld_n = normalize(vec3(transpose(inv_modelMat)*vec4(nx, ny, nz, 0.0f)));
 		}
 
 		// Only two texture components per vertex, if there are any
