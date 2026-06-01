@@ -45,6 +45,10 @@ void Shape::lerp(const float time, glm::mat4 &model) {
 						  this->modelMat[1] / scales.y,
 						  this->modelMat[2] / scales.z);
 	// TODO: a*(1 - tm) + b*tm 
+	// TODO: generalized fetch const matrix reference method
+	// TODO: support only translations for now,
+	// have bounding box of object encompass whole range of motion
+	// when i get to bvh
 }
 
 
