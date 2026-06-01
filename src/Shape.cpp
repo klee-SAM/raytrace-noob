@@ -35,6 +35,20 @@ Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const {
 	return h;
 }
 
+void Shape::lerp(const float time, glm::mat4 &model) {
+	vec4 translations = this->modelMat[3];
+	vec3 scales = vec3(length(this->modelMat[0]),
+					   length(this->modelMat[1]),
+					   length(this->modelMat[2]));
+	// XYZ
+	vec3 rotations = vec3(this->modelMat[0] / scales.x,
+						  this->modelMat[1] / scales.y,
+						  this->modelMat[2] / scales.z);
+	// TODO: a*(1 - tm) + b*tm 
+}
+
+
+
 // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
 vec2 Sphere::computeUV(const vec3& p) const {
     float u = 0.5f + std::atan2(p.z, p.x)*R_PI*0.5f;
