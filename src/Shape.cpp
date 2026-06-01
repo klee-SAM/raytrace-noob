@@ -35,20 +35,27 @@ Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const {
 	return h;
 }
 
-void Shape::lerp(const float time, glm::mat4 &model) {
-	vec4 translations = this->modelMat[3];
+vec3 lerp(float t, vec3 a, vec3 b) { return (1.f - t)*a + t*b; }
+// Use to "move" the object before doing any intersection tests.
+// TODO: have bounding box of object encompass whole range of motion
+glm::mat4 Shape::modelMatLerp(const float time) const {
+	vec3 translations = vec3(this->modelMat[3]);
 	vec3 scales = vec3(length(this->modelMat[0]),
 					   length(this->modelMat[1]),
 					   length(this->modelMat[2]));
-	// XYZ
-	vec3 rotations = vec3(this->modelMat[0] / scales.x,
-						  this->modelMat[1] / scales.y,
-						  this->modelMat[2] / scales.z);
-	// TODO: a*(1 - tm) + b*tm 
-	// TODO: generalized fetch const matrix reference method
-	// TODO: support only translations for now,
-	// have bounding box of object encompass whole range of motion
-	// when i get to bvh
+	// vec3 rotations = vec3(this->modelMat[0] / scales.x,
+	// 					  this->modelMat[1] / scales.y,
+	// 					  this->modelMat[2] / scales.z);
+	mat4 model = this->modelMat;
+	vec3 li_scales = vec4(lerp(time, scales, m_scale), 1.f);
+	// Cancel out the old scales and replace with lerped scaling
+	vec3 sv = vec3(li_scales.x/scales.x, li_scales.y/scales.y, li_scales.z/scales.z);
+	model = glm::scale(model, sv);
+	// Translation.
+	model[3] = vec4(lerp(time, translations, m_translation), 1.f);
+
+	// Support for interpolating the rotation tba (requires quaternions)
+	return model;
 }
 
 

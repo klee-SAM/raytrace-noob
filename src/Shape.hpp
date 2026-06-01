@@ -14,7 +14,8 @@ public:
 	virtual void initialize() {}
 
 	void setModelMatrix(const glm::mat4& m);
-	glm::mat4 getModelMatrix() const { return modelMat; }
+	const glm::mat4& getModelMatrix() const { return modelMat; }
+	const glm::mat4& getModelMatrix(float tm) const { return modelMatLerp(tm); }
 	void setMaterial(const std::shared_ptr<Material>& mat) { material = mat; }
 
 	virtual void intersect(const Ray& ray, std::vector<Hit>& hits) = 0;
@@ -30,7 +31,7 @@ protected:
 	// object at the end of the time interval, which
 	// is used by lerp() to easily compose a new matrix
 	glm::vec3 m_translation;
-	glm::vec3 m_rotation;
+	// glm::vec3 m_rotation;
 	glm::vec3 m_scale;
 
 	// determines if new matrices need to be constructed
@@ -60,7 +61,7 @@ protected:
 		const glm::mat4 &model,
 		float t) const;
 
-	void lerp(const float time, glm::mat4 &model);
+	glm::mat4 modelMatLerp(const float time) const;
 };
 
 /* Represents a sphere.
