@@ -117,7 +117,8 @@ do this by adding and using an extra parameter time
 
 // maybe should also add a note stating that
 // the next transforms should be small
-// compared to current
+// compared to current, because code assumes
+// that the blur is only from one frame to the next
 // should also hold myself back from adding an option
 // for casting specifically motion blur rays to moving objects;
 // that is a whole nother can of worms 

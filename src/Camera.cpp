@@ -307,10 +307,8 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
 }
 
 // Whitted-style ray-tracing, but sometimes amalmagated
-vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, 
-                         const Ray& ray, 
-                         const Interval& interval, 
-                         uint recursiveDepth) 
+vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray, 
+                         const Interval& interval, uint recursiveDepth) 
 {
     Hit rec;
     vec3 clr = vec3(0.0f);
@@ -366,7 +364,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
     if (occlusionSamples > 0 && recursiveDepth < 2) {
         // the maximum is arbitrary, but it should be small 
         // so that faraway objects are not considered
-        vec3 occlFac = occlusionFactor(rec, scene, Interval(interval.min, occludingRadius));
+        auto occlArea = Interval(interval.min, occludingRadius);
+        vec3 occlFac = occlusionFactor(rec, scene, occlArea, ray.time);
         // sqrt is a hack that makes the shadows softer
         bp_clr.r *= std::sqrt(occlFac.r);
         bp_clr.g *= std::sqrt(occlFac.g);
@@ -378,7 +377,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene,
         vec3 lv = normalize(ld);
         // Construct shadow rays for each light, using world coordinates.
         // Boolean parameter to cull the number of neglible rays casted for shadows 
-        float lightVisibility = shadowFactor(light, rec, scene, interval, recursiveDepth < 2);
+        float lightVisibility = shadowFactor(light, rec, scene, 
+            interval, ray.time, recursiveDepth < 2);
 
         float Li = light->intensity;
         bp_clr += lightVisibility * Li * lightingFactor(rec, lv, ev);
@@ -407,9 +407,8 @@ vec3 Camera::lightingFactor(const Hit &rec, const vec3 &lv, const vec3 &ev)
 }
 
 // Uses monte carlo integration
-vec3 Camera::occlusionFactor(const Hit &rec, 
-                             const unique_ptr<Scene> &scene,
-                             const Interval &interval) 
+vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
+                             const Interval &interval, float time) 
 {
     vec3 lightAbsorption(0.f);
 
@@ -420,6 +419,7 @@ vec3 Camera::occlusionFactor(const Hit &rec,
     // Reuse the ray object, yes?
     Ray aoray;
     aoray.setPos(aorayPos);
+    aoray.time = time;
 
     for (uint i = 0; i < occlusionSamples; ++i) {
         float u1 = unifRandGen->rand();
@@ -481,11 +481,10 @@ public:
 };
 
 // Randomly samples points on area lights depending on their radius.
-float Camera::shadowFactor(const shared_ptr<Light>& light, 
-                           const Hit &rec, 
+float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec, 
                            const unique_ptr<Scene> &scene,
                            const Interval &interval,
-                           bool sampleArea = true) 
+                           float time, bool sampleArea) 
 {
     vec3 ld = light->pos - rec.x;
     vec3 lv = normalize(ld);
@@ -494,6 +493,7 @@ float Camera::shadowFactor(const shared_ptr<Light>& light,
     Ray sray;
     sray.setPos(rec.x + (float)interval.min*rec.n);
     sray.setDir(lv);
+    sray.time = time;
 
     Hit srec;
 
