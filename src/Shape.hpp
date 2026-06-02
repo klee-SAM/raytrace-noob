@@ -13,7 +13,13 @@ public:
 	// TODO: bounding box function 
 	virtual void initialize() {}
 
+	// Sets the initial transform.
 	void setModelMatrix(const glm::mat4& m);
+	// Sets the final transform, enabling motion blur 
+	void setNextModelTransforms(const glm::vec3& trns,
+								const glm::vec3& rot,
+								const glm::vec3& scl);
+
 	glm::mat4 getModelMatrix() const { return modelMat; }
 	glm::mat4 getModelMatrix(float tm) const { return modelMatLerp(tm); }
 	void setMaterial(const std::shared_ptr<Material>& mat) { material = mat; }
@@ -59,6 +65,7 @@ protected:
 		const glm::vec3& x, // hit position
 		const glm::vec3& vx, // unnormalized ray dir
 		const glm::mat4 &model,
+		const glm::mat4 &invMod,
 		float t) const;
 
 	glm::mat4 modelMatLerp(const float time) const;

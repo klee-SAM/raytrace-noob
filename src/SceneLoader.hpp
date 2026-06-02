@@ -64,6 +64,9 @@ private:
 
         SHAPE_TYPE type;
         glm::vec3 pos, scl, rot;
+        glm::vec3 npos, nscl, nrot;
+         // Should be set to True whenever moving transforms are set
+        bool moving;
         std::shared_ptr<Material> smat;
 
         // shape sub-class properties
@@ -78,7 +81,8 @@ private:
 
         ShapeProperties(SceneLoader& l) : loader(l), 
             pos(0.0f), scl(1.0f), rot(0.0f), 
-            smat(defaultMaterial) {}
+            npos(0.0f), nscl(1.0f), nrot(0.0f),
+            moving(false), smat(defaultMaterial) {}
 
         void applyProperties(std::shared_ptr<Shape>& shape);
     };

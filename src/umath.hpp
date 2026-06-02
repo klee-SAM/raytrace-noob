@@ -29,7 +29,11 @@ public:
         modMat *= glm::scale(glm::mat4(1.0f), scale);
         return modMat;
     }
-    void clear();
+    void clear() {
+        position = glm::vec3(0.0f);
+        scale    = glm::vec3(1.0f);
+        rotation = glm::vec3(0.0f);
+    };
 private:
     glm::vec3 position = glm::vec3(0.0f); // position in world coordinates
 	glm::vec3 scale    = glm::vec3(1.0f); // scales for each axis

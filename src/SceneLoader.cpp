@@ -325,7 +325,8 @@ int SceneLoader::parseShape(
         if (jsonstreq(key, "shape")) {
             prop.type = shapeTypeFromToken(value);
             shape = createShape(prop.type);
-        } else if (jsonstreq(key, "position")) {
+        } 
+        else if (jsonstreq(key, "position")) {
             prop.pos = float3FromToken(value);
         } else if (jsonstreq(key, "scale")) {
             prop.scl = float3FromToken(value);
@@ -334,11 +335,26 @@ int SceneLoader::parseShape(
             prop.rot.x = glm::radians(prop.rot.x);
             prop.rot.y = glm::radians(prop.rot.y);
             prop.rot.z = glm::radians(prop.rot.z);
-        } else if (jsonstreq(key, "material")) {
+        } 
+        else if (jsonstreq(key, "nextPosition")) {
+            prop.npos = float3FromToken(value);
+            prop.moving = true;
+        } else if (jsonstreq(key, "nextScale")) {
+            prop.nscl = float3FromToken(value);
+            prop.moving = true;
+        } 
+        // else if (jsonstreq(key, "nextRotation")) {
+        //     // prop.rot = float3FromToken(value);
+        //     // prop.rot.x = glm::radians(prop.rot.x);
+        //     // prop.rot.y = glm::radians(prop.rot.y);
+        //     // prop.rot.z = glm::radians(prop.rot.z);
+        
+        // } 
+        else if (jsonstreq(key, "material")) {
             prop.smat = scene->getMaterial(stringFromToken(value));
-        } else if (jsonstreq(key, "file")) {
+        } 
+        else if (jsonstreq(key, "file")) {
             prop.mesh_filename = stringFromToken(value);
-
         } else if (jsonstreq(key, "left")) {
             // Parsing nested shapes requires accounting for 
             // nested tokens within nested tokens
@@ -347,10 +363,8 @@ int SceneLoader::parseShape(
         } else if (jsonstreq(key, "right")) {
             prop_ind += 1 + parseShape(value, scene, prop.right);
             continue;
-
         } else if (jsonstreq(key, "operator")) {
             string operationType = stringFromToken(value);
-
             if (operationType == "intersection") {
                 prop.operationType = OperationType::Intersection;
             } else if (operationType == "union" ) {
@@ -437,6 +451,9 @@ void SceneLoader::ShapeProperties::applyProperties(shared_ptr<Shape>& shape)
     modelMat.setPosition(pos);
     modelMat.setRotation(rot);
     modelMat.setScale(scl);
+    mat4 initialModel = modelMat.getMatrix();
+
+    if (moving) { shape->setNextModelTransforms(npos, nrot, nscl); }
     
     // Hack to initialize a mesh object
     // bool isMesh = dynamic_cast<Mesh*>(shape.get()) != nullptr;
@@ -468,7 +485,7 @@ void SceneLoader::ShapeProperties::applyProperties(shared_ptr<Shape>& shape)
         break;
     }
 
-    shape->setModelMatrix(modelMat.getMatrix());
+    shape->setModelMatrix(initialModel);
     shape->setMaterial(smat);
 };
 

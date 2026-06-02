@@ -16,7 +16,17 @@ void Shape::setModelMatrix(const mat4& m) {
 	// invT_modelMat = transpose(inverse(m));
 }
 
-Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const {
+void Shape::setNextModelTransforms(const glm::vec3& trns,
+								   const glm::vec3& rot,
+								   const glm::vec3& scl) 
+{
+	m_translation = trns;
+	m_scale = scl;
+	// invT_modelMat = transpose(inverse(m));
+}
+
+Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const 
+{
 	vec3 wld_x = vec3(modelMat*vec4(x, 1.0f));
 	// Use the inverse transpose to ensure that the normals
 	// face the correct direction for nonuniform scales.
@@ -35,10 +45,33 @@ Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const {
 	return h;
 }
 
+Hit Shape::toWorldSpaceHit(const vec3 &x, const vec3 &vx, 
+						   const mat4 &model,
+						   const mat4 &inv_model,
+						   float t) const 
+{
+	vec3 wld_x = vec3(model*vec4(x, 1.0f));
+	// Use the inverse transpose to ensure that the normals
+	// face the correct direction for nonuniform scales.
+	vec3 wld_n = normalize(vec3(transpose(inv_model)*computeNormal(x)));
+	float wld_t = t/length(vx);
+
+	Hit h; 
+	h.x = wld_x; 
+	h.n = wld_n; 
+	h.t = wld_t;
+	h.m = material;
+	vec2 uv = computeUV(x);
+	h.u = uv.x;
+	h.v = uv.y;
+
+	return h;
+}
+
 vec3 lerp(float t, vec3 a, vec3 b) { return (1.f - t)*a + t*b; }
 // Use to "move" the object before doing any intersection tests.
 // TODO: have bounding box of object encompass whole range of motion
-glm::mat4 Shape::modelMatLerp(const float time) const {
+mat4 Shape::modelMatLerp(const float time) const {
 	vec3 translations = vec3(this->modelMat[3]);
 	vec3 scales = vec3(length(this->modelMat[0]),
 					   length(this->modelMat[1]),
@@ -65,14 +98,19 @@ timestamp before testing. toWorldSpaceHit() should be overloaded with an extra
 parameter(s) modelMat (and inv_modelMat), and the inverse
 transpose should not be stored (just compute it if there's a hit)
 
-NOTE: i should probably test using boolean hacks to avoid an ifstatement
-so to generically using getModelMatrix(float tm), but for now i
-should just use the bool moving to pick which of the getModel()
-methods to use
+NOTE: for now i should just use the bool moving to pick 
+which of the getModel() methods to use
+
+i probably could test using boolean hacks to avoid an ifstatement
+so to generically using getModelMatrix(float tm) later
 
 when i eventually get motion blur sorta working, i should test
 whether removing precomputed inverse helps or reduces performance
 but for now, i should keep it 
+
+----
+I should test the sphere to see if it moves.
+
 
 https://stackoverflow.com/questions/11227809
 */
@@ -91,6 +129,9 @@ vec4 Sphere::computeNormal(const glm::vec3& x) const {
 };
 
 void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
+	mat4 modelMat = this->getModelMatrix(ray.time);
+	mat4 inv_modelMat = inverse(modelMat);
+
 	vec3 pk = vec3(inv_modelMat*ray.pos);
 	vec3 vx = vec3(inv_modelMat*ray.dir);
 	vec3 vk = normalize(vx);
@@ -108,11 +149,11 @@ void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
 		float t1 = (-b + glm::sqrt(d))*den;
 
 		vec3 x0 = pk + t0*vk;
-        Hit h0 = toWorldSpaceHit(x0, vx, t0);
+        Hit h0 = toWorldSpaceHit(x0, vx, modelMat, inv_modelMat, t0);
 		hits.push_back(h0);
 
 		vec3 x1 = pk + t1*vk;
-		Hit h1 = toWorldSpaceHit(x1, vx, t1);
+		Hit h1 = toWorldSpaceHit(x1, vx, modelMat, inv_modelMat, t1);
 		hits.push_back(h1);
 	}
 }
