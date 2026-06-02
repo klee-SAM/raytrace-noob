@@ -44,7 +44,7 @@ protected:
 	// for this object
 	// TODO: does increasing branching with this make
 	// things better or worse?
-	bool moving;
+	bool moving = false;
 
 	// glm::mat3 textureMat; // Texture transformation matrix
 

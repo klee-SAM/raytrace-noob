@@ -23,6 +23,7 @@ void Shape::setNextModelTransforms(const glm::vec3& trns,
 	m_translation = trns;
 	m_scale = scl;
 	// invT_modelMat = transpose(inverse(m));
+	moving = true;
 }
 
 Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const 
@@ -141,7 +142,9 @@ vec4 Sphere::computeNormal(const glm::vec3& x) const {
 };
 
 void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
-	mat4 modelMat = this->getModelMatrix(ray.time);
+	mat4 modelMat;
+	if (moving) modelMat = this->getModelMatrix(ray.time);
+	else modelMat = this->getModelMatrix();
 	mat4 inv_modelMat = inverse(modelMat);
 
 	vec3 pk = vec3(inv_modelMat*ray.pos);
