@@ -62,7 +62,8 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) {
     Ray cray; 
     cray.pos = cameraPos;
     cray.dir = coord;
-    cray.time = unifRandGen->rand();
+    vec2 rndVec = diskRandGen->rand();
+    cray.time = std::fmod(dot(rndVec, rndVec), 1.f);
 
     return cray;
 }
@@ -235,7 +236,7 @@ vec3 Camera::getSkyColor(const Ray& ray)
 
 Ray reflectRay(const Ray &ray, const Hit &rec) 
 {
-    Ray reflRay; 
+    Ray reflRay = ray; 
     // ray.dir - 2.0f * dot(rec.n, ray.dir) * rec.n
     reflRay.setDir(glm::reflect(ray.getDir(), rec.n));
     reflRay.setPos(rec.x + reflRay.getDir()*Camera::EPSILION);
@@ -249,7 +250,7 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
     float n1, n2;
     const float &rf_i = rec.m->refrIndex;
     vec3 norm = rec.n;
-    Ray refrRay;
+    Ray refrRay = ray;
 
     float cosI = -dot(normalize(ray.getDir()), norm);
     assert(fabs(cosI) < 1.01f);
@@ -296,7 +297,7 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
 {
     vec3 reflClr = getRayColor(scene, reflectRay(ray, hit), interval, recursions);
     for (uint r = 1; r < hit.m->reflSamples; ++r) {
-        Ray nearRay; nearRay.pos = ray.pos;
+        Ray nearRay = ray;
         nearRay.setDir(normalize(ray.getDir() + glm::sphericalRand(hit.m->fuzz)));
         reflClr += getRayColor(scene, reflectRay(nearRay, hit), interval, recursions);
     }

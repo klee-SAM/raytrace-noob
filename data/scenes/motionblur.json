@@ -1,6 +1,6 @@
 {
     "camera" : {
-        "antialias" : 1,
+        "antialias" : 16,
         "fov" : 45.0,
         "from": [2, 0.5, 5],
         "to" : [0, 0, 0]
@@ -10,7 +10,8 @@
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [1.0, 0.5, 0.5],
             "specular" : [0.0, 0.0, 0.0],
-            "exponent" : 100.0
+            "exponent" : 100.0,
+            "reflCoeff" : 0.5
         },
         "green" : {
             "ambient" : [0.1, 0.1, 0.1],
@@ -60,9 +61,9 @@
         {
             "shape" : "sphere",
             "position" : [0.5, -0.75, 0.0],
-            "nextPosition" : [1.5, 0, 0.0],
+            "nextPosition" : [0.75, -0.75, 0.0],
             "scale" :    [0.25, 0.25, 0.25],
-            "nextScale" : [0.5, 0.25, 0.25],
+            "nextScale" : [0.25, 0.25, 0.25],
             "material" : "white"
         }
     ]

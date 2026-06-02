@@ -68,7 +68,7 @@ Hit Shape::toWorldSpaceHit(const vec3 &x, const vec3 &vx,
 	return h;
 }
 
-vec3 lerp(float t, vec3 a, vec3 b) { return (1.f - t)*a + t*b; }
+vec3 lerp(float t, vec3 a, vec3 b) { return a + t*(b-a); }
 // Use to "move" the object before doing any intersection tests.
 // TODO: have bounding box of object encompass whole range of motion
 mat4 Shape::modelMatLerp(const float time) const {
@@ -111,6 +111,17 @@ but for now, i should keep it
 ----
 I should test the sphere to see if it moves.
 
+TODO: modify camera class so that all secondary rays
+casted inherit the primary ray's time.
+do this by adding and using an extra parameter time
+
+// maybe should also add a note stating that
+// the next transforms should be small
+// compared to current
+// should also hold myself back from adding an option
+// for casting specifically motion blur rays to moving objects;
+// that is a whole nother can of worms 
+// (casting a nondeterministic number of rays)
 
 https://stackoverflow.com/questions/11227809
 */
