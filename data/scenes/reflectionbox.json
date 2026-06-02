@@ -1,0 +1,129 @@
+{
+    "camera" : {
+        "from" : [1,0,4],
+        "to" : [0,-1,0],
+        "antialias" : 1,
+        "fov" : 45
+    },
+    "materials" : {
+        "red" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [1.5, 0.3, 0.25],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0,
+            "reflective" : 0.25,
+            "refrIndex" : 1.5,
+            "transparency" : 0.5
+        },
+        "green" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.1, 1.0, 0.325],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
+        },
+        "cyan" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.1, 1.0, 0.725],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0,
+            "reflective" : 0.5,
+            "reflectionSamples" : 8,
+            "fuzz" : 0.125
+        },
+        "yellow" : {
+           "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.75, 0.75, 0.25],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0 
+        },
+        "blue" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.4, 0.5, 1.0],
+            "specular" : [0.0, 0.0, 0.0],
+            "exponent" : 100.0,
+            "reflectance" : 0.75
+        },
+        "white" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.8, 0.8, 0.8],
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
+        }
+    },
+    "lights" : [
+        { 
+            "position": [0.0, 1.0, 0.0], 
+            "intensity": 1
+        }
+    ],
+    "shapes" : [
+        {
+            "shape" : "sphere",
+            "position" : [-0.5, -1.25, -0.5],
+            "scale" : [0.75, 0.75, 0.75],
+            "material" : "red"
+        },
+        {
+            "shape" : "sphere",
+            "position" : [1.25, -1.5, -0.5],
+            "scale" : [0.5, 0.5, 0.5],
+            "material" : "cyan"
+        },
+        {
+            "shape" : "box",
+            "position" : [0.5, -1.5, -2.0],
+            "scale" :    [0.5, 0.5, 0.5],
+            "rotation" : [0, 45, 0],
+            "material" : "green"
+        },
+        {
+            "shape" : "cylinder",
+            "position" : [-2.5, -1.5, -2.0],
+            "scale" :    [0.5, 0.5, 0.5],
+            "rotation" : [15, 0, 7.5],
+            "material" : "yellow"
+        },
+        {
+            "shape" : "cylinder",
+            "position" : [2, -1.5, 2.0],
+            "scale" :    [0.5, 0.5, 0.5],
+            "rotation" : [15, 0, 7.5],
+            "material" : "yellow"
+        },
+        {
+            "shape" : "plane",
+            "position" : [-4.0, 1.0, 0.0],
+            "rotation" : [0, 0, -90],
+            "material" : "blue"
+        },
+        {
+            "shape" : "plane",
+            "position" : [0.0, -1.0, -4.0],
+            "rotation" : [90, 0, 0],
+            "material" : "blue"
+        },
+        {
+            "shape" : "plane",
+            "position" : [0.0, -1.0, 4.0],
+            "rotation" : [-90, 0, 0],
+            "material" : "blue"
+        },
+        {
+            "shape" : "plane",
+            "position" : [4.0, 1.0, 0.0],
+            "rotation" : [0, 0, 90],
+            "material" : "blue"
+        },
+        {
+            "shape" : "plane",
+            "position" : [0.0, -2.0, 0.0],
+            "material" : "white"
+        },
+        {
+            "shape" : "plane",
+            "position" : [0.0, 2.0, 0.0],
+            "rotation" : [180, 0, 0],
+            "material" : "white"
+        }
+    ]
+}
