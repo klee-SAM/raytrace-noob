@@ -338,10 +338,10 @@ int SceneLoader::parseShape(
         } 
         else if (jsonstreq(key, "nextPosition")) {
             prop.npos = float3FromToken(value);
-            prop.moving = true;
+            prop.movePos = true;
         } else if (jsonstreq(key, "nextScale")) {
             prop.nscl = float3FromToken(value);
-            prop.moving = true;
+            prop.moveScl = true;
         } 
         // else if (jsonstreq(key, "nextRotation")) {
         //     // prop.rot = float3FromToken(value);
@@ -453,7 +453,13 @@ void SceneLoader::ShapeProperties::applyProperties(shared_ptr<Shape>& shape)
     modelMat.setScale(scl);
     mat4 initialModel = modelMat.getMatrix();
 
-    if (moving) { shape->setNextModelTransforms(npos, nrot, nscl); }
+    // Not a good look
+    if (movePos || moveScl || moveRot) { 
+        if (!movePos) npos = pos;
+        if (!moveScl) nscl = scl;
+        if (!moveRot) nrot = rot;
+        shape->setNextModelTransforms(npos, nrot, nscl); 
+    }
     
     // Hack to initialize a mesh object
     // bool isMesh = dynamic_cast<Mesh*>(shape.get()) != nullptr;
