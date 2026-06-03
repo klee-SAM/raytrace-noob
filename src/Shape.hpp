@@ -21,7 +21,7 @@ public:
 								const glm::vec3& scl);
 
 	glm::mat4 getModelMatrix() const { return modelMat; }
-	glm::mat4 getModelMatrix(float tm) const { return modelMatLerp(tm); }
+	glm::mat4 getModelMatrix(float tm) const;
 	void setMaterial(const std::shared_ptr<Material>& mat) { material = mat; }
 
 	virtual void intersect(const Ray& ray, std::vector<Hit>& hits) = 0;

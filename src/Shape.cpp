@@ -16,6 +16,11 @@ void Shape::setModelMatrix(const mat4& m) {
 	// invT_modelMat = transpose(inverse(m));
 }
 
+glm::mat4 Shape::getModelMatrix(float time) const {
+	if (this->moving) return modelMatLerp(time);
+	else return modelMat;
+}
+
 void Shape::setNextModelTransforms(const glm::vec3& trns,
 								   const glm::vec3& rot,
 								   const glm::vec3& scl) 
@@ -142,9 +147,7 @@ vec4 Sphere::computeNormal(const glm::vec3& x) const {
 };
 
 void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
-	mat4 modelMat;
-	if (moving) modelMat = this->getModelMatrix(ray.time);
-	else modelMat = this->getModelMatrix();
+	mat4 modelMat = this->getModelMatrix(ray.time);
 	mat4 inv_modelMat = inverse(modelMat);
 
 	vec3 pk = vec3(inv_modelMat*ray.pos);
@@ -245,6 +248,8 @@ vec2 Box::computeUV(const glm::vec3& p) const {
 
 // Axis-aligned bounding box intersection
 void Box::intersect(const Ray& ray, vector<Hit>& hits) {
+	mat4 modelMat = this->getModelMatrix(ray.time);
+	mat4 inv_modelMat = inverse(modelMat);
 	// Transform the ray back to model space first;
 	// axis tests assume the box is at the origin
 	vec3 pk = vec3(inv_modelMat*ray.pos);
@@ -268,11 +273,11 @@ void Box::intersect(const Ray& ray, vector<Hit>& hits) {
 	if (tmax < tmin) return;
 
 	vec3 x0 = pk + tmin*vk;
-	Hit h0 = toWorldSpaceHit(x0, vx, tmin);
+	Hit h0 = toWorldSpaceHit(x0, vx, modelMat, inv_modelMat, tmin);
 	hits.push_back(h0);
 
 	vec3 x1 = pk + tmax*vk;
-	Hit h1 = toWorldSpaceHit(x1, vx, tmax);
+	Hit h1 = toWorldSpaceHit(x1, vx, modelMat, inv_modelMat, tmax);
 	hits.push_back(h1);
 }
 
@@ -288,6 +293,9 @@ vec2 Cylinder::computeUV(const vec3& p) const {
 
 void Cylinder::intersect(const Ray& ray, vector<Hit>& hits) 
 {
+	mat4 modelMat = this->getModelMatrix(ray.time);
+	mat4 inv_modelMat = inverse(modelMat);
+
 	vec3 pk = vec3(inv_modelMat*ray.pos);
 	vec3 vx = vec3(inv_modelMat*ray.dir);
 	vec3 vk = normalize(vx);
@@ -306,11 +314,11 @@ void Cylinder::intersect(const Ray& ray, vector<Hit>& hits)
 	float t1 = (-b + glm::sqrt(d))*den;
 
 	vec3 x0 = pk + t0*vk;
-	Hit h0 = toWorldSpaceHit(x0, vx, t0);
+	Hit h0 = toWorldSpaceHit(x0, vx, modelMat, inv_modelMat, t0);
 	hits.push_back(h0);
 
 	vec3 x1 = pk + t1*vk;
-	Hit h1 = toWorldSpaceHit(x1, vx, t1); 
+	Hit h1 = toWorldSpaceHit(x1, vx, modelMat, inv_modelMat, t1); 
 	hits.push_back(h1);
 }
 
@@ -558,6 +566,10 @@ bool Mesh::intersect_triangle(const vec3& orig, const vec3& dir,
 
 // Some floating-point error possible, or the normals are not normal
 void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
+	// TODO: rework bounding shape function so that it's
+	// compatible with motion blur, allowing me to let this be
+	// affected by motion blur properties
+
 	// transform ray to local coords
 	vec3 l_rorig = vec3(inv_modelMat*ray.pos);
 
@@ -613,6 +625,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 	// u and v refer to barycentric coordinates.
 	float t, u, v;
 
+	mat4 invT_modelMat = transpose(inv_modelMat);
 	for (size_t i = 0, j = 0; i < posBuf.size(); i += 9, j += 6) {
 		if (!intersect_triangle(l_rorig, r_vk, i, t, u, v)) continue;
 		float w = 1.0f - v - u;
@@ -632,7 +645,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 			// Because of floating-point error, the interpolated normal is no longer
 			// normalized, so explicitly normalize it again.
-			wld_n = normalize(vec3(transpose(inv_modelMat)*vec4(nx, ny, nz, 0.0f)));
+			wld_n = normalize(vec3(invT_modelMat*vec4(nx, ny, nz, 0.0f)));
 		}
 
 		// Only two texture components per vertex, if there are any
@@ -674,9 +687,17 @@ void pushIntervals(vector<Interval>& intervals, const vector<Hit>& hits) {
 }
 
 void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
+	mat4 modelMat = getModelMatrix(ray.time);
+	mat4 inv_modelMat = inverse(modelMat);
+
+	Ray mray;
+	mray.pos = inv_modelMat * ray.pos;
+	mray.dir = inv_modelMat * ray.dir;
+	mray.time = ray.time;
+
 	vector<Hit> rightHits;
-	this->left->intersect(ray, hits);
-	this->right->intersect(ray, rightHits);
+	this->left->intersect(mray, hits);
+	this->right->intersect(mray, rightHits);
 
 	vector<Interval> l_intervals;
 	vector<Interval> r_intervals; 
@@ -694,6 +715,13 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 	std::sort(hits.begin(), hits.end(), cmp);
 
 	filter_intersections(l_intervals, r_intervals, hits);
+
+	// need to transform the hits back from CSG space to world space
+	mat4 invT_modelMat = transpose(inv_modelMat);
+	for (auto &hit : hits) {
+		hit.x = modelMat*vec4(hit.x, 1.f);
+		hit.n = normalize(invT_modelMat*vec4(hit.n, 0.f));
+	}
 }
 
 bool intersection_allowed(OperationType op, bool inL, bool inR) {
