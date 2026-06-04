@@ -481,6 +481,9 @@ public:
 };
 
 // Randomly samples points on area lights depending on their radius.
+// TODO: change this to return a vec3 that is affected by the
+// clr of the shadowed object if it is transparent; easy object attentuation]
+// the colored glass 
 float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec, 
                            const unique_ptr<Scene> &scene,
                            const Interval &interval,

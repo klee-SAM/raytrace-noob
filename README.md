@@ -41,6 +41,7 @@ Adding more features on a simple raytracer as a learning exercise
 #### misc.
 - [ ] scene format documentation (json)
 - [ ] description format for textures/patterns 
+- [ ] Spatial textures
 - [x] ambient occlusion settings
 - [x] control of area light sample count
 - [ ] pmj02 random number generation
