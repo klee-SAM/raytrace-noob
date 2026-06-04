@@ -145,6 +145,11 @@ private:
     glm::vec3 getReflectionColor(const std::unique_ptr<Scene> &scene,
                                  const Ray &ray, const Hit &rec, 
                                  const Interval &interval, uint recursions);
+    
+    glm::vec3 getRefractedColor(const std::unique_ptr<Scene> &scene,
+                                   const Ray &ray, const Hit &rec,
+                                   const Interval &interval, uint recursions,
+                                   float &reflectance, bool back_face);
 
     glm::vec3 getSkyColor(const Ray& ray);
     

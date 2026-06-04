@@ -266,16 +266,16 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
     }
 
     float eta = n1/n2;
-    float sin2T = eta*eta*(1.0f-cosI*cosI);
+    float k = 1.f - eta*eta*(1.0f-cosI*cosI);
 
-    // Total internal reflection, but reflect instead
-    if (sin2T > 1.0f) {
+    // Total internal reflection, do nothing instead
+    if (k < 0.0f) {
         reflectance = 1.0f;
         return refrRay;
     }
     
     // cos(t)^2
-    float cosT = sqrt(1.0f - sin2T);
+    float cosT = sqrt(k);
     float m = 1.0f - (n1 > n2 ? cosT : cosI);
     // atrocity for (1 - cos)^5: (m^2)^2 * m = m^5
     float r0 = (n1 - n2)/(n1 + n2); r0 *= r0;
@@ -303,7 +303,24 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
     }
     // reflSamples must be at least 1.
     reflClr /= hit.m->reflSamples;
+
+    reflClr *= hit.m->reflCoeff;
     return reflClr;
+}
+
+vec3 Camera::getRefractedColor(const std::unique_ptr<Scene> &scene,
+                               const Ray &ray, const Hit &hit,
+                               const Interval &interval, 
+                               uint recursions, float &reflectance,
+                               bool back_face) 
+{
+    Ray refrRay = refractRay(ray, hit, reflectance, back_face);
+    vec3 refrClr = vec3(0.f);
+    if (reflectance < 1.f - CONSTANTS::EPSILION) {
+        refrClr = getRayColor(scene, refrRay, interval, recursions);
+    } // otherwise, no refracted clr, modify reflected instead
+    refrClr *= hit.m->transparency;
+    return refrClr;
 }
 
 // Whitted-style ray-tracing, but sometimes amalmagated
@@ -340,7 +357,6 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     if (reflective && !back_face) { 
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         reflectClr = getReflectionColor(scene, ray, rec, interval, recursiveDepth+1);
-        reflectClr *= rec.m->reflCoeff;
     }   
 
     if (refractive) {
@@ -352,9 +368,18 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         if (back_face) rec.n = -rec.n;  
         // If the above line is not nested in this if statement,
         // bright specks may appear on meshes w/ backface culling enabled. 
-        refractClr = getRayColor(scene, refractRay(ray, rec, reflectance, back_face), 
-                              interval, recursiveDepth+1);
-        refractClr *= rec.m->transparency;
+        // refractClr = getRayColor(scene, refractRay(ray, rec, reflectance, back_face), 
+        //                       interval, recursiveDepth+1);
+        refractClr = getRefractedColor(scene, ray, rec, interval, 
+                        recursiveDepth+1, reflectance, back_face);
+        
+        // Deal with TIR here.
+        if (reflectance > 1.f - CONSTANTS::EPSILION) {
+            Ray refrRay = reflectRay(ray, rec);
+            refrRay.setPos( rec.x - 2.f*Camera::EPSILION*refrRay.getDir() );
+            reflectClr = getRayColor(scene, refrRay, interval, recursiveDepth+1);
+            reflectClr *= rec.m->transparency;
+        }
     }
 
     // The eye vector does not point to the camera when reflecting/refracting
@@ -435,6 +460,7 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
             float atten = glm::clamp(aoHit.t / (float)interval.max, 0.f, 1.f);
             lightAbsorption += vec3(1.f) - aoHit.diffuse() * atten;
         }
+        // TODO: early exit at X/N number of samples
     }
     vec3 occlusionCoeff = vec3(1.f) - (lightAbsorption / (float)occlusionSamples);
     
