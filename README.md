@@ -25,7 +25,7 @@ Adding more features on a simple raytracer as a learning exercise
 
 #### camera effects
 - [x] Antialiasing
-- [ ] Motion blur
+- [x] Motion blur
 
 #### optimizations
 - [X] Multithreading
@@ -38,7 +38,7 @@ Adding more features on a simple raytracer as a learning exercise
     - create a fractal
 - [ ] Monte Carlo path tracing
 
-### misc.
+#### misc.
 - [ ] scene format documentation (json)
 - [ ] description format for textures/patterns 
 - [x] ambient occlusion settings
@@ -48,8 +48,14 @@ Adding more features on a simple raytracer as a learning exercise
 - [x] lookat
 - [ ] move mesh buffers to another object
     - allows for sharing of mesh data between objects
+- [ ] organize src files into folders
+    - New .h and .cpp files for each shape
+    - Light class as separate file
+    - ext folder for libraries
+    - util folder for umath, prand
+- [ ] mesh motion blur support, whenever BVH is done
 
-
+### things to consider
 - Using SoA for better cache locality
     - w/o SOA, performance decreases by linearly significant
      amount if i add more data to hold b/c cache misses
@@ -59,6 +65,12 @@ Adding more features on a simple raytracer as a learning exercise
     - Takes substanial effort in reworking the entire raytracer
     - a BVH would yield good results for less effort
     - could be promising, but this is a maybe
+- option for noiseless (but aliased) motion blur
+    - move transforms options into a group for json files
+    - option to specify "frames" 
+    - option to "merge" with the previous frame (render results
+    of both frames are averaged together)
+    - produce a sequence of png images w/ suffixed numbers
 
 
 ## Dependencies
@@ -79,14 +91,15 @@ Other platforms may have slightly different build instructions.
 - jsmn.h (JSON parser): https://github.com/zserge/jsmn
 - tiny_obj_loader.h: https://github.com/tinyobjloader/tinyobjloader
 
-# Further reading:
-
+## Further reading:
 - Raytracing in One Weekend series (https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 - The Ray Tracer Challenge: (https://pragprog.com/titles/jbtracer/the-ray-tracer-challenge/)
 - Physically Based Rendering: (https://pbr-book.org/4ed/contents)
 - Scratchapixel lessons: (https://www.scratchapixel.com/index.html) 
 
 ## Other links:
+
+These are resources I consulted while developing this raytracer.
 
 ### Multithreading
 - cpp_multithreading: (https://github.com/wasimusu/cpp_multithreading)
@@ -101,8 +114,10 @@ Other platforms may have slightly different build instructions.
 - https://jcgt.org/published/0006/01/02/paper.pdf
 - https://www.rorydriscoll.com/2009/01/07/better-sampling/
 
-## Area lighting
-- https://jcgt.org/published/0008/01/04/paper.pdf
-- https://github.com/Andrew-Helmer/pmj-cpp/tree/master/sample_generation
-- https://abau.io/blog/sample_patterns/
+### Area lighting
 - https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-lighting/introduction-to-lighting-spherical-light-cone-sampling.html
+
+#### Sampling Methods
+- https://github.com/Andrew-Helmer/pmj-cpp/tree/master/sample_generation
+- https://jcgt.org/published/0008/01/04/paper.pdf
+- https://abau.io/blog/sample_patterns/
