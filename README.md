@@ -108,6 +108,8 @@ These are resources I consulted while developing this raytracer.
 
 ### Reflections/Refractions
 - https://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf
+- https://computergraphics.stackexchange.com/questions/7789/
+- https://stackoverflow.com/questions/53549615/
 
 ### Ambient Occlusion
 - https://computergraphics.stackexchange.com/questions/7985/
