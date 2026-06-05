@@ -2,7 +2,7 @@
     "camera" : {
         "distance" : 5.0,
         "rotation" : [-55, 0, 0],
-        "antialias" : 1,
+        "antialias" : 16,
         "fov" : 60.0,
         "sky" : "haze",
         "ambientColor" : [0.15, 0.15, 0.15],

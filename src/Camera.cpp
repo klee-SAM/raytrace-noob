@@ -18,7 +18,15 @@ std::unique_ptr<prand::uniformRand> unifRandGen =
 std::unique_ptr<prand::diskRand> diskRandGen = 
     std::make_unique<prand::diskRand>(RAND_GEN_SIZE);
 
+constexpr float SAMP_DIFF_EPSILION = 2.f/255.f;
 
+// Returns the closest intersection in the interval.
+bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& closestHit);
+// True if currClr*(i+1) equals culmClr within sampBreak threshold; should be called
+// after currClr is added to culmClr.
+// TODO: use heuristic closer to statistic approach (computing running error)
+bool has_no_change(uint i, uint break_i, const vec3 &culmClr, 
+    const vec3 &currClr, float sampBreak = SAMP_DIFF_EPSILION);
 
 void Camera::applyProjection(MatrixStack& MS) {
     MS.mult(perspective(fovy, aspectRatio, znear, zfar));
@@ -68,6 +76,18 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) {
     return cray;
 }
 
+bool has_no_change(const uint i, const uint break_i, 
+    const vec3 &culmClr, const vec3 &currClr, 
+    const float sampBreak)
+{
+    if (i < break_i) return false;
+    // Stop sampling this pixel if the contribution
+    // of the new sample is < sampBreak for all comps
+    auto eqCmp = glm::epsilonEqual(culmClr, 
+        static_cast<float>(i+1)*currClr, sampBreak);
+    return eqCmp.r && eqCmp.g && eqCmp.b;
+}
+
 void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, uint y) 
 {
     for (uint x = 0; x < width; ++x) {
@@ -87,17 +107,11 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
             Ray cray = castPrimaryRay(x, y, dx, dy);
             vec3 rayColor = getRayColor(scene, cray);
             color += rayColor;
-
-            if (i < breakpoint) continue; 
             
             // Stop sampling this pixel if the contribution
-            // of the new sample is < 2 values for all comps
-            auto eqCmp = glm::epsilonEqual(color, 
-                static_cast<float>(i+1)*rayColor, 2.f/255.f);
-            if (eqCmp.r && eqCmp.g && eqCmp.b) {
-                r_samplesDone = 1.f / static_cast<float>(i + 1);
-                break;
-            }
+            // of the new sample is < epsilion values for all comps
+            bool cond = has_no_change(i, breakpoint, color, rayColor);
+            if (cond) { r_samplesDone = 1.f / static_cast<float>(i + 1); break; }
         }
 
         color *= r_samplesDone;
@@ -392,9 +406,9 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         auto occlArea = Interval(interval.min, occludingRadius);
         vec3 occlFac = occlusionFactor(rec, scene, occlArea, ray.time);
         // sqrt is a hack that makes the shadows softer
-        bp_clr.r *= std::sqrt(occlFac.r);
-        bp_clr.g *= std::sqrt(occlFac.g);
-        bp_clr.b *= std::sqrt(occlFac.b); 
+        bp_clr.r *= occlFac.r;
+        bp_clr.g *= occlFac.g;
+        bp_clr.b *= occlFac.b; 
     }
 
     for (auto& light : scene->getLights()) {
@@ -446,6 +460,9 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
     aoray.setPos(aorayPos);
     aoray.time = time;
 
+    const uint BREAKPOINT = std::max(occlusionSamples / 4, 8U);
+
+    float currSamplesDone = static_cast<float>(occlusionSamples); 
     for (uint i = 0; i < occlusionSamples; ++i) {
         float u1 = unifRandGen->rand();
         float u2 = unifRandGen->rand();
@@ -456,13 +473,18 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
 
         Hit aoHit;
         bool occluded = hit(scene->getShapes(), aoray, interval, aoHit);
+        vec3 rayAbsorbed = vec3(0.f);
         if (occluded && aoHit.m) {
             float atten = glm::clamp(aoHit.t / (float)interval.max, 0.f, 1.f);
-            lightAbsorption += vec3(1.f) - aoHit.diffuse() * atten;
+            // For a red clr, green and blue are absorbed
+            rayAbsorbed = vec3(1.f) - aoHit.diffuse() * atten;
         }
-        // TODO: early exit at X/N number of samples
+        lightAbsorption += rayAbsorbed;
+        bool cond = has_no_change(i, BREAKPOINT, lightAbsorption, rayAbsorbed);
+        // crazy, over 2x speedup with no visible changes in quality
+        if (cond) { currSamplesDone = static_cast<float>(i + 1); break; }
     }
-    vec3 occlusionCoeff = vec3(1.f) - (lightAbsorption / (float)occlusionSamples);
+    vec3 occlusionCoeff = vec3(1.f) - (lightAbsorption / currSamplesDone);
     
     return occlusionCoeff;
 }
@@ -545,7 +567,7 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
 
     
     auto sampler = sampleCone(light->getSamples());
-    
+    float samplesDone = static_cast<float>(light->getSamples());
     for (int i = 1; i < light->getSamples(); ++i) {
         vec3 offset = sampler(ld, light->getRadius());
         vec3 new_ld = light->pos + offset*light->getRadius() - rec.x;
@@ -553,8 +575,9 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         tl = length(new_ld);
         sray.setDir(new_lv);
         
-        visibleLight += getShadowContrib();
+        float contrib = getShadowContrib();
+        visibleLight += contrib;
     }
 
-    return visibleLight / (float)light->getSamples();
+    return visibleLight / samplesDone;
 }

@@ -68,6 +68,7 @@ constexpr float decimal(float x) { return x - static_cast<int>(x); }
 constexpr float fract(float x) { return x - std::floor(x); }
 // https://stackoverflow.com/questions/1903954/
 constexpr int sgn(float val) { return (0.0f < val) - (val < 0.0f); }
+constexpr bool is_pow2(int n) { return n == 0 || (n & (n - 1)) == 0; }
 
 // orthonormal basis (TBN matrix)
 inline void assignONBvec3s(const glm::vec3& n, glm::vec3& b1, glm::vec3& b2) 
