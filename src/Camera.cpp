@@ -76,11 +76,11 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) {
     return cray;
 }
 
-bool has_no_change(const uint i, const uint break_i, 
+bool has_no_change(const uint i, const uint min_i, 
     const vec3 &culmClr, const vec3 &currClr, 
     const float sampBreak)
 {
-    if (i < break_i) return false;
+    if (i < min_i) return false;
     // Stop sampling this pixel if the contribution
     // of the new sample is < sampBreak for all comps
     auto eqCmp = glm::epsilonEqual(culmClr, 
@@ -460,7 +460,7 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
     aoray.setPos(aorayPos);
     aoray.time = time;
 
-    const uint BREAKPOINT = std::max(occlusionSamples / 4, 8U);
+    const uint minConvergSamp = std::max(occlusionSamples / 4, 8U);
 
     float currSamplesDone = static_cast<float>(occlusionSamples); 
     for (uint i = 0; i < occlusionSamples; ++i) {
@@ -480,7 +480,7 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
             rayAbsorbed = vec3(1.f) - aoHit.diffuse() * atten;
         }
         lightAbsorption += rayAbsorbed;
-        bool cond = has_no_change(i, BREAKPOINT, lightAbsorption, rayAbsorbed);
+        bool cond = has_no_change(i, minConvergSamp, lightAbsorption, rayAbsorbed);
         // crazy, over 2x speedup with no visible changes in quality
         if (cond) { currSamplesDone = static_cast<float>(i + 1); break; }
     }
@@ -494,20 +494,26 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
 class sampleCone {
 private:
     glm::vec3 dx, dy;
+    glm::vec3 dz;
+    const float radius;
+    float dz_len_2;
 public:
     // Akalin's method, ty scratchapixel for saving me from this area light torment nexus
-    sampleCone(int N) { }
-    inline glm::vec3 operator()(const glm::vec3 &ld, const float radius) {
-        // Faster to generate less random variables
-        float r1 = unifRandGen->rand();
-        float r2 = unifRandGen->rand();
-
-        glm::vec3 dz = ld;
-        float dz_len_2 = glm::dot(dz, dz);
+    sampleCone(const glm::vec3 &ld, const float sampleRadius) 
+    : radius(sampleRadius)
+    { 
+        dz = ld;
+        dz_len_2 = glm::dot(dz, dz);
         float dz_len = std::sqrt(dz_len_2);
         dz /= -dz_len;
 
         assignONBvec3s(dz, dx, dy);
+    }
+    inline glm::vec3 operator()() 
+    {
+        // Faster to generate less random variables
+        float r1 = unifRandGen->rand();
+        float r2 = unifRandGen->rand();
 
         float sin_theta_max_2 = radius * radius / dz_len_2;
         float sin_theta_max = std::sqrt(sin_theta_max_2);
@@ -532,6 +538,9 @@ public:
 // TODO: change this to return a vec3 that is affected by the
 // clr of the shadowed object if it is transparent; easy object attentuation]
 // the colored glass 
+
+// todo: i am rationing commits rn, work on actual color glass part of sunday
+// commit the shadow optimization changes saturday
 float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec, 
                            const unique_ptr<Scene> &scene,
                            const Interval &interval,
@@ -563,13 +572,16 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
 
     float visibleLight = getShadowContrib();
 
-    if (light->getRadius() < MINIMUM_COEFF || !sampleArea) { return visibleLight; }
-
+    if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { return visibleLight; }
     
-    auto sampler = sampleCone(light->getSamples());
+    auto sampler = sampleCone(ld, light->getRadius());
     float samplesDone = static_cast<float>(light->getSamples());
+    const int min_i = std::max(light->getSamples() / 4, 32);
+
+    float mean = 0.f;
+
     for (int i = 1; i < light->getSamples(); ++i) {
-        vec3 offset = sampler(ld, light->getRadius());
+        vec3 offset = sampler();
         vec3 new_ld = light->pos + offset*light->getRadius() - rec.x;
         vec3 new_lv = normalize(new_ld);
         tl = length(new_ld);
@@ -577,6 +589,12 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         
         float contrib = getShadowContrib();
         visibleLight += contrib;
+
+        // bool cond = has_no_change(i, min_i, visibleLight, contrib); 
+        // This does not work 
+        // if (i < min_i) continue;  
+        // bool cond = std::fabs(visibleLight - contrib*(i+1)) < SAMP_DIFF_EPSILION / 64;
+        // if (cond) { samplesDone = static_cast<float>(i+1); break; }
     }
 
     return visibleLight / samplesDone;

@@ -53,7 +53,9 @@
     "lights" : [
         { 
             "position": [0.0, 1.0, 0.0], 
-            "intensity": 1
+            "intensity": 1,
+            "radius" : 0.25,
+            "samples" : 64
         }
     ],
     "shapes" : [
