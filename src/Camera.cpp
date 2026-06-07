@@ -538,9 +538,6 @@ public:
 // TODO: change this to return a vec3 that is affected by the
 // clr of the shadowed object if it is transparent; easy object attentuation]
 // the colored glass 
-
-// todo: i am rationing commits rn, work on actual color glass part of sunday
-// commit the shadow optimization changes saturday
 float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec, 
                            const unique_ptr<Scene> &scene,
                            const Interval &interval,
@@ -564,7 +561,7 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
 
         // 1.0f is fully lit by default, which is when point has unobstructed path to light
         float s_transparency = !behindShape; // if behind, return value from 0.0f to 1.0f
-        if (isEmiss) s_transparency = 1.0f;
+        if (!behindShape || isEmiss) s_transparency = 1.0f;
         else if (isTrns) s_transparency = glm::clamp(srec.m->transparency, 0.0f, 1.0f);
 
         return s_transparency;
@@ -575,10 +572,12 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { return visibleLight; }
     
     auto sampler = sampleCone(ld, light->getRadius());
-    float samplesDone = static_cast<float>(light->getSamples());
-    const int min_i = std::max(light->getSamples() / 4, 32);
+    const int min_i = std::max(light->getSamples() / 4, 8);
 
-    float mean = 0.f;
+    // https://stackoverflow.com/questions/5147378/
+    float meanLight = visibleLight;
+    float samplesDone = 1.f;
+    float m2 = visibleLight * visibleLight;
 
     for (int i = 1; i < light->getSamples(); ++i) {
         vec3 offset = sampler();
@@ -588,7 +587,19 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         sray.setDir(new_lv);
         
         float contrib = getShadowContrib();
-        visibleLight += contrib;
+        // visibleLight += contrib;
+        
+        samplesDone++;
+        float r_sampDone = 1.f / samplesDone;
+        float prev_mean = meanLight;
+        meanLight += (contrib - prev_mean) * r_sampDone;
+        m2 += (contrib - prev_mean) * (contrib - meanLight);
+
+        if (i < min_i) continue;  
+
+        float vari = m2 * r_sampDone;
+        float epsi2 = SAMP_DIFF_EPSILION;
+        if (vari < epsi2) { break; }
 
         // bool cond = has_no_change(i, min_i, visibleLight, contrib); 
         // This does not work 
@@ -597,5 +608,11 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         // if (cond) { samplesDone = static_cast<float>(i+1); break; }
     }
 
-    return visibleLight / samplesDone;
+    // TODO, actually, commit changes on sunday, 
+    // b/c issue w/ transparency shadow calc and naive optimization strat
+    // actual changes start monday 
+    // todo: i am rationing commits rn, work on actual color glass part of monday
+
+    // return visibleLight / samplesDone;
+    return meanLight;
 }
