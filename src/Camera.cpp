@@ -561,8 +561,17 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
 
         // 1.0f is fully lit by default, which is when point has unobstructed path to light
         float s_transparency = !behindShape; // if behind, return value from 0.0f to 1.0f
-        if (!behindShape || isEmiss) s_transparency = 1.0f;
-        else if (isTrns) s_transparency = glm::clamp(srec.m->transparency, 0.0f, 1.0f);
+        if (!behindShape || isEmiss) { 
+            s_transparency = 1.0f; 
+        } else if (isTrns) { 
+            s_transparency = glm::clamp(srec.m->transparency, 0.0f, 1.0f); 
+            // ...
+        }
+        // TODO: visual effect where transparent objects "erase" shadow, should recursively
+        // cast more refracted rays to determine what other objects cast shadow
+        // recursively get a s_transparency contribution (consecutive transparent objects
+        // should reduce s_transparecy), recursively call this lambda function with refracted ray
+        // reflectance term gets a dummy variable (refractRay)
 
         return s_transparency;
     };
