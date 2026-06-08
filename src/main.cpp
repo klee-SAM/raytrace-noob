@@ -252,6 +252,7 @@ int main(int argc, char** argv) {
     unique_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
     clog << "Seconds used by render(): " 
          << (double)(clock()-start)/(processor_count*CLOCKS_PER_SEC) << '\n';
+    // commit rationing todo: use std::chrono steady clock or high res clock
     image->setFilename(outputname);
     image->write();
 

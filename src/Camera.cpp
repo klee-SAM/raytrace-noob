@@ -607,12 +607,7 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         // bool cond = std::fabs(visibleLight - contrib*(i+1)) < SAMP_DIFF_EPSILION / 64;
         // if (cond) { samplesDone = static_cast<float>(i+1); break; }
     }
-
-    // TODO, actually, commit changes on sunday, 
-    // b/c issue w/ transparency shadow calc and naive optimization strat
     // actual changes start monday 
     // todo: i am rationing commits rn, work on actual color glass part of monday
-
-    // return visibleLight / samplesDone;
     return meanLight;
 }
