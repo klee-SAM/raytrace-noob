@@ -245,21 +245,16 @@ int main(int argc, char** argv) {
     
     camera->applyProjection(P);
     camera->applyView(MV);
-
-    // clock_t start = clock();
-    auto start = chrono::steady_clock::now();
-    // Each core increments the cycle count by 1, so attempt to account for that in the benchmark
-    // by assuming all processors are used. This is still not totally accurate.
-    // auto processor_count = std::thread::hardware_concurrency();
-    // if (processor_count < 1) processor_count = 1;
+    
+    using namespace std::chrono;
+    auto start = steady_clock::now();
     unique_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
-    auto interval = chrono::duration_cast<chrono::nanoseconds>(chrono::steady_clock::now() - start);
-    clog << "Seconds used by render(): " 
-        //  << (double)(clock()-start)/(processor_count*CLOCKS_PER_SEC) << '\n';
-        << interval.count() / 1e9 << '\n';
-    // commit rationing todo: use std::chrono steady clock or high res clock
+    // Cast if the platform's steady clock doesn't use nanoseconds
+    auto interval = duration_cast<nanoseconds>(steady_clock::now() - start);
+    clog << "Seconds used by render(): " << interval.count() / 1e9 << '\n'; 
     image->setFilename(outputname);
     image->write();
-
+    // commit ration removal of comments LOL
+    // readme update for another day, just commit that change
     return 0;
 }
