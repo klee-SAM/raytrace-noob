@@ -100,7 +100,7 @@ Other platforms may have slightly different build instructions.
 
 ## Other links:
 
-These are resources I consulted while developing this raytracer.
+These are the resources I consulted while developing this raytracer.
 
 ### Multithreading
 - cpp_multithreading: (https://github.com/wasimusu/cpp_multithreading)

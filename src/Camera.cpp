@@ -435,13 +435,13 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 
 vec3 Camera::lightingFactor(const Hit &rec, const vec3 &lv, const vec3 &ev)
 {
-    vec3 kd = rec.diffuse(), 
-         ks = rec.specular();
-    float s = rec.m->exponent;
+    const vec3 kd = rec.diffuse(), 
+               ks = rec.specular();
+    const float s = rec.m->exponent;
 
-    vec3 h = normalize(lv + ev);
-    auto diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
-    auto spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
+    const vec3 h = normalize(lv + ev);
+    const auto diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
+    const auto spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
     return (diff_cont + spec_cont);
 }
 
@@ -464,27 +464,27 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
 
     float currSamplesDone = static_cast<float>(occlusionSamples); 
     for (uint i = 0; i < occlusionSamples; ++i) {
-        float u1 = unifRandGen->rand();
-        float u2 = unifRandGen->rand();
+        const float u1 = unifRandGen->rand();
+        const float u2 = unifRandGen->rand();
         vec3 rDir = cosineSampleHemisphere(u1, u2);
         // Transform the sampled vector from tangent to world space
         rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);        
         aoray.setDir(normalize(rDir));
 
         Hit aoHit;
-        bool occluded = hit(scene->getShapes(), aoray, interval, aoHit);
+        const bool occluded = hit(scene->getShapes(), aoray, interval, aoHit);
         vec3 rayAbsorbed = vec3(0.f);
         if (occluded && aoHit.m) {
-            float atten = glm::clamp(aoHit.t / (float)interval.max, 0.f, 1.f);
+            const float atten = glm::clamp(aoHit.t / (float)interval.max, 0.f, 1.f);
             // For a red clr, green and blue are absorbed
             rayAbsorbed = vec3(1.f) - aoHit.diffuse() * atten;
         }
         lightAbsorption += rayAbsorbed;
-        bool cond = has_no_change(i, minConvergSamp, lightAbsorption, rayAbsorbed);
+        const bool cond = has_no_change(i, minConvergSamp, lightAbsorption, rayAbsorbed);
         // crazy, over 2x speedup with no visible changes in quality
         if (cond) { currSamplesDone = static_cast<float>(i + 1); break; }
     }
-    vec3 occlusionCoeff = vec3(1.f) - (lightAbsorption / currSamplesDone);
+    const vec3 occlusionCoeff = vec3(1.f) - (lightAbsorption / currSamplesDone);
     
     return occlusionCoeff;
 }
@@ -499,12 +499,12 @@ private:
     float dz_len_2;
 public:
     // Akalin's method, ty scratchapixel for saving me from this area light torment nexus
-    sampleCone(const glm::vec3 &ld, const float sampleRadius) 
+    sampleCone(const glm::vec3 &ld, float sampleRadius) 
     : radius(sampleRadius)
     { 
         dz = ld;
         dz_len_2 = glm::dot(dz, dz);
-        float dz_len = std::sqrt(dz_len_2);
+        const float dz_len = std::sqrt(dz_len_2);
         dz /= -dz_len;
 
         assignONBvec3s(dz, dx, dy);
@@ -512,20 +512,20 @@ public:
     inline glm::vec3 operator()() 
     {
         // Faster to generate less random variables
-        float r1 = unifRandGen->rand();
-        float r2 = unifRandGen->rand();
+        const float r1 = unifRandGen->rand();
+        const float r2 = unifRandGen->rand();
 
-        float sin_theta_max_2 = radius * radius / dz_len_2;
-        float sin_theta_max = std::sqrt(sin_theta_max_2);
-        float cos_theta_max = std::sqrt(std::max(0.f, 1.f - sin_theta_max_2));
+        const float sin_theta_max_2 = radius * radius / dz_len_2;
+        const float sin_theta_max = std::sqrt(sin_theta_max_2);
+        const float cos_theta_max = std::sqrt(std::max(0.f, 1.f - sin_theta_max_2));
 
-        float cos_theta = 1.f + (cos_theta_max - 1.f) * r1;
-        float sin_theta_2 = 1.f - cos_theta * cos_theta;
+        const float cos_theta = 1.f + (cos_theta_max - 1.f) * r1;
+        const float sin_theta_2 = 1.f - cos_theta * cos_theta;
 
-        float cos_alpha = (sin_theta_2 / sin_theta_max) + 
+        const float cos_alpha = (sin_theta_2 / sin_theta_max) + 
             cos_theta * std::sqrt(1.f - sin_theta_2 / sin_theta_max_2);
-        float sin_alpha = std::sqrt(1.f - cos_alpha * cos_alpha);
-        float phi = 2 * PI * r2;
+        const float sin_alpha = std::sqrt(1.f - cos_alpha * cos_alpha);
+        const float phi = 2 * PI * r2;
 
         // PDFs are useful for path tracing, but not for this Whitted-hybrid tracer 
         // float pdf 1.f / (2.f * PI * (1.f - cos_theta_max));
@@ -543,9 +543,9 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
                            const Interval &interval,
                            float time, bool sampleArea) 
 {
-    vec3 ld = light->pos - rec.x;
-    vec3 lv = normalize(ld);
-    float tl = length(ld);
+    const vec3 ld = light->pos - rec.x;
+    const vec3 lv = normalize(ld);
+    float tl = length(ld); // mutated by getShadowContrib() lambda
 
     Ray sray;
     sray.setPos(rec.x + (float)interval.min*rec.n);
@@ -555,9 +555,9 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
     Hit srec;
 
     auto getShadowContrib = [&]() {   
-        bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
-        bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
-        bool isEmiss = srec.m && dot(srec.emissive(), srec.emissive()) > 0.0f;
+        const bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
+        const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
+        const bool isEmiss = srec.m && dot(srec.emissive(), srec.emissive()) > 0.0f;
 
         // 1.0f is fully lit by default, which is when point has unobstructed path to light
         float s_transparency = !behindShape; // if behind, return value from 0.0f to 1.0f
@@ -576,7 +576,7 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         return s_transparency;
     };
 
-    float visibleLight = getShadowContrib();
+    const float visibleLight = getShadowContrib();
 
     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { return visibleLight; }
     
@@ -616,7 +616,8 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         // bool cond = std::fabs(visibleLight - contrib*(i+1)) < SAMP_DIFF_EPSILION / 64;
         // if (cond) { samplesDone = static_cast<float>(i+1); break; }
     }
-    // actual changes start monday 
-    // todo: i am rationing commits rn, work on actual color glass part of monday
+    // actual changes start someday 
+    // todo: i am rationing commits rn, work on actual color glass part of someday
+    // commit changing of vars to const b/c lol, after readme update
     return meanLight;
 }
