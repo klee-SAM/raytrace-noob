@@ -254,7 +254,6 @@ int main(int argc, char** argv) {
     clog << "Seconds used by render(): " << interval.count() / 1e9 << '\n'; 
     image->setFilename(outputname);
     image->write();
-    // commit ration removal of comments LOL
-    // readme update for another day, just commit that change
+
     return 0;
 }
