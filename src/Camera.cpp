@@ -296,7 +296,8 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
     reflectance = r0 + (1.0f-r0)*(m*m*m*m*m);
     // reflectance = std::clamp(fabs(reflectance), 0.0f, 1.0f);
 
-    refrRay.setDir( normalize(eta*ray.getDir()) + ((eta*(cosI) - cosT)*norm) );
+    // refrRay.setDir( normalize( eta*ray.getDir() + norm*(eta*cosI - cosT) ) );
+    refrRay.setDir( normalize( eta*ray.getDir() ) + norm*(eta*cosI - cosT) ); // incorrect, commit ration
     refrRay.setPos( rec.x + refrRay.getDir()*(float)Camera::EPSILION );
 
     return refrRay;
@@ -382,8 +383,6 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         if (back_face) rec.n = -rec.n;  
         // If the above line is not nested in this if statement,
         // bright specks may appear on meshes w/ backface culling enabled. 
-        // refractClr = getRayColor(scene, refractRay(ray, rec, reflectance, back_face), 
-        //                       interval, recursiveDepth+1);
         refractClr = getRefractedColor(scene, ray, rec, interval, 
                         recursiveDepth+1, reflectance, back_face);
         
@@ -405,7 +404,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         // so that faraway objects are not considered
         auto occlArea = Interval(interval.min, occludingRadius);
         vec3 occlFac = occlusionFactor(rec, scene, occlArea, ray.time);
-        // sqrt is a hack that makes the shadows softer
+        // sqrt was a hack that made the shadows softer
         bp_clr.r *= occlFac.r;
         bp_clr.g *= occlFac.g;
         bp_clr.b *= occlFac.b; 
@@ -554,7 +553,9 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
 
     Hit srec;
 
-    auto getShadowContrib = [&]() {   
+    auto getShadowContrib = [&](uint recursions = 0U) {  
+        if (recursions >= Camera::MAX_RECURSIONS) return 0.0f;
+         
         const bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
         const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
         const bool isEmiss = srec.m && dot(srec.emissive(), srec.emissive()) > 0.0f;
@@ -572,6 +573,17 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         // recursively get a s_transparency contribution (consecutive transparent objects
         // should reduce s_transparecy), recursively call this lambda function with refracted ray
         // reflectance term gets a dummy variable (refractRay)
+
+        // ignore above, too expensive and won't work to emulate caustics
+
+        // TODO: refracted rays won't reach the light source and is not based :(
+        // do not case additional rays, instead overload the hit function to return
+        // a list of intersections, sorted by hit distance, and compute products
+        // transparency (no caustics b/c that requires photon mapping)
+        // for branch prediction don't do early exits on transpar computation
+        // NOTE: if the ray intersects a opaque shape before the light source,
+        // stop the intersection tests early and return for shadowHit()
+        // function. otherwise, compute product transparency
 
         return s_transparency;
     };
@@ -596,7 +608,6 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         sray.setDir(new_lv);
         
         float contrib = getShadowContrib();
-        // visibleLight += contrib;
         
         samplesDone++;
         float r_sampDone = 1.f / samplesDone;
@@ -618,6 +629,5 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
     }
     // actual changes start someday 
     // todo: i am rationing commits rn, work on actual color glass part of someday
-    // commit changing of vars to const b/c lol, after readme update
     return meanLight;
 }
