@@ -45,7 +45,7 @@ void Camera::applyView(MatrixStack& MS) {
     // inverse of view matrix so that the 
     // center, eye, and up vectors are 
     // specified wrt old transforms
-    auto cameraMat = glm::inverse(MS.top());
+    const auto cameraMat = glm::inverse(MS.top());
     center = this->lookAtPos;
     eye = cameraMat * vec4(position, 1.f);
     upVec = cameraMat * vec4(camUpVec, 0.f);
@@ -59,8 +59,8 @@ void Camera::applyView(MatrixStack& MS) {
 Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) {
     // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
 
-    float ndc_y = 2*((float)idy + offsety)/((float)height) - 1.0;
-    float ndc_x = 2*((float)idx + offsetx)/((float)width) - 1.0;
+    const float ndc_y = 2*((float)idy + offsety)/((float)height) - 1.0;
+    const float ndc_x = 2*((float)idx + offsetx)/((float)width) - 1.0;
 
     glm::vec4 coord(ndc_x, ndc_y, -1.0f, 1.0f); // px coord
     coord = invP*coord; // eye coord
@@ -70,21 +70,20 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) {
     Ray cray; 
     cray.pos = cameraPos;
     cray.dir = coord;
-    vec2 rndVec = diskRandGen->rand();
+    const vec2 rndVec = diskRandGen->rand();
     cray.time = std::fmod(dot(rndVec, rndVec), 1.f);
 
     return cray;
 }
 
-bool has_no_change(const uint i, const uint min_i, 
-    const vec3 &culmClr, const vec3 &currClr, 
-    const float sampBreak)
+bool has_no_change(const uint i, const uint min_i, const vec3 &culmClr, 
+    const vec3 &currClr, const float sampBreak)
 {
     if (i < min_i) return false;
     // Stop sampling this pixel if the contribution
     // of the new sample is < sampBreak for all comps
-    auto eqCmp = glm::epsilonEqual(culmClr, 
-        static_cast<float>(i+1)*currClr, sampBreak);
+    const vec3 extCurrClr = static_cast<float>(i+1)*currClr;
+    const auto eqCmp = glm::epsilonEqual(culmClr, extCurrClr, sampBreak);
     return eqCmp.r && eqCmp.g && eqCmp.b;
 }
 
@@ -97,15 +96,15 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         color = getRayColor(scene, cray);
         
         // breakpoints have experimentally OK magic numbers
-        uint breakpoint = std::max(AAsamples / 4, 8U);
+        const uint breakpoint = std::max(AAsamples / 4, 8U);
         float r_samplesDone = sample_scale;
         for (uint i = 1; i < AAsamples; ++i) {
             // Branching isn't great if it doesn't lead to early breaks
-            vec2 offset = 0.5f*diskRandGen->rand(i) + vec2(0.5f);
+            const vec2 offset = 0.5f*diskRandGen->rand(i) + vec2(0.5f);
             
-            float dx = offset.x, dy = offset.y;
-            Ray cray = castPrimaryRay(x, y, dx, dy);
-            vec3 rayColor = getRayColor(scene, cray);
+            const float dx = offset.x, dy = offset.y;
+            cray = castPrimaryRay(x, y, dx, dy);
+            const vec3 rayColor = getRayColor(scene, cray);
             color += rayColor;
             
             // Stop sampling this pixel if the contribution
@@ -157,6 +156,13 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
 
     vector<thread> threads;
     // reserve 1 thread for outputting the current number of scans completed
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    // TODO: experiement with not reserving
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     for (uint i = 0; i < numThreads-1; ++i) {
         // passing by non-const ref dangerous!!! thank goodness only 1
         // thread processes 1 row at a time
@@ -250,7 +256,7 @@ vec3 Camera::getSkyColor(const Ray& ray)
 
 Ray reflectRay(const Ray &ray, const Hit &rec) 
 {
-    Ray reflRay = ray; 
+    Ray reflRay; 
     // ray.dir - 2.0f * dot(rec.n, ray.dir) * rec.n
     reflRay.setDir(glm::reflect(ray.getDir(), rec.n));
     reflRay.setPos(rec.x + reflRay.getDir()*Camera::EPSILION);
@@ -262,13 +268,13 @@ Ray reflectRay(const Ray &ray, const Hit &rec)
 Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFacing) 
 {
     float n1, n2;
-    const float &rf_i = rec.m->refrIndex;
     vec3 norm = rec.n;
     Ray refrRay = ray;
 
     float cosI = -dot(normalize(ray.getDir()), norm);
     assert(fabs(cosI) < 1.01f);
 
+    const float &rf_i = rec.m->refrIndex;
     if (backFacing) {
         // Leaving the shape
         n1 = rf_i;
@@ -279,8 +285,8 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
         n2 = rf_i;
     }
 
-    float eta = n1/n2;
-    float k = 1.f - eta*eta*(1.0f-cosI*cosI);
+    const float eta = n1/n2;
+    const float k = 1.f - eta*eta*(1.0f-cosI*cosI);
 
     // Total internal reflection, do nothing instead
     if (k < 0.0f) {
@@ -289,8 +295,8 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
     }
     
     // cos(t)^2
-    float cosT = sqrt(k);
-    float m = 1.0f - (n1 > n2 ? cosT : cosI);
+    const float cosT = sqrt(k);
+    const float m = 1.0f - (n1 > n2 ? cosT : cosI);
     // atrocity for (1 - cos)^5: (m^2)^2 * m = m^5
     float r0 = (n1 - n2)/(n1 + n2); r0 *= r0;
     reflectance = r0 + (1.0f-r0)*(m*m*m*m*m);
@@ -329,7 +335,7 @@ vec3 Camera::getRefractedColor(const std::unique_ptr<Scene> &scene,
                                uint recursions, float &reflectance,
                                bool back_face) 
 {
-    Ray refrRay = refractRay(ray, hit, reflectance, back_face);
+    const Ray refrRay = refractRay(ray, hit, reflectance, back_face);
     vec3 refrClr = vec3(0.f);
     if (reflectance < 1.f - CONSTANTS::EPSILION) {
         refrClr = getRayColor(scene, refrRay, interval, recursions);
@@ -358,14 +364,14 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     vec3 refractClr = vec3(0.0f);
 
     float reflectance = 1.0f; // If the material is not refractive, keep any reflections
-    bool reflective = rec.m->reflCoeff > Camera::MINIMUM_COEFF;
-    bool refractive = rec.m->transparency > Camera::MINIMUM_COEFF;
+    const bool reflective = rec.m->reflCoeff > Camera::MINIMUM_COEFF;
+    const bool refractive = rec.m->transparency > Camera::MINIMUM_COEFF;
 
     // Determine if the ray is inside or outside the object,
     // only to handle the case of lighting for CSG.
     // Doing this means that refraction must account for
     // this possibility via parameter
-    bool back_face = dot(ray.getDir(), rec.n) > 0.0f; // true if inside
+    const bool back_face = dot(ray.getDir(), rec.n) > 0.0f; // true if inside
 
     // Avoid casting additional reflection rays if inside the object, this
     // avoids massively expensive and unnecessary computation (3x increase)
@@ -396,14 +402,14 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     }
 
     // The eye vector does not point to the camera when reflecting/refracting
-    vec3 ev = -ray.dir;
+    const vec3 ev = -ray.dir;
 
     vec3 bp_clr = rec.ambient() + globalAmbient;
     if (occlusionSamples > 0 && recursiveDepth < 2) {
         // the maximum is arbitrary, but it should be small 
         // so that faraway objects are not considered
-        auto occlArea = Interval(interval.min, occludingRadius);
-        vec3 occlFac = occlusionFactor(rec, scene, occlArea, ray.time);
+        const auto occlArea = Interval(interval.min, occludingRadius);
+        const vec3 occlFac = occlusionFactor(rec, scene, occlArea, ray.time);
         // sqrt was a hack that made the shadows softer
         bp_clr.r *= occlFac.r;
         bp_clr.g *= occlFac.g;
@@ -411,11 +417,11 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     }
 
     for (auto& light : scene->getLights()) {
-        vec3 ld = light->pos - rec.x;
-        vec3 lv = normalize(ld);
+        const vec3 ld = light->pos - rec.x;
+        const vec3 lv = normalize(ld);
         // Construct shadow rays for each light, using world coordinates.
         // Boolean parameter to cull the number of neglible rays casted for shadows 
-        float lightVisibility = shadowFactor(light, rec, scene, 
+        const float lightVisibility = shadowFactor(light, rec, scene, 
             interval, ray.time, recursiveDepth < 2);
 
         float Li = light->intensity;
@@ -508,7 +514,7 @@ public:
 
         assignONBvec3s(dz, dx, dy);
     }
-    inline glm::vec3 operator()() 
+    inline glm::vec3 operator()() const
     {
         // Faster to generate less random variables
         const float r1 = unifRandGen->rand();
@@ -592,7 +598,7 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
 
     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { return visibleLight; }
     
-    auto sampler = sampleCone(ld, light->getRadius());
+    const auto sampler = sampleCone(ld, light->getRadius());
     const int min_i = std::max(light->getSamples() / 4, 8);
 
     // https://stackoverflow.com/questions/5147378/
@@ -607,18 +613,18 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         tl = length(new_ld);
         sray.setDir(new_lv);
         
-        float contrib = getShadowContrib();
+        const float contrib = getShadowContrib();
         
         samplesDone++;
-        float r_sampDone = 1.f / samplesDone;
-        float prev_mean = meanLight;
+        const float r_sampDone = 1.f / samplesDone;
+        const float prev_mean = meanLight;
         meanLight += (contrib - prev_mean) * r_sampDone;
         m2 += (contrib - prev_mean) * (contrib - meanLight);
 
         if (i < min_i) continue;  
 
-        float vari = m2 * r_sampDone;
-        float epsi2 = SAMP_DIFF_EPSILION;
+        const float vari = m2 * r_sampDone;
+        const float epsi2 = SAMP_DIFF_EPSILION;
         if (vari < epsi2) { break; }
 
         // bool cond = has_no_change(i, min_i, visibleLight, contrib); 
