@@ -13,6 +13,7 @@ Adding more features on a simple raytracer as a learning exercise
     - "fog!"
     - calculate distance traveled through fog material object, 
     - then comp-wise multiply color by attenuation based on distance
+    - (backtracing with hit())
 - [x] CSG
 
 #### light interactions
@@ -26,6 +27,7 @@ Adding more features on a simple raytracer as a learning exercise
 #### camera effects
 - [x] Antialiasing
 - [x] Motion blur
+- [ ] Depth of field
 
 #### optimizations
 - [X] Multithreading
@@ -105,6 +107,9 @@ These are the resources I consulted while developing this raytracer.
 ### Multithreading
 - cpp_multithreading: (https://github.com/wasimusu/cpp_multithreading)
 - https://stackoverflow.com/questions/15278343/c11-thread-safe-queue
+- https://stackoverflow.com/questions/868568/what-do-the-terms-cpu-bound-and-i-o-bound-mean
+- https://stackoverflow.com/questions/43482448/multithreading-raytracer
+- https://stackoverflow.com/questions/5645592/large-number-of-threads-in-c-and-efficiency?rq=3
 
 ### Reflections/Refractions
 - https://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf
