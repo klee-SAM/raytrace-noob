@@ -122,6 +122,9 @@ These are the resources I consulted while developing this raytracer.
 - https://jcgt.org/published/0006/01/02/paper.pdf
 - https://www.rorydriscoll.com/2009/01/07/better-sampling/
 
+### Diffuse Interreflection
+- https://raytracing2012.wordpress.com/first-bounce-diffuse-interreflections/
+
 ### Area lighting
 - https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-lighting/introduction-to-lighting-spherical-light-cone-sampling.html
 
