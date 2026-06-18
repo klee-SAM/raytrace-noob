@@ -50,7 +50,7 @@ namespace prand
     public:
         genRand() : i(0U) {}
         genRand(size_t size) : genRand() { dataPoints.reserve(N); }
-        inline T rand() { return dataPoints.at(i++ % dataPoints.size()); }
+        inline T rand() { i++; return dataPoints.at(i*(i+2673457) % dataPoints.size()); }
         // Slightly faster than not providing an index
         inline T rand(size_t j) { return dataPoints.at(j % dataPoints.size()); }
     };
