@@ -81,7 +81,7 @@ inline void assignONBvec3s(const glm::vec3& n, glm::vec3& b1, glm::vec3& b2)
 }
 
 // This implements importance sampling.
-// u1 and u2 are random uniform variables
+// u1 and u2 are random uniform variables w/ range [0, 1)
 inline glm::vec3 cosineSampleHemisphere(float u1, float u2) 
 {   // thank you rory
     const float r = sqrt(u1);
