@@ -20,7 +20,7 @@ public:
     
     // Assume that threads will only ever pop from the queue, and 
     // that the job of delegating tasks to threads is single-threaded.
-    inline void push(const uint& val) { rqueue.push(val); }
+    inline void push(const uint &val) { rqueue.push(val); }
     
     extract_pair pop() {
         std::unique_lock<std::mutex> lock(mut);
@@ -79,14 +79,14 @@ public:
 
     // Provided for compatibility; don't use these
     void setInitDistance(double dist) { translation.z = -std::abs(dist); }
-    void setTranslation(const glm::vec3& pos) { translation = pos; }
-    void setRotation(const glm::vec3& rot) { rotation = rot; }
+    void setTranslation(const glm::vec3 &pos) { translation = pos; }
+    void setRotation(const glm::vec3 &rot) { rotation = rot; }
 
-    void setCameraPos(const glm::vec3& pos) { position = pos; }
-    void setLookAtPos(const glm::vec3& pos) { lookAtPos = pos; }
+    void setCameraPos(const glm::vec3 &pos) { position = pos; }
+    void setLookAtPos(const glm::vec3 &pos) { lookAtPos = pos; }
     // As a failsafe, make the up vector face in the +y axis
     // if the magnitude of upVec is 0.
-    void setUpVector(const glm::vec3& upVec) { 
+    void setUpVector(const glm::vec3 &upVec) { 
         if (glm::length(upVec) < CONSTANTS::EPSILION) {
             std::cerr << "Provided up vector has a length near zero\n";
             camUpVec = glm::normalize(upVec+vec3(0.f, EPSILION, 0.f)); 
@@ -98,15 +98,15 @@ public:
     // Ambient occlusion samples are taken for every color ray, including
     // anti-aliasing rays; recommended to reduce AO samples if increasing AA rays
     void setAmbientOcclusionSamples(uint count) { occlusionSamples = count > 0 ? count : 0; }
-    void setGlobalAmbientColor(const glm::vec3& clr) { globalAmbient = clr; }
+    void setGlobalAmbientColor(const glm::vec3 &clr) { globalAmbient = clr; }
     void setAmbientOccludingRadius(float r) { occludingRadius = r; }
 
     enum class SkyType {Void, Haze};
     void setSky(SkyType s) { sky = s; }
 
     std::unique_ptr<Image> render(std::unique_ptr<Scene>&, const glm::mat4&, const glm::mat4&);
-    void setRow(const std::unique_ptr<Scene>& scene, std::unique_ptr<Image>& image, uint y);
-    void processRows(const std::unique_ptr<Scene>& scene, std::unique_ptr<Image>& image);
+    void setRow(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image, uint y);
+    void processRows(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image);
 
 private:
     RowQueue r_queue;
@@ -138,8 +138,8 @@ private:
     glm::mat4 invP;      // inverse of projection mat
     float sample_scale;
 
-    glm::vec3 getRayColor(const std::unique_ptr<Scene>& scene, const Ray& ray, 
-                          const Interval& interval = Interval(EPSILION, MAX_DIST), 
+    glm::vec3 getRayColor(const std::unique_ptr<Scene> &scene, const Ray &ray, 
+                          const Interval &interval = Interval(EPSILION, MAX_DIST), 
                           uint recursiveDepth = 0);
     
     glm::vec3 getReflectionColor(const std::unique_ptr<Scene> &scene,
@@ -147,11 +147,11 @@ private:
                                  const Interval &interval, uint recursions);
     
     glm::vec3 getRefractedColor(const std::unique_ptr<Scene> &scene,
-                                   const Ray &ray, const Hit &rec,
-                                   const Interval &interval, uint recursions,
-                                   float &reflectance, bool back_face);
+                                const Ray &ray, const Hit &rec,
+                                const Interval &interval, uint recursions,
+                                float &reflectance, bool back_face);
 
-    glm::vec3 getSkyColor(const Ray& ray);
+    glm::vec3 getSkyColor(const Ray &ray);
     
     Ray castPrimaryRay(uint idx, uint idy, float offsetx = 0.5f, float offsety = 0.5f);
 
@@ -161,7 +161,7 @@ private:
     glm::vec3 occlusionFactor(const Hit &rec, const std::unique_ptr<Scene> &scene,
                               const Interval &interval, float time);
 
-    float shadowFactor(const std::shared_ptr<Light>& light, const Hit &rec, 
+    float shadowFactor(const std::shared_ptr<Light> &light, const Hit &rec, 
                        const std::unique_ptr<Scene> &scene, const Interval &interval,
                        float time, bool = true);
 };
