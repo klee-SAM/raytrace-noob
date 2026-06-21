@@ -51,8 +51,13 @@ public:
     // Define getters for lighting components here instead of 
     // in the material class to avoid needing extra parameters
     // However, these can segfault if m isn't checked for nullptr
-    inline vec3 ambient() const { return m->ambient->value(u, v, x); }
-    inline vec3 diffuse() const { return m->diffuse->value(u, v, x); }
-    inline vec3 specular() const { return m->specular->value(u, v, x); }
-    inline vec3 emissive() const { return m->emissive->value(u, v, x); }
+    inline vec3 ambient() const { return m ? m->ambient->value(u, v, x) : glm::vec3(0.f); }
+    inline vec3 diffuse() const { return m ? m->diffuse->value(u, v, x) : glm::vec3(0.f); }
+    inline vec3 specular() const { return m ? m->specular->value(u, v, x) : glm::vec3(0.f); }
+    inline vec3 emissive() const { return m ? m->emissive->value(u, v, x) : glm::vec3(0.f); }
+
+    static inline void sortHits(std::vector<Hit>& hits) { 
+        constexpr auto cmp = [](const Hit& a, const Hit& b) { return a.t < b.t; };
+        std::sort(hits.begin(), hits.end(), cmp); 
+    }
 };

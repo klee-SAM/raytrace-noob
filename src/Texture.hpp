@@ -27,6 +27,7 @@ protected:
     Texture(const std::shared_ptr<Image> &img) : color(0.0f) { this->img = img; } 
 
     glm::vec3 color; // for flat colors or procedural textures
+    glm::mat3 textureMat; // Texture transformation matrix
 
     // multiple distinct materials could point to the same
     // image data, so shared ptr it is
