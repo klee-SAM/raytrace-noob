@@ -215,24 +215,24 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
 
 // Like the above, except this is used
 // for cases where all hits for a ray are needed
-// bool hit(ShapesVector shapes, const Ray& ray, 
-//          const Interval& interval, vector<Hit>& allHits) 
-// {
-//     bool intersected_any = false;
-//     vector<Hit> temp_hits;
-//     temp_hits.reserve(16);
-//     for (const shared_ptr<Shape>& shape : shapes) {
-//         shape->intersect(ray, temp_hits);
-//         for (Hit& hit : temp_hits) {
-//             if (!interval.contains(hit.t)) continue;
-//             intersected_any = true;
-//             allHits.push_back(hit);
-//         }
-//         temp_hits.clear();
-//     }
-//     Hit::sortHits(allHits);
-//     return intersected_any;
-// }
+bool hit(ShapesVector shapes, const Ray& ray, 
+         const Interval& interval, vector<Hit>& allHits) 
+{
+    bool intersected_any = false;
+    vector<Hit> temp_hits;
+    temp_hits.reserve(16);
+    for (const shared_ptr<Shape>& shape : shapes) {
+        shape->intersect(ray, temp_hits);
+        for (Hit& hit : temp_hits) {
+            if (!interval.contains(hit.t)) continue;
+            intersected_any = true;
+            allHits.push_back(hit);
+        }
+        temp_hits.clear();
+    }
+    Hit::sortHits(allHits);
+    return intersected_any;
+}
 
 vec3 Camera::getSkyColor(const Ray& ray) 
 {
@@ -632,37 +632,20 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
     sray.setDir(lv);
     sray.time = time;
 
-    Hit srec;
+    // Hit srec;
+    vector<Hit> srecs;
+    srecs.reserve(16);
+    constexpr auto aboveZero = [](const vec3 &clr) { return clr.r > 0 || clr.g > 0 || clr.b > 0; };
     auto getShadowContrib = [&](float tmax) {  
-        const bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tmax), srec);
-        const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
-        const bool isEmiss = srec.m && dot(srec.emissive(), srec.emissive()) > 0.0f;
-
+        hit(scene->getShapes(), sray, Interval(interval.min, tmax), srecs);
         // 1.0f is fully lit by default, which is when point has unobstructed path to light
-        float s_transparency = !behindShape; // if behind, return value from 0.0f to 1.0f
-        if (!behindShape || isEmiss) { 
-            s_transparency = 1.0f; 
-        } else if (isTrns) { 
-            // s_transparency = glm::clamp(srec.m->transparency, 0.0f, 1.0f); 
-            // ...
+        float s_transparency = 1.f; // if behind, return value from 0.0f to 1.0f
+        for (const Hit& srec : srecs) {
+            const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
+            const bool isEmiss = srec.m && aboveZero(srec.emissive());
+            s_transparency *= std::min((isTrns || !isEmiss)*srec.m->transparency + isEmiss, 1.f);
         }
-        // TODO: visual effect where transparent objects "erase" shadow, should recursively
-        // cast more refracted rays to determine what other objects cast shadow
-        // recursively get a s_transparency contribution (consecutive transparent objects
-        // should reduce s_transparecy), recursively call this lambda function with refracted ray
-        // reflectance term gets a dummy variable (refractRay)
-
-        // ignore above, too expensive and won't work to emulate caustics
-
-        // TODO: refracted rays won't reach the light source and is not based :(
-        // do not case additional rays, instead overload the hit function to return
-        // a list of intersections, sorted by hit distance, and compute products
-        // transparency (no caustics b/c that requires photon mapping)
-        // for branch prediction don't do early exits on transpar computation
-        // NOTE: if the ray intersects a opaque shape before the light source,
-        // stop the intersection tests early and return for shadowHit()
-        // function. otherwise, compute product transparency
-
+        srecs.clear();
         return s_transparency;
     };
 
