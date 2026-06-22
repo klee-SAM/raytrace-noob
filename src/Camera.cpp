@@ -3,8 +3,13 @@
 
 // #define SHOW_NORMALS
 
-using namespace std;
-using namespace glm;
+using std::vector;
+using std::shared_ptr;
+using std::unique_ptr;
+
+using glm::vec2;
+using glm::vec3;
+using glm::mat4;
 
 typedef const vector<shared_ptr<Shape>>& ShapesVector;
 
@@ -24,12 +29,11 @@ constexpr float SAMP_DIFF_EPSILION = 2.f/255.f;
 bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& closestHit);
 // True if currClr*(i+1) equals culmClr within sampBreak threshold; should be called
 // after currClr is added to culmClr.
-// TODO: use heuristic closer to statistic approach (computing running error)
 bool has_no_change(uint i, uint break_i, const vec3 &culmClr, 
     const vec3 &currClr, float sampBreak = SAMP_DIFF_EPSILION);
 
 void Camera::applyProjection(MatrixStack& MS) {
-    MS.mult(perspective(fovy, aspectRatio, znear, zfar));
+    MS.mult(glm::perspective(fovy, aspectRatio, znear, zfar));
 }
 void Camera::applyView(MatrixStack& MS) {
     glm::mat4 lookAtMat;
@@ -142,9 +146,9 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
 
     uint totalCasts = height*width;
 
-    unique_ptr<Image> image = make_unique<Image>(width, height);
+    unique_ptr<Image> image = std::make_unique<Image>(width, height);
 
-    uint numThreads = thread::hardware_concurrency();
+    uint numThreads = std::thread::hardware_concurrency();
     // create at least 2 threads: one for counting, the other traces
     if (numThreads < 2) numThreads = 2;
     std::clog << "Threads available: " << numThreads << '\n';
@@ -154,12 +158,12 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     // Push rows as jobs
     for (uint y = 0; y < height; ++y) { r_queue.push(y); }
 
-    vector<thread> threads;
+    vector<std::thread> threads;
 
     for (uint i = 0; i < numThreads; ++i) {
         // passing by non-const ref dangerous!!! thank goodness only 1
         // thread processes 1 row at a time
-        threads.push_back(std::move(thread(&Camera::processRows, this, 
+        threads.push_back(std::move(std::thread(&Camera::processRows, this, 
             std::ref(scene), std::ref(image))));
     }
 
@@ -170,11 +174,11 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
                     << totalCasts << " scans completed " << std::flush;
             // Results in displayed times being larger than actual times
             // for very simple and fast scenes, but less thread switching 
-            this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     };
     
-    thread counter(countScans);
+    std::thread counter(countScans);
 
     for (auto& thread : threads) {
         if (!thread.joinable()) continue;
@@ -327,7 +331,7 @@ Ray refractRayAgain(const Ray &ray, const Hit &rec) {
     const float eta = n1/n2;
     const float k = 1.f - eta*eta*(1.0f-cosI*cosI);
     if (k < 0.f) return Ray(vec3(0.f), vec3(0.f), 0.f);
-    const vec3 rayDir = eta*ray.getDir()+norm*(eta*cosI-sqrt(k));
+    const vec3 rayDir = eta*ray.getDir()+norm*(eta*cosI-std::sqrt(k));
     const vec3 rayPos = rec.x + rayDir*Camera::EPSILION;
     return Ray(normalize(rayDir), rayPos, ray.time);
 }
@@ -671,12 +675,9 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
     const auto sampler = sampleCone(ld, light->getRadius());
     const int min_i = std::max(light->getSamples() / 4, 8);
 
-    // https://stackoverflow.com/questions/5147378/
     // Use this method instead of has_no_change() since it plays nicer with 
     // shadow implementation (prev. method did not give good results)
-    float meanLight = 0.f;
-    float samplesDone = 0.f;
-    float m2 = 0.f;
+    VarianceCounter<float> counter;
 
     for (int i = 0; i < light->getSamples(); ++i) {
         const vec3 sampLightPos = light->pos + sampler()*light->getRadius();
@@ -686,21 +687,15 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         sray.setDir(new_lv);
         
         const float contrib = getShadowContrib(tmax);
-        
-        samplesDone++;
-        const float r_sampDone = 1.f / samplesDone;
-        const float prev_mean = meanLight;
-        meanLight += (contrib - prev_mean) * r_sampDone;
-        m2 += (contrib - prev_mean) * (contrib - meanLight);
+        bool lowVari = counter.add(contrib);
 
         if (i < min_i) continue;  
 
-        const float vari = m2 * r_sampDone;
-        constexpr float epsi2 = 0.05f;
-        bool fullOrNoLit = abs(meanLight*r_sampDone - 1.f) >= 1.f - CONSTANTS::EPSILION;
-        if (vari < epsi2 || fullOrNoLit) { break; }         
+        const float currVis = abs(counter.getMean() / counter.getSamplesDone() - 1.f);
+        const bool fullOrNoLit = currVis >= 1.f - CONSTANTS::EPSILION;
+        if (lowVari || fullOrNoLit) { break; }         
     }
     // actual changes start someday 
     // todo: i am rationing commits rn, work on actual color glass part of someday
-    return meanLight;
+    return counter.getMean();
 }

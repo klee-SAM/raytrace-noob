@@ -40,6 +40,32 @@ public:
     inline bool empty() const { return rqueue.empty(); }
 };
 
+// For early-exit termination; accumulates a running average
+// and variance. https://stackoverflow.com/questions/5147378/
+template <typename T>
+class VarianceCounter {
+private:
+    T mean, m2;
+    float samplesDone;
+public:
+    static constexpr float EPSI2 = 0.05f;
+    VarianceCounter() : mean(T(0)), m2(T(0)), samplesDone(0.f) {}
+    inline T getMean() const { return mean; }
+    inline float getSamplesDone() const {return samplesDone; }
+    // Adds contrib to the mean counter and returns whether the
+    // variance is less than the threshold EPSI2.
+    inline bool add(T contrib) {
+        samplesDone++;
+        const float r_sampDone = 1.f / samplesDone;
+        const float prev_mean = mean;
+        mean += (contrib - prev_mean) * r_sampDone;
+        m2 += (contrib - prev_mean) * (contrib - mean);
+
+        const float vari = m2 * r_sampDone;
+        return vari < EPSI2;
+    }
+};
+
 class Camera {
 public:
     // I could make these modifible via json files
