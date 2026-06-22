@@ -73,8 +73,8 @@ public:
     static constexpr float MAX_DIST = std::numeric_limits<float>::max();
     static constexpr uint MAX_RECURSIONS = 7;
 
-    const float MINIMUM_COEFF = 0.005f;
-    const bool FULL_SHADOWS = false;
+    static constexpr float MINIMUM_COEFF = 0.005f;
+    static constexpr bool FULL_SHADOWS = false;
 
     Camera() : translation(0.f), rotation(0.f),
                position(0.f), lookAtPos(0.f), camUpVec{0.f, 1.f, 0.f},
@@ -189,6 +189,9 @@ private:
     glm::vec3 occlusionFactor(const Hit &rec, const std::unique_ptr<Scene> &scene,
                               const Interval &interval, float time);
 
+    float getShadowContrib(std::vector<Hit> &srecs, const Ray &sray,
+                           const std::unique_ptr<Scene> &scene, 
+                           const Interval &t_int);
     float shadowFactor(const std::shared_ptr<Light> &light, const Hit &rec, 
                        const std::unique_ptr<Scene> &scene, const Interval &interval,
                        float time, bool = true);

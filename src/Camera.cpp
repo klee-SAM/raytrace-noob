@@ -613,11 +613,35 @@ public:
     }
 };
 
+constexpr auto aboveZero = [](const vec3 &clr) { return clr.r > 0 || clr.g > 0 || clr.b > 0; };
+float Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
+                               const std::unique_ptr<Scene> &scene, 
+                               const Interval &t_int) {  
+    if (FULL_SHADOWS) {
+        Hit srec;
+        const bool behindShape = hit(scene->getShapes(), sray, t_int, srec);
+        const bool isEmiss = srec.m && aboveZero(srec.emissive());
+        return static_cast<float>(!behindShape || isEmiss);
+    } else {
+        // 1.0f is fully lit by default, which is when point has unobstructed path to light
+        float s_transparency = 1.f; // if behind, return value from 0.0f to 1.0f
+        hit(scene->getShapes(), sray, t_int, srecs);
+        for (const Hit& srec : srecs) {
+            const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
+            const bool isEmiss = srec.m && aboveZero(srec.emissive());
+            const float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
+            s_transparency *= std::clamp(trnsMult, 0.f, 1.f);
+        }
+        srecs.clear();
+        return s_transparency;
+    }        
+};
+
 // Randomly samples points on area lights depending on their radius.
 // TODO: change this to return a vec3 that is affected by the
 // clr of the shadowed object if it is transparent; easy object attentuation]
 // the colored glass 
-float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec, 
+float Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec, 
                            const unique_ptr<Scene> &scene,
                            const Interval &interval,
                            float time, bool sampleArea) 
@@ -635,30 +659,10 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
     // Hit srec;
     vector<Hit> srecs;
     srecs.reserve(16);
-    constexpr auto aboveZero = [](const vec3 &clr) { return clr.r > 0 || clr.g > 0 || clr.b > 0; };
-    // setting where all transparenct objects still cast opaque shadows?
-    auto getShadowContrib = [&](float tmax) {  
-        if (FULL_SHADOWS) {
-            Hit srec;
-            const bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tmax), srec);
-            const bool isEmiss = srec.m && aboveZero(srec.emissive());
-            return static_cast<float>(!behindShape || isEmiss);
-        } else {
-            // 1.0f is fully lit by default, which is when point has unobstructed path to light
-            float s_transparency = 1.f; // if behind, return value from 0.0f to 1.0f
-            hit(scene->getShapes(), sray, Interval(interval.min, tmax), srecs);
-            for (const Hit& srec : srecs) {
-                const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
-                const bool isEmiss = srec.m && aboveZero(srec.emissive());
-                const float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
-                s_transparency *= std::clamp(trnsMult, 0.f, 1.f);
-            }
-            srecs.clear();
-            return s_transparency;
-        }        
-    };
 
-    if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { return getShadowContrib(tl); }
+    if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { 
+        return getShadowContrib(srecs, sray, scene, Interval(interval.min, tl)); 
+    }
     
     const auto sampler = sampleCone(ld, light->getRadius());
     const int min_i = std::max(light->getSamples() / 4, 8);
@@ -674,7 +678,8 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         const vec3 new_lv = new_ld / tmax;
         sray.setDir(new_lv);
         
-        const float contrib = getShadowContrib(tmax);
+        const float contrib = getShadowContrib(srecs, sray, 
+            scene, Interval(interval.min, tmax));
         bool lowVari = counter.add(contrib);
 
         if (i < min_i) continue;  
