@@ -128,14 +128,23 @@ These are the resources I consulted while developing this raytracer.
 ### Area lighting
 - https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-lighting/introduction-to-lighting-spherical-light-cone-sampling.html
 
+### Motion blur
+- https://stackoverflow.com/questions/46156903/how-to-lerp-between-two-quaternions
 
-### Other Optimizations
-- https://stackoverflow.com/questions/11227809
+### BVH and GPU Acceleration
+- https://github.com/AdaptiveCpp/AdaptiveCpp
+- https://umm-csci.github.io/senior-seminar/seminars/fall2011/Martin.pdf
+- https://stackoverflow.com/questions/61222620/optimizing-bvh-traversal-in-ray-tracer
+- https://computergraphics.stackexchange.com/questions/10098/is-bvh-faster-than-the-octree-kd-tree-for-raytracing-the-objects-on-a-gpu
 
 ### Sampling Methods
 - https://github.com/Andrew-Helmer/pmj-cpp/tree/master/sample_generation
 - https://jcgt.org/published/0008/01/04/paper.pdf
 - https://abau.io/blog/sample_patterns/
+- https://stackoverflow.com/questions/5147378/
 
-### Diffuse Reflection
+### Other Interesting Links
 - https://raytracing2012.wordpress.com/first-bounce-diffuse-interreflections/
+- https://stackoverflow.com/questions/11227809
+- https://www.cs.umd.edu/users/mount/Indep/Alisa_Chen/caustics.html
+- https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md

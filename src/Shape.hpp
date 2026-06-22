@@ -14,7 +14,7 @@ public:
 	virtual void initialize() {}
 
 	// Sets the initial transform.
-	void setModelMatrix(const glm::mat4& m);
+	void setModelMatrix(const glm::mat4& m) { modelMat = m; }
 	// Sets the final transform, enabling motion blur 
 	void setNextModelTransforms(const glm::vec3& trns,
 								const glm::vec3& rot,

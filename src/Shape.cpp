@@ -6,20 +6,18 @@
 // #define BACKFACE_CULLING
 #include "Shape.hpp"
 
-using namespace std;
-using namespace glm;
-using namespace CONSTANTS;
+using std::vector;
+using std::string;
+using std::clog; 
+using std::cerr;
 
-void Shape::setModelMatrix(const mat4& m) {
-	modelMat = m;
-	// inv_modelMat = inverse(m);
-	// invT_modelMat = transpose(inverse(m));
-}
+using glm::vec2;
+using glm::vec3;
+using glm::mat4;
 
 glm::mat4 Shape::getModelMatrix(float time) const {
 	// Faster to branch than to always do modelMatLerp()
-	if (this->moving) return modelMatLerp(time);
-	else return modelMat;
+	return this->moving ? modelMatLerp(time) : modelMat;
 }
 
 void Shape::setNextModelTransforms(const glm::vec3& trns,
@@ -28,7 +26,7 @@ void Shape::setNextModelTransforms(const glm::vec3& trns,
 {
 	m_translation = trns;
 	m_scale = scl;
-	// invT_modelMat = transpose(inverse(m));
+	// m_rotation = rot;
 	moving = true;
 }
 
@@ -77,21 +75,21 @@ Hit Shape::toWorldSpaceHit(const vec3 &x, const vec3 &vx,
 	return h;
 }
 
-vec3 lerp(float t, vec3 a, vec3 b) { return a + t*(b-a); }
+constexpr vec3 lerp(float t, vec3 a, vec3 b) { return a + t*(b-a); }
 // Use to "move" the object before doing any intersection tests.
 // TODO: have bounding box of object encompass whole range of motion
 mat4 Shape::modelMatLerp(const float time) const {
-	vec3 translations = vec3(this->modelMat[3]);
-	vec3 scales = vec3(length(this->modelMat[0]),
-					   length(this->modelMat[1]),
-					   length(this->modelMat[2]));
+	const vec3 translations = vec3(this->modelMat[3]);
+	const vec3 scales = vec3(length(this->modelMat[0]),
+					   		 length(this->modelMat[1]),
+					   		 length(this->modelMat[2]));
 	// vec3 rotations = vec3(this->modelMat[0] / scales.x,
 	// 					  this->modelMat[1] / scales.y,
 	// 					  this->modelMat[2] / scales.z);
 	mat4 model = this->modelMat;
-	vec3 li_scales = vec4(lerp(time, scales, m_scale), 1.f);
+	const vec3 li_scales = vec4(lerp(time, scales, m_scale), 1.f);
 	// Cancel out the old scales and replace with lerped scaling
-	vec3 sv = vec3(li_scales.x/scales.x, li_scales.y/scales.y, li_scales.z/scales.z);
+	const vec3 sv = vec3(li_scales.x/scales.x, li_scales.y/scales.y, li_scales.z/scales.z);
 	model = glm::scale(model, sv);
 	// Translation.
 	model[3] = vec4(lerp(time, translations, m_translation), 1.f);
@@ -99,17 +97,6 @@ mat4 Shape::modelMatLerp(const float time) const {
 	// Support for interpolating the rotation tba (requires quaternions)
 	return model;
 }
-
-/* what to do
-
-update: removing precomputed inverse is good because it's
-not useful when i have to do motion blur; kinda redundent
-and i would like to prioritize simplicity over small time gain
-
-----
-*/
-
-
 
 // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
 vec2 Sphere::computeUV(const vec3& p) const {

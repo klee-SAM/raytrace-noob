@@ -1,8 +1,7 @@
 #include "Texture.hpp"
 
-using namespace std;
-using namespace glm;
-
+using glm::vec2;
+using glm::vec3;
 
 // Default spatial texture
 vec3 GradientTexture::value(float, float, const vec3& p) const {
@@ -28,8 +27,8 @@ vec3 ImageTexture::value(float u, float v, const vec3& p) const {
 
 
 // Default checker textures
-const shared_ptr<Texture> CheckerTexture::white = make_shared<ColorTexture>(vec3(1.0f));
-const shared_ptr<Texture> CheckerTexture::black = make_shared<ColorTexture>(vec3(0.0f));
+const std::shared_ptr<Texture> CheckerTexture::white = std::make_shared<ColorTexture>(vec3(1.0f));
+const std::shared_ptr<Texture> CheckerTexture::black = std::make_shared<ColorTexture>(vec3(0.0f));
 
 vec3 CheckerTexture::value(float u, float v, const vec3& p) const {
     // Use floor to pull values to -INF
