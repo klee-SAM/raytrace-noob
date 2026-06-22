@@ -7,10 +7,6 @@ using std::vector;
 using std::shared_ptr;
 using std::unique_ptr;
 
-using glm::vec2;
-using glm::vec3;
-using glm::mat4;
-
 typedef const vector<shared_ptr<Shape>>& ShapesVector;
 
 // Arbitrary size, but computing these numbers

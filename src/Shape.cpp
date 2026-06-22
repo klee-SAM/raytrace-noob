@@ -11,10 +11,6 @@ using std::string;
 using std::clog; 
 using std::cerr;
 
-using glm::vec2;
-using glm::vec3;
-using glm::mat4;
-
 glm::mat4 Shape::getModelMatrix(float time) const {
 	// Faster to branch than to always do modelMatLerp()
 	return this->moving ? modelMatLerp(time) : modelMat;
@@ -68,9 +64,7 @@ Hit Shape::toWorldSpaceHit(const vec3 &x, const vec3 &vx,
 	h.n = wld_n; 
 	h.t = wld_t;
 	h.m = material;
-	vec2 uv = computeUV(x);
-	h.u = uv.x;
-	h.v = uv.y;
+	h.uv = computeUV(x);
 
 	return h;
 }
@@ -178,7 +172,7 @@ void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
     Hit hit; 
     hit.x = x; hit.n = n; hit.t = t; 
     hit.m = material;
-    hit.u = u; hit.v = v;
+    hit.uv.s = u; hit.uv.t = v;
 	hits.push_back(hit);
 }
 
@@ -620,7 +614,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 		Hit h; 
 		h.x = wld_x; h.n = wld_n; h.t = t; 
-		h.u = tex_u; h.v = tex_v;
+		h.uv.s = tex_u; h.uv.t = tex_v;
 		h.m = this->material;
 		hits.push_back(h);
 	}

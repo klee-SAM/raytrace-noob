@@ -14,7 +14,7 @@ public:
     // Provided b/c materials are constructed with ColorTextures by default
     void init(const glm::vec3 &clr) { this->color = clr; };
 
-    virtual glm::vec3 value(float u, float v, const glm::vec3& p) const = 0;
+    virtual glm::vec3 value(const glm::vec2 &uv, const glm::vec3 &p) const = 0;
 
 protected:
     // ????
@@ -40,7 +40,7 @@ public:
     ColorTexture(const glm::vec3& clr) : Texture(clr) {}
     virtual ~ColorTexture() = default;
 
-    glm::vec3 value(float, float, const glm::vec3&) const override { return color; }
+    glm::vec3 value(const glm::vec2&, const glm::vec3&) const override { return color; }
 };
 
 class GradientTexture : public Texture {
@@ -50,7 +50,7 @@ public:
 
     // perhaps a function to generate gradient here
 
-    glm::vec3 value(float u, float v, const glm::vec3& p) const override;
+    glm::vec3 value(const glm::vec2&, const glm::vec3& p) const override;
 };
 
 class ImageTexture : public Texture {
@@ -60,7 +60,7 @@ public:
     ImageTexture(const std::shared_ptr<Image> &img) : Texture(img) {} 
     virtual ~ImageTexture() = default;
 
-    glm::vec3 value(float u, float v, const glm::vec3&) const override;
+    glm::vec3 value(const glm::vec2& uv, const glm::vec3&) const override;
 };
 
 
@@ -85,7 +85,7 @@ public:
     void setEven(const std::shared_ptr<Texture>& e) { even = e; }
     void setOdd(const std::shared_ptr<Texture>& o) { odd = o; }
 
-    glm::vec3 value(float u, float v, const glm::vec3& p) const override;
+    glm::vec3 value(const glm::vec2& uv, const glm::vec3& p) const override;
 
 private:
     std::shared_ptr<Texture> even;

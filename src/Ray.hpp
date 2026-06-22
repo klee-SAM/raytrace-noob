@@ -2,12 +2,6 @@
 #include "stn.hpp"
 #include "Material.hpp"
 
-// TODO: rewrite ray as a class that uses vec4s 
-// instead of vec3s, avoid need to convert
-// to and from vec4 for intersect functions
-
-typedef glm::vec3 vec3;
-typedef glm::vec4 vec4;
 typedef std::shared_ptr<Material> pMaterial; 
 
 class Ray {
@@ -44,17 +38,16 @@ public:
     vec3 x;      // hit location
     vec3 n;      // hit normal
     float t;     // dist from origin to hit
-    float u;     // texture u coord
-    float v;     // texture v coord
+    vec2 uv;     // texture uv coord
     pMaterial m; // material of hit surface
 
     // Define getters for lighting components here instead of 
     // in the material class to avoid needing extra parameters
     // However, these can segfault if m isn't checked for nullptr
-    inline vec3 ambient() const { return m ? m->ambient->value(u, v, x) : glm::vec3(0.f); }
-    inline vec3 diffuse() const { return m ? m->diffuse->value(u, v, x) : glm::vec3(0.f); }
-    inline vec3 specular() const { return m ? m->specular->value(u, v, x) : glm::vec3(0.f); }
-    inline vec3 emissive() const { return m ? m->emissive->value(u, v, x) : glm::vec3(0.f); }
+    inline vec3 ambient() const { return m ? m->ambient->value(uv, x) : glm::vec3(0.f); }
+    inline vec3 diffuse() const { return m ? m->diffuse->value(uv, x) : glm::vec3(0.f); }
+    inline vec3 specular() const { return m ? m->specular->value(uv, x) : glm::vec3(0.f); }
+    inline vec3 emissive() const { return m ? m->emissive->value(uv, x) : glm::vec3(0.f); }
 
     static inline void sortHits(std::vector<Hit>& hits) { 
         constexpr auto cmp = [](const Hit& a, const Hit& b) { return a.t < b.t; };
