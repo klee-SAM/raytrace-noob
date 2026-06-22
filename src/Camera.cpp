@@ -155,26 +155,21 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     for (uint y = 0; y < height; ++y) { r_queue.push(y); }
 
     vector<thread> threads;
-    // reserve 1 thread for outputting the current number of scans completed
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    // TODO: experiement with not reserving
-
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    for (uint i = 0; i < numThreads-1; ++i) {
+    for (uint i = 0; i < numThreads; ++i) {
         // passing by non-const ref dangerous!!! thank goodness only 1
         // thread processes 1 row at a time
         threads.push_back(std::move(thread(&Camera::processRows, this, 
             std::ref(scene), std::ref(image))));
     }
 
-    // horrific
+    // horrific; +1 thread than cores works b/c it's i/o bound (sleep)
     auto countScans = [this, numThreads, totalCasts, jobsFinished]() {
-        while (r_queue.rowsProcessed < height && jobsFinished < numThreads-1) {
+        while (r_queue.rowsProcessed < height && jobsFinished < numThreads) {
             std::clog << '\r' << r_queue.rowsProcessed*width << '/' 
                     << totalCasts << " scans completed " << std::flush;
+            // Results in displayed times being larger than actual times
+            // for very simple and fast scenes, but less thread switching 
             this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     };
@@ -203,7 +198,7 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
 
     for (const shared_ptr<Shape>& shape : shapes) {
         shape->intersect(ray, temp_hits);
-        if (temp_hits.empty()) continue;
+        
         for (Hit& hit : temp_hits) {
             if (!interval.contains(hit.t)) continue;
             intersected_any = true;
@@ -219,21 +214,23 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
 }
 
 // Like the above, except this is used
-// for cases where the hit information is unused
-// bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval) 
+// for cases where all hits for a ray are needed
+// bool hit(ShapesVector shapes, const Ray& ray, 
+//          const Interval& interval, vector<Hit>& allHits) 
 // {
 //     bool intersected_any = false;
 //     vector<Hit> temp_hits;
-//     temp_hits.reserve(16); // magic number
+//     temp_hits.reserve(16);
 //     for (const shared_ptr<Shape>& shape : shapes) {
 //         shape->intersect(ray, temp_hits);
-//         if (temp_hits.empty()) continue;
 //         for (Hit& hit : temp_hits) {
 //             if (!interval.contains(hit.t)) continue;
 //             intersected_any = true;
-//             break;
+//             allHits.push_back(hit);
 //         }
+//         temp_hits.clear();
 //     }
+//     Hit::sortHits(allHits);
 //     return intersected_any;
 // }
 
@@ -260,6 +257,7 @@ Ray reflectRay(const Ray &ray, const Hit &rec)
     // ray.dir - 2.0f * dot(rec.n, ray.dir) * rec.n
     reflRay.setDir(glm::reflect(ray.getDir(), rec.n));
     reflRay.setPos(rec.x + reflRay.getDir()*Camera::EPSILION);
+    reflRay.time = ray.time;
     return reflRay;
 }
 
@@ -291,7 +289,10 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
     // Total internal reflection, do nothing instead
     if (k < 0.0f) {
         reflectance = 1.0f;
-        return refrRay;
+        // change to return an invalid ray instead (reusing the hit obj is
+        // incorrect, b/c the norm would be pointing out of the obj
+        // if I no longer modified rec.n b4 calling this func)
+        return refrRay; 
     }
     
     // cos(t)^2
@@ -302,11 +303,66 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
     reflectance = r0 + (1.0f-r0)*(m*m*m*m*m);
     // reflectance = std::clamp(fabs(reflectance), 0.0f, 1.0f);
 
-    // refrRay.setDir( normalize( eta*ray.getDir() + norm*(eta*cosI - cosT) ) );
-    refrRay.setDir( normalize( eta*ray.getDir() ) + norm*(eta*cosI - cosT) ); // incorrect, commit ration
+    refrRay.setDir( normalize( eta*ray.getDir() + norm*(eta*cosI - cosT) ) );
+    // refrRay.setDir( normalize( eta*ray.getDir() ) + norm*(eta*cosI - cosT) ); // incorrect, commit ration
     refrRay.setPos( rec.x + refrRay.getDir()*(float)Camera::EPSILION );
 
     return refrRay;
+}
+
+Ray refractRayAgain(const Ray &ray, const Hit &rec) {
+    float n1, n2;
+    vec3 norm = rec.n;
+    float cosI = -dot(norm, ray.getDir());
+    // backfacing if true
+    if (cosI < 0.f) {
+        n1 = rec.m->refrIndex; 
+        n2 = 1.f;
+        cosI = -cosI;
+    } else {
+        n1 = 1.f; 
+        n2 = rec.m->refrIndex;
+        norm = -norm;
+    }
+    const float eta = n1/n2;
+    const float k = 1.f - eta*eta*(1.0f-cosI*cosI);
+    if (k < 0.f) return Ray(vec3(0.f), vec3(0.f), 0.f);
+    const vec3 rayDir = eta*ray.getDir()+norm*(eta*cosI-sqrt(k));
+    const vec3 rayPos = rec.x + rayDir*Camera::EPSILION;
+    return Ray(normalize(rayDir), rayPos, ray.time);
+}
+
+// To be tested even when there is no refraction, rewrite reflection
+// and refraction with the fixes
+// also i WILL attempt to modify refraction and reflection again,
+// but maybe after thursday
+// this returns 1 if eta == 1. reduces reflection when =/= 1
+// https://computergraphics.stackexchange.com/questions/4573/
+float reflectance(const Ray &ray, const Hit &rec) {
+    float eta, n1, n2; 
+    vec3 norm = rec.n;
+    if (std::abs(rec.m->refrIndex - 1.f) < CONSTANTS::EPSILION)
+        return 1.f;
+    float cosX = -dot(norm, ray.getDir());
+    cosX = std::clamp(cosX, -1.f, 1.f); // jus clamp lmao
+    if (cosX < 0.f) { /*true if backfacing*/
+        n1 = rec.m->refrIndex; 
+        n2 = 1.f;
+        cosX = -cosX;
+    } else {
+        n1 = 1.f; 
+        n2 = rec.m->refrIndex;
+        norm = -norm;
+    }
+    if (n1 > n2) {
+        eta = n1 / n2;
+        const float sin2T = eta*eta*(1.0f-cosX*cosX);
+        if (sin2T > 1.0f) { return 1.f; } // TIR
+        cosX = sqrt(1.f - sin2T);
+    }
+    const float x = 1.0f - cosX;
+    float r0 = (n1 - n2)/(n1 + n2); r0 *= r0;
+    return r0 + (1.0f-r0)*(x*x*x*x*x);
 }
 
 // this does not increment `recursions` when it recursively calls
@@ -365,7 +421,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 
     float reflectance = 1.0f; // If the material is not refractive, keep any reflections
     const bool reflective = rec.m->reflCoeff > Camera::MINIMUM_COEFF;
-    const bool refractive = rec.m->transparency > Camera::MINIMUM_COEFF;
+    const bool transparent = rec.m->transparency > Camera::MINIMUM_COEFF;
 
     // Determine if the ray is inside or outside the object,
     // only to handle the case of lighting for CSG.
@@ -373,14 +429,18 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     // this possibility via parameter
     const bool back_face = dot(ray.getDir(), rec.n) > 0.0f; // true if inside
 
+    // TODO: calculate reflectance first, and if it hits certain
+    // thresholds, do not recurse one or the other
+
     // Avoid casting additional reflection rays if inside the object, this
     // avoids massively expensive and unnecessary computation (3x increase)
+    // TIR reflections are done in refraction case
     if (reflective && !back_face) { 
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         reflectClr = getReflectionColor(scene, ray, rec, interval, recursiveDepth+1);
     }   
-
-    if (refractive) {
+    // Objects must be transparent in order to refract light.
+    if (transparent) {
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         // flip the normal for refraction, if inside
         // this must be done before calculating cosI for reflection, or
@@ -393,27 +453,29 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
                         recursiveDepth+1, reflectance, back_face);
         
         // Deal with TIR here.
-        if (reflectance > 1.f - CONSTANTS::EPSILION) {
+        if (reflectance >= 1.f - CONSTANTS::EPSILION) {
             Ray refrRay = reflectRay(ray, rec);
-            refrRay.setPos( rec.x - 2.f*Camera::EPSILION*refrRay.getDir() );
+            // this set the reflected ray outside the surface, making it bounce out
+            // immediately again; this is not physically based.
+            // refrRay.setPos( rec.x - 2.f*Camera::EPSILION*refrRay.getDir() );
             reflectClr = getRayColor(scene, refrRay, interval, recursiveDepth+1);
-            reflectClr *= rec.m->transparency;
+            reflectClr *= rec.m->reflCoeff;
         }
     }
 
     // The eye vector does not point to the camera when reflecting/refracting
     const vec3 ev = -ray.dir;
 
-    vec3 bp_clr = rec.ambient() + globalAmbient;
+    vec3 localClr = rec.ambient() + globalAmbient;
     if (occlusionSamples > 0 && recursiveDepth < 2) {
         // the maximum is arbitrary, but it should be small 
         // so that faraway objects are not considered
         const auto occlArea = Interval(interval.min, occludingRadius);
         const vec3 occlFac = occlusionFactor(rec, scene, occlArea, ray.time);
         // sqrt was a hack that made the shadows softer
-        bp_clr.r *= occlFac.r;
-        bp_clr.g *= occlFac.g;
-        bp_clr.b *= occlFac.b; 
+        localClr.r *= occlFac.r;
+        localClr.g *= occlFac.g;
+        localClr.b *= occlFac.b; 
     }
 
     for (auto& light : scene->getLights()) {
@@ -425,12 +487,19 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
             interval, ray.time, recursiveDepth < 2);
 
         float Li = light->intensity;
-        bp_clr += lightVisibility * Li * lightingFactor(rec, lv, ev);
+        localClr += lightVisibility * Li * lightingFactor(rec, lv, ev);
     }
 
     // not really ideal
-    clr += (1.0f - rec.m->reflCoeff)*(1.0f - rec.m->transparency)*bp_clr;
-
+    // ki + kr + kt = 1
+    // ki + refl*kr + (1-refl)*kt = 1
+    // ki = 1 - refl*kr + (1-refl)*kt
+    float localCoeff = 1.f - reflectance*rec.m->reflCoeff -
+                       (1.f - reflectance)*rec.m->transparency;
+    clr += localCoeff*localClr;
+    // clr += (1.0f - rec.m->reflCoeff)*(1.0f - rec.m->transparency)*localClr;
+    // to self: Please do not waste time playing around with mixing 
+    // reflectance and refraction, this is already "correct"
     clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
 
     clr += rec.emissive();
@@ -455,6 +524,7 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
                              const Interval &interval, float time) 
 {
     vec3 lightAbsorption(0.f);
+    // vec3 diffuseAbsorption(0.f);
 
     vec3 T, B;
     assignONBvec3s(rec.n, T, B);
@@ -479,12 +549,23 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
         Hit aoHit;
         const bool occluded = hit(scene->getShapes(), aoray, interval, aoHit);
         vec3 rayAbsorbed = vec3(0.f);
+
+        // For a red clr, green and blue are absorbed, but reflections and refractions
+        // also need consideration. however, recursively calling getRayColor is expensive
         if (occluded && aoHit.m) {
+            // the further away the light is, the less that the ray absorbs
             const float atten = glm::clamp(aoHit.t / (float)interval.max, 0.f, 1.f);
-            // For a red clr, green and blue are absorbed
-            rayAbsorbed = vec3(1.f) - aoHit.diffuse() * atten;
+            // const vec3 aoeyeVec = normalize(ev+rDir);
+            // Go the negative of rDir to crudely emulate color blending
+            // rayAbsorbed = vec3(1.f) - lightingFactor(aoHit, -rDir, aoeyeVec)*atten;
+            // TODO: COLOR BLENDING IS ACTUALLY DIFFUSE INTERREFLECTION. 
+            // REWRITE TO ALSO RETURN A DIFFUSE ATTENUATION, and just have the
+            // the ambient occlusion factor be a scalar 
+            const vec3 diff_cont = aoHit.diffuse()*std::max(0.0f, glm::dot(rec.n, rDir));
+            rayAbsorbed = vec3(1.f) - diff_cont * atten;
         }
         lightAbsorption += rayAbsorbed;
+        // diffuseAbsorption += rayAbsorbed;
         const bool cond = has_no_change(i, minConvergSamp, lightAbsorption, rayAbsorbed);
         // crazy, over 2x speedup with no visible changes in quality
         if (cond) { currSamplesDone = static_cast<float>(i + 1); break; }
@@ -510,7 +591,7 @@ public:
         dz = ld;
         dz_len_2 = glm::dot(dz, dz);
         const float dz_len = std::sqrt(dz_len_2);
-        dz /= -dz_len;
+        dz /= dz_len;
 
         assignONBvec3s(dz, dx, dy);
     }
@@ -533,7 +614,7 @@ public:
         const float phi = 2 * PI * r2;
 
         // PDFs are useful for path tracing, but not for this Whitted-hybrid tracer 
-        // float pdf 1.f / (2.f * PI * (1.f - cos_theta_max));
+        // float pdf = 1.f / (2.f * PI * (1.f - cos_theta_max));
 
         return std::cos(phi)*sin_alpha*dx + std::sin(phi)*sin_alpha*dy + cos_alpha*dz;
     }
@@ -549,20 +630,18 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
                            float time, bool sampleArea) 
 {
     const vec3 ld = light->pos - rec.x;
-    const vec3 lv = normalize(ld);
-    float tl = length(ld); // mutated by getShadowContrib() lambda
+    const float tl = length(ld);
+    const vec3 lv = ld / tl;
 
     Ray sray;
-    sray.setPos(rec.x + (float)interval.min*rec.n);
+    vec3 srayCPos = rec.x + (float)interval.min*rec.n;
+    sray.setPos(srayCPos);
     sray.setDir(lv);
     sray.time = time;
 
     Hit srec;
-
-    auto getShadowContrib = [&](uint recursions = 0U) {  
-        if (recursions >= Camera::MAX_RECURSIONS) return 0.0f;
-         
-        const bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tl), srec);
+    auto getShadowContrib = [&](float tmax) {  
+        const bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tmax), srec);
         const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
         const bool isEmiss = srec.m && dot(srec.emissive(), srec.emissive()) > 0.0f;
 
@@ -571,7 +650,7 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         if (!behindShape || isEmiss) { 
             s_transparency = 1.0f; 
         } else if (isTrns) { 
-            s_transparency = glm::clamp(srec.m->transparency, 0.0f, 1.0f); 
+            // s_transparency = glm::clamp(srec.m->transparency, 0.0f, 1.0f); 
             // ...
         }
         // TODO: visual effect where transparent objects "erase" shadow, should recursively
@@ -594,26 +673,35 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         return s_transparency;
     };
 
-    const float visibleLight = getShadowContrib();
-
-    if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { return visibleLight; }
+    // okay, so the cause of that one frikking band was literally me doing an initial
+    // perfect sample, which i only thought of because I experimented with perturbing
+    // the shadow ray position. dammit 
+    if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { return getShadowContrib(tl); }
     
     const auto sampler = sampleCone(ld, light->getRadius());
     const int min_i = std::max(light->getSamples() / 4, 8);
 
     // https://stackoverflow.com/questions/5147378/
-    float meanLight = visibleLight;
-    float samplesDone = 1.f;
-    float m2 = visibleLight * visibleLight;
+    // Use this method instead of has_no_change() since it plays nicer with 
+    // shadow implementation (prev. method did not give good results)
+    float meanLight = 0.f;
+    float samplesDone = 0.f;
+    float m2 = 0.f;
 
-    for (int i = 1; i < light->getSamples(); ++i) {
-        vec3 offset = sampler();
-        vec3 new_ld = light->pos + offset*light->getRadius() - rec.x;
-        vec3 new_lv = normalize(new_ld);
-        tl = length(new_ld);
+    vec3 T, B;
+    assignONBvec3s(rec.n, T, B);
+
+    for (int i = 0; i < light->getSamples(); ++i) {
+        const vec3 sampLightPos = light->pos + sampler()*light->getRadius();
+        const vec3 new_ld = sampLightPos - rec.x;
+        const float tmax = length(new_ld);
+        const vec3 new_lv = new_ld / tmax;
+        // const vec2 offset = 5000000.f*diskRandGen->rand();
+        // const vec3 offsetPos = vec3(offset.x*T + offset.y*B);
+        // sray.setPos(srayCPos + offsetPos);
         sray.setDir(new_lv);
         
-        const float contrib = getShadowContrib();
+        const float contrib = getShadowContrib(tmax);
         
         samplesDone++;
         const float r_sampDone = 1.f / samplesDone;
@@ -624,16 +712,16 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         if (i < min_i) continue;  
 
         const float vari = m2 * r_sampDone;
-        const float epsi2 = SAMP_DIFF_EPSILION;
-        if (vari < epsi2) { break; }
-
-        // bool cond = has_no_change(i, min_i, visibleLight, contrib); 
-        // This does not work 
-        // if (i < min_i) continue;  
-        // bool cond = std::fabs(visibleLight - contrib*(i+1)) < SAMP_DIFF_EPSILION / 64;
-        // if (cond) { samplesDone = static_cast<float>(i+1); break; }
+        constexpr float epsi2 = 0.05f;
+        bool fullOrNoLit = abs(meanLight*r_sampDone - 1.f) >= 1.f - CONSTANTS::EPSILION;
+        if (vari < epsi2 || fullOrNoLit) { break; }         
     }
     // actual changes start someday 
     // todo: i am rationing commits rn, work on actual color glass part of someday
+
+    // constexpr float thres = .625f; // not ideal, but i'm desperate to hide banding
+    // constexpr float adjCoeff = (1.f/(thres*thres*thres));
+    // const float curvedLight = adjCoeff*meanLight*meanLight*meanLight*meanLight;
+    // return meanLight < thres ? curvedLight : meanLight;
     return meanLight;
 }
