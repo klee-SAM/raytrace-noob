@@ -636,17 +636,26 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
     vector<Hit> srecs;
     srecs.reserve(16);
     constexpr auto aboveZero = [](const vec3 &clr) { return clr.r > 0 || clr.g > 0 || clr.b > 0; };
+    // setting where all transparenct objects still cast opaque shadows?
     auto getShadowContrib = [&](float tmax) {  
-        hit(scene->getShapes(), sray, Interval(interval.min, tmax), srecs);
-        // 1.0f is fully lit by default, which is when point has unobstructed path to light
-        float s_transparency = 1.f; // if behind, return value from 0.0f to 1.0f
-        for (const Hit& srec : srecs) {
-            const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
+        if (FULL_SHADOWS) {
+            Hit srec;
+            const bool behindShape = hit(scene->getShapes(), sray, Interval(interval.min, tmax), srec);
             const bool isEmiss = srec.m && aboveZero(srec.emissive());
-            s_transparency *= std::min((isTrns || !isEmiss)*srec.m->transparency + isEmiss, 1.f);
-        }
-        srecs.clear();
-        return s_transparency;
+            return static_cast<float>(!behindShape || isEmiss);
+        } else {
+            // 1.0f is fully lit by default, which is when point has unobstructed path to light
+            float s_transparency = 1.f; // if behind, return value from 0.0f to 1.0f
+            hit(scene->getShapes(), sray, Interval(interval.min, tmax), srecs);
+            for (const Hit& srec : srecs) {
+                const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
+                const bool isEmiss = srec.m && aboveZero(srec.emissive());
+                const float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
+                s_transparency *= std::clamp(trnsMult, 0.f, 1.f);
+            }
+            srecs.clear();
+            return s_transparency;
+        }        
     };
 
     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { return getShadowContrib(tl); }

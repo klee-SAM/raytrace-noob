@@ -72,7 +72,9 @@ public:
     static constexpr float EPSILION = 5E-3f; // having a low epsilion value does not bode well with meshes
     static constexpr float MAX_DIST = std::numeric_limits<float>::max();
     static constexpr uint MAX_RECURSIONS = 7;
-    static constexpr float MINIMUM_COEFF = 0.005f;
+
+    const float MINIMUM_COEFF = 0.005f;
+    const bool FULL_SHADOWS = false;
 
     Camera() : translation(0.f), rotation(0.f),
                position(0.f), lookAtPos(0.f), camUpVec{0.f, 1.f, 0.f},
