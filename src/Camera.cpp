@@ -490,18 +490,11 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         localClr += lightVisibility * Li * lightingFactor(rec, lv, ev);
     }
 
-    // not really ideal
-    // ki + kr + kt = 1
-    // ki + refl*kr + (1-refl)*kt = 1
-    // ki = 1 - refl*kr + (1-refl)*kt
+    // ki = 1 - refl*kr - (1-refl)*kt
     float localCoeff = 1.f - reflectance*rec.m->reflCoeff -
                        (1.f - reflectance)*rec.m->transparency;
     clr += localCoeff*localClr;
-    // clr += (1.0f - rec.m->reflCoeff)*(1.0f - rec.m->transparency)*localClr;
-    // to self: Please do not waste time playing around with mixing 
-    // reflectance and refraction, this is already "correct"
     clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
-
     clr += rec.emissive();
 
     return clr;
@@ -673,9 +666,6 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
         return s_transparency;
     };
 
-    // okay, so the cause of that one frikking band was literally me doing an initial
-    // perfect sample, which i only thought of because I experimented with perturbing
-    // the shadow ray position. dammit 
     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { return getShadowContrib(tl); }
     
     const auto sampler = sampleCone(ld, light->getRadius());
@@ -688,17 +678,11 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
     float samplesDone = 0.f;
     float m2 = 0.f;
 
-    vec3 T, B;
-    assignONBvec3s(rec.n, T, B);
-
     for (int i = 0; i < light->getSamples(); ++i) {
         const vec3 sampLightPos = light->pos + sampler()*light->getRadius();
         const vec3 new_ld = sampLightPos - rec.x;
         const float tmax = length(new_ld);
         const vec3 new_lv = new_ld / tmax;
-        // const vec2 offset = 5000000.f*diskRandGen->rand();
-        // const vec3 offsetPos = vec3(offset.x*T + offset.y*B);
-        // sray.setPos(srayCPos + offsetPos);
         sray.setDir(new_lv);
         
         const float contrib = getShadowContrib(tmax);
@@ -718,10 +702,5 @@ float Camera::shadowFactor(const shared_ptr<Light>& light, const Hit &rec,
     }
     // actual changes start someday 
     // todo: i am rationing commits rn, work on actual color glass part of someday
-
-    // constexpr float thres = .625f; // not ideal, but i'm desperate to hide banding
-    // constexpr float adjCoeff = (1.f/(thres*thres*thres));
-    // const float curvedLight = adjCoeff*meanLight*meanLight*meanLight*meanLight;
-    // return meanLight < thres ? curvedLight : meanLight;
     return meanLight;
 }
