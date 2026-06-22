@@ -483,7 +483,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         const vec3 lv = normalize(ld);
         // Construct shadow rays for each light, using world coordinates.
         // Boolean parameter to cull the number of neglible rays casted for shadows 
-        const float lightVisibility = shadowFactor(light, rec, scene, 
+        const vec3 lightVisibility = shadowFactor(light, rec, scene, 
             interval, ray.time, recursiveDepth < 2);
 
         float Li = light->intensity;
@@ -614,23 +614,28 @@ public:
 };
 
 constexpr auto aboveZero = [](const vec3 &clr) { return clr.r > 0 || clr.g > 0 || clr.b > 0; };
-float Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
+vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
                                const std::unique_ptr<Scene> &scene, 
                                const Interval &t_int) {  
     if (FULL_SHADOWS) {
         Hit srec;
         const bool behindShape = hit(scene->getShapes(), sray, t_int, srec);
         const bool isEmiss = srec.m && aboveZero(srec.emissive());
-        return static_cast<float>(!behindShape || isEmiss);
+        return vec3(static_cast<float>(!behindShape || isEmiss));
     } else {
         // 1.0f is fully lit by default, which is when point has unobstructed path to light
-        float s_transparency = 1.f; // if behind, return value from 0.0f to 1.0f
+        vec3 s_transparency(1.f); // if behind, return value from 0.0f to 1.0f
         hit(scene->getShapes(), sray, t_int, srecs);
         for (const Hit& srec : srecs) {
             const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
             const bool isEmiss = srec.m && aboveZero(srec.emissive());
-            const float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
-            s_transparency *= std::clamp(trnsMult, 0.f, 1.f);
+            float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
+            trnsMult = std::clamp(trnsMult, 0.f, 1.f);
+            const vec3 diff_cont = srec.diffuse()*std::max(0.0f, dot(srec.n, sray.getDir()));
+            // weird behavior with spheres perhaps (the transparency being
+            // very low but not zero, and the diffuse being strong)
+            // could fix by trnsMult * sum, but stronger shadows and weaker color
+            s_transparency *= vec3(trnsMult) + (1.f - trnsMult)*isTrns*diff_cont;
         }
         srecs.clear();
         return s_transparency;
@@ -641,7 +646,7 @@ float Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
 // TODO: change this to return a vec3 that is affected by the
 // clr of the shadowed object if it is transparent; easy object attentuation]
 // the colored glass 
-float Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec, 
+vec3 Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec, 
                            const unique_ptr<Scene> &scene,
                            const Interval &interval,
                            float time, bool sampleArea) 
@@ -669,7 +674,7 @@ float Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec,
 
     // Use this method instead of has_no_change() since it plays nicer with 
     // shadow implementation (prev. method did not give good results)
-    VarianceCounter<float> counter;
+    VarianceCounter<vec3> counter;
 
     for (int i = 0; i < light->getSamples(); ++i) {
         const vec3 sampLightPos = light->pos + sampler()*light->getRadius();
@@ -678,13 +683,13 @@ float Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec,
         const vec3 new_lv = new_ld / tmax;
         sray.setDir(new_lv);
         
-        const float contrib = getShadowContrib(srecs, sray, 
+        const vec3 contrib = getShadowContrib(srecs, sray, 
             scene, Interval(interval.min, tmax));
-        bool lowVari = counter.add(contrib);
+        bool lowVari = counter.add(contrib, CounterCmps::vec3_cmp);
 
         if (i < min_i) continue;  
-
-        const float currVis = abs(counter.getMean() / counter.getSamplesDone() - 1.f);
+        const float dotMean = dot(counter.getMean(), counter.getMean());
+        const float currVis = abs(dotMean / (3.f*counter.getSamplesDone()) - 1.f);
         const bool fullOrNoLit = currVis >= 1.f - CONSTANTS::EPSILION;
         if (lowVari || fullOrNoLit) { break; }         
     }
