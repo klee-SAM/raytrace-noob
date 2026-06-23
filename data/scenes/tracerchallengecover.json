@@ -4,7 +4,7 @@
         "from": [-7, 7, 11],
         "to" : [5, 1, -5],
         "up" : [-0.45, 1, 0],
-        "antialias" : 1,
+        "antialias" : 64,
         "fov" : 60
     },
     "materials" : {
@@ -17,7 +17,7 @@
         },
         "cyan" : {
             "ambient" : [0.0, 0.0, 0.0],
-            "diffuse" : [0.373, 0.904, 0.850],
+            "diffuse" : [0.2611, 0.6328, 0.595],
             "specular" : [1.0, 1.0, 1.0],
             "exponent" : 200.0,
             "reflective" : 0.7,

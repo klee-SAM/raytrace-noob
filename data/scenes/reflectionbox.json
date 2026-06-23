@@ -2,18 +2,18 @@
     "camera" : {
         "from" : [1,0,4],
         "to" : [0,-1,0],
-        "antialias" : 1,
+        "antialias" : 256,
         "fov" : 45
     },
     "materials" : {
         "red" : {
             "ambient" : [0.1, 0.1, 0.1],
-            "diffuse" : [1.5, 0.3, 0.25],
+            "diffuse" : [1, 0.3, 0.25],
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0,
-            "reflective" : 0.25,
+            "reflective" : 0.125,
             "refrIndex" : 1.5,
-            "transparency" : 0.5
+            "transparency" : 0.375
         },
         "green" : {
             "ambient" : [0.1, 0.1, 0.1],
@@ -53,7 +53,8 @@
     "lights" : [
         { 
             "position": [0.0, 1.0, 0.0], 
-            "intensity": 1
+            "intensity": 1,
+            "radius": 1
         }
     ],
     "shapes" : [
