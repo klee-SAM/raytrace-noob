@@ -3,12 +3,12 @@
 #include "umath.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include "external/stb_image_write.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_FAILURE_STRINGS
 #define STBI_FAILURE_USERMSG
-#include "stb_image.h"
+#include "external/stb_image.h"
 
 const float COLOR_SCALE = 1.0f / 255.0f;
 

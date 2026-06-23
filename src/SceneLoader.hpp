@@ -10,7 +10,7 @@
 dirty attempt at hiding linker errors and compiler warnings */
 #define JSMN_INLINE 
 #define JSMN_STRICT 
-#include "jsmn.h" 
+#include "external/jsmn.h" 
 
 // if I had more time I should probably write my own json parser instead
 // but thank you zserge

@@ -1,7 +1,7 @@
 #include "stn.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
+#include "external/tiny_obj_loader.h"
 
 // #define BACKFACE_CULLING
 #include "Shape.hpp"
