@@ -420,8 +420,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     vec3 refractClr = vec3(0.0f);
 
     float reflectance = 1.0f; // If the material is not refractive, keep any reflections
-    const bool reflective = rec.m->reflCoeff > Camera::MINIMUM_COEFF;
-    const bool transparent = rec.m->transparency > Camera::MINIMUM_COEFF;
+    const bool reflective = rec.m->reflCoeff > MINIMUM_COEFF;
+    const bool transparent = rec.m->transparency > MINIMUM_COEFF;
 
     // Determine if the ray is inside or outside the object,
     // only to handle the case of lighting for CSG.
@@ -465,17 +465,18 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 
     // The eye vector does not point to the camera when reflecting/refracting
     const vec3 ev = -ray.dir;
+    vec3 diffuseFac = vec3(1.f);
 
     vec3 localClr = rec.ambient() + globalAmbient;
-    if (occlusionSamples > 0 && recursiveDepth < 2) {
+    const bool occlusionEnabled = occlusionSamples > 0 && occludingRadius > MINIMUM_COEFF;
+    if (occlusionEnabled && recursiveDepth < 2) {
         // the maximum is arbitrary, but it should be small 
         // so that faraway objects are not considered
         const auto occlArea = Interval(interval.min, occludingRadius);
-        const vec3 occlFac = occlusionFactor(rec, scene, occlArea, ray.time);
+        const float occlFac = occlusionDiffuseFactor(rec, scene, 
+            occlArea, diffuseFac, ray.time);
         // sqrt was a hack that made the shadows softer
-        localClr.r *= occlFac.r;
-        localClr.g *= occlFac.g;
-        localClr.b *= occlFac.b; 
+        localClr *= occlFac;
     }
 
     for (auto& light : scene->getLights()) {
@@ -487,7 +488,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
             interval, ray.time, recursiveDepth < 2);
 
         float Li = light->intensity;
-        localClr += lightVisibility * Li * lightingFactor(rec, lv, ev);
+        localClr += lightVisibility * Li * lightingFactor(rec, lv, ev, diffuseFac);
     }
 
     // ki = 1 - refl*kr - (1-refl)*kt
@@ -500,7 +501,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     return clr;
 }
 
-vec3 Camera::lightingFactor(const Hit &rec, const vec3 &lv, const vec3 &ev)
+vec3 Camera::lightingFactor(const Hit &rec, const vec3 &lv, 
+                            const vec3 &ev, const vec3 &diffAtt)
 {
     const vec3 kd = rec.diffuse(), 
                ks = rec.specular();
@@ -509,15 +511,16 @@ vec3 Camera::lightingFactor(const Hit &rec, const vec3 &lv, const vec3 &ev)
     const vec3 h = normalize(lv + ev);
     const auto diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
     const auto spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
-    return (diff_cont + spec_cont);
+    return (diff_cont*diffAtt + spec_cont);
 }
 
 // Uses monte carlo integration
-vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
-                             const Interval &interval, float time) 
+float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &scene,
+                                    const Interval &interval, vec3 &diffuseFac,
+                                    float time)
 {
-    vec3 lightAbsorption(0.f);
-    // vec3 diffuseAbsorption(0.f);
+    float lightAbsorption = 0.f;
+    vec3 diffuseAbsorption(0.f);
 
     vec3 T, B;
     assignONBvec3s(rec.n, T, B);
@@ -529,6 +532,7 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
     aoray.time = time;
 
     const uint minConvergSamp = std::max(occlusionSamples / 4, 8U);
+    const float r_tmax = 1.f / (float)interval.max;
 
     float currSamplesDone = static_cast<float>(occlusionSamples); 
     for (uint i = 0; i < occlusionSamples; ++i) {
@@ -547,23 +551,19 @@ vec3 Camera::occlusionFactor(const Hit &rec, const unique_ptr<Scene> &scene,
         // also need consideration. however, recursively calling getRayColor is expensive
         if (occluded && aoHit.m) {
             // the further away the light is, the less that the ray absorbs
-            const float atten = glm::clamp(aoHit.t / (float)interval.max, 0.f, 1.f);
-            // const vec3 aoeyeVec = normalize(ev+rDir);
-            // Go the negative of rDir to crudely emulate color blending
-            // rayAbsorbed = vec3(1.f) - lightingFactor(aoHit, -rDir, aoeyeVec)*atten;
-            // TODO: COLOR BLENDING IS ACTUALLY DIFFUSE INTERREFLECTION. 
-            // REWRITE TO ALSO RETURN A DIFFUSE ATTENUATION, and just have the
-            // the ambient occlusion factor be a scalar 
+            const float atten = glm::clamp(aoHit.t * r_tmax, 0.f, 1.f);
             const vec3 diff_cont = aoHit.diffuse()*std::max(0.0f, glm::dot(rec.n, rDir));
             rayAbsorbed = vec3(1.f) - diff_cont * atten;
+            lightAbsorption += (1.f - atten);
         }
-        lightAbsorption += rayAbsorbed;
-        // diffuseAbsorption += rayAbsorbed;
-        const bool cond = has_no_change(i, minConvergSamp, lightAbsorption, rayAbsorbed);
+        diffuseAbsorption += rayAbsorbed;
+        const bool cond = has_no_change(i, minConvergSamp, diffuseAbsorption, rayAbsorbed);
         // crazy, over 2x speedup with no visible changes in quality
         if (cond) { currSamplesDone = static_cast<float>(i + 1); break; }
     }
-    const vec3 occlusionCoeff = vec3(1.f) - (lightAbsorption / currSamplesDone);
+    const float r_samplesDone = 1.f / currSamplesDone;
+    const float occlusionCoeff = 1.f - lightAbsorption*r_samplesDone;
+    diffuseFac = vec3(1.f) - (diffuseAbsorption*r_samplesDone);
     
     return occlusionCoeff;
 }
@@ -643,9 +643,6 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
 };
 
 // Randomly samples points on area lights depending on their radius.
-// TODO: change this to return a vec3 that is affected by the
-// clr of the shadowed object if it is transparent; easy object attentuation]
-// the colored glass 
 vec3 Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec, 
                            const unique_ptr<Scene> &scene,
                            const Interval &interval,
@@ -693,7 +690,5 @@ vec3 Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec,
         const bool fullOrNoLit = currVis >= 1.f - CONSTANTS::EPSILION;
         if (lowVari || fullOrNoLit) { break; }         
     }
-    // actual changes start someday 
-    // todo: i am rationing commits rn, work on actual color glass part of someday
     return counter.getMean();
 }

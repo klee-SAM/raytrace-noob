@@ -193,10 +193,12 @@ private:
     Ray castPrimaryRay(uint idx, uint idy, float offsetx = 0.5f, float offsety = 0.5f);
 
     glm::vec3 lightingFactor(const Hit &rec, const glm::vec3 &lv, 
-                             const glm::vec3 &eyeVec);
+                             const glm::vec3 &eyeVec, 
+                             const glm::vec3 &diffAtt = glm::vec3(1.f));
 
-    glm::vec3 occlusionFactor(const Hit &rec, const std::unique_ptr<Scene> &scene,
-                              const Interval &interval, float time);
+    float occlusionDiffuseFactor(const Hit &rec, const std::unique_ptr<Scene> &scene,
+                                 const Interval &interval, glm::vec3 &diffuseAtten, 
+                                 float time);
 
     glm::vec3 getShadowContrib(std::vector<Hit> &srecs, const Ray &sray,
                            const std::unique_ptr<Scene> &scene, 
