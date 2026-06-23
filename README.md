@@ -62,6 +62,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] support .mtl conventions for scene files
 
 ### things to consider
+- creating a custom math library instead of using GLM
 - Using SoA for better cache locality
     - w/o SOA, performance decreases by linearly significant
      amount if i add more data to hold b/c cache misses
