@@ -467,6 +467,9 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     const vec3 ev = -ray.dir;
     vec3 diffuseFac = vec3(1.f);
 
+    // Another term, ia, could be multiplied with the ambient and determined based on the 
+    // distribution and number of lights throughout the scene automatically.
+    // Not that important though.
     vec3 localClr = rec.ambient() + globalAmbient;
     const bool occlusionEnabled = occlusionSamples > 0 && occludingRadius > MINIMUM_COEFF;
     if (occlusionEnabled && recursiveDepth < 2) {
