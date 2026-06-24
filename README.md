@@ -9,11 +9,6 @@ Adding more features on a simple raytracer as a learning exercise
 - [x] Infinite cylinders
 - [x] Boxes
 - [ ] Tori
-- [ ] Object/Regional Light Attentuation
-    - "fog!"
-    - calculate distance traveled through fog material object, 
-    - then comp-wise multiply color by attenuation based on distance
-    - (backtracing with hit())
 - [x] CSG
 
 #### light interactions
@@ -21,8 +16,14 @@ Adding more features on a simple raytracer as a learning exercise
 - [X] Texture mapping
 - [X] Refraction
 - [X] Reflection roughness
+- [ ] Enviroment mapping
+- [ ] Object/Regional Light Attentuation
+    - "fog!"
+    - calculate distance traveled through fog material object, 
+    - then comp-wise multiply color by attenuation based on distance
+    - (backtracing with hit())
 - [X] Area lights
-- [X] Ambient occulusion
+- [X] Ambient occlusion
 
 #### camera effects
 - [x] Antialiasing
