@@ -44,18 +44,11 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] scene format documentation (json)
 - [ ] description format for textures/patterns 
 - [ ] Spatial textures
-- [x] ambient occlusion settings
-- [x] control of area light sample count
 - [ ] pmj02 random number generation
 - [ ] partial .mtl support (tiny_obj_loader)
-- [x] lookat
 - [ ] move mesh buffers to another object
     - allows for sharing of mesh data between objects
-- [ ] organize src files into folders
-    - New .h and .cpp files for each shape
-    - Light class as separate file
-    - ext folder for libraries
-    - util folder for umath, prand
+- [x] organize src files into folders
 - [ ] mesh motion blur support, whenever BVH is done
 - [ ] Rewrite sceneloader to change scene after read all
     - requires intermediate data structure for holding
@@ -90,7 +83,8 @@ This requires that you set the environment variable `GLM_INCLUDE_DIR` to a copy 
 Other platforms may have slightly different build instructions.
 
 1. Create a new `build` folder inside the project folder (which contains CMakeLists.txt)
-2. Do `cmake ..` inside the build folder to create the Makefile.
+2. Do `cmake ..` inside the build folder to create the Makefile for debug mode.
+    - Do `cmake -DCMAKE_BUILD_TYPE=Release` for release mode instead.
 3. Call `make` to build.
 
 ## Other libraries used
