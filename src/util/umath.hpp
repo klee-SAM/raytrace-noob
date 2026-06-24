@@ -48,14 +48,14 @@ namespace {
     using namespace CONSTANTS;
     class Interval {
     public:
-        double min, max;
+        float min, max;
 
         Interval() : min(INF), max(-INF) {} // empty
-        Interval(double min, double max) : min(min), max(max) {}
+        Interval(float min, float max) : min(min), max(max) {}
 
-        double size() const { return max - min; }
-        bool contains(double x) const { return (min <= x) && (x <= max); }
-        bool surrounds(double x) const { return (x < min) && (max < x);}    
+        float size() const { return max - min; }
+        bool contains(float x) const { return (min <= x) && (x <= max); }
+        bool surrounds(float x) const { return (x < min) && (max < x);}    
 
         static const Interval empty, world;
     };
