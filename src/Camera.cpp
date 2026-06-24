@@ -555,12 +555,13 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
         if (occluded && aoHit.m) {
             // the further away the light is, the less that the ray absorbs
             const float atten = glm::clamp(aoHit.t * r_tmax, 0.f, 1.f);
-            // Crude approximation of color blending from diffuse reflection
+            // Very crude approximation of color blending from diffuse reflection
             const float dCoeff = (1.f - rec.m->reflCoeff) * (1.f - rec.m->transparency);
             const vec3 kd = aoHit.diffuse() * dCoeff;
             const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, rDir));
             rayAbsorbed = vec3(1.f) - diff_cont * atten;
-            lightAbsorption += (1.f - atten);
+            // Transparent objects occlude less light. well, i think
+            lightAbsorption += (1.f - atten) * (1.f - rec.m->transparency);
         }
         diffuseAbsorption += rayAbsorbed;
         const bool cond = has_no_change(i, minConvergSamp, diffuseAbsorption, rayAbsorbed);
