@@ -54,6 +54,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] Rewrite sceneloader to change scene after read all
     - requires intermediate data structure for holding
 - [ ] support .mtl conventions for scene files
+- [ ] reimplement refraction with better practices
 
 ### things to consider
 - creating a custom math library instead of using GLM
