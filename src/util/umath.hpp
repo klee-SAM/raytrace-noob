@@ -1,5 +1,7 @@
 #pragma once
-#include "stn.hpp"
+#include "../stn.hpp"
+
+#include <limits>
 
 typedef glm::vec2 vec2;
 

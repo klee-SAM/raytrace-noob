@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stn.hpp"
+#include "../stn.hpp"
 #include "umath.hpp"
 
 // Could be adjusted to balance memory use and randomness
@@ -9,35 +9,6 @@ constexpr size_t RAND_GEN_SIZE = 50'000U;
 // Pseudo-random generation using lookup tables. 
 namespace prand 
 {
-    // Much faster than randomly generating for
-    // each ray, and less noise. However, this 
-    // means that sampling beyond 18 per instance
-    // doesn't lead to better results
-    constexpr size_t N = 18;
-    // Thank you professor sueda
-    static constexpr vec2 poissonDiskData[N] = {
-        vec2(-0.220147, 0.976896),
-        vec2(-0.735514, 0.693436),
-        vec2(-0.200476, 0.310353),
-        vec2( 0.180822, 0.454146),
-        vec2( 0.292754, 0.937414),
-        vec2( 0.564255, 0.207879),
-        vec2( 0.178031, 0.024583),
-        vec2( 0.613912,-0.205936),
-        vec2(-0.385540,-0.070092),
-        vec2( 0.962838, 0.378319),
-        vec2(-0.886362, 0.032122),
-        vec2(-0.466531,-0.741458),
-        vec2( 0.006773,-0.574796),
-        vec2(-0.739828,-0.410584),
-        vec2( 0.590785,-0.697557),
-        vec2(-0.081436,-0.963262),
-        vec2( 1.000000,-0.100160),
-        vec2( 0.622430, 0.680868)
-    };
-    constexpr inline vec2 poissonDisk(size_t index) { return poissonDiskData[index % N]; }
-
-    
     template <typename T>
     class genRand 
     {
@@ -49,7 +20,7 @@ namespace prand
 
     public:
         genRand() : i(0U) {}
-        genRand(size_t size) : genRand() { dataPoints.reserve(N); }
+        genRand(size_t size) : genRand() { dataPoints.reserve(size); }
         inline T rand() { i++; return dataPoints.at(i*(i+2673457) % dataPoints.size()); }
         // Slightly faster than not providing an index
         inline T rand(size_t j) { return dataPoints.at(j % dataPoints.size()); }

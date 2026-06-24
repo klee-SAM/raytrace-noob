@@ -1,5 +1,5 @@
 #include "Camera.hpp"
-#include "prand.hpp"
+#include "util/prand.hpp"
 
 // #define SHOW_NORMALS
 

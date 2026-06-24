@@ -2,7 +2,8 @@
 #include "stn.hpp"
 #include "Material.hpp"
 #include "Ray.hpp"
-#include "umath.hpp"
+
+#include "util/umath.hpp"
 
 class Shape {
 public:

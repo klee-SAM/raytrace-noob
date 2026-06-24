@@ -4,21 +4,13 @@
 #include <algorithm>
 #include <cassert>
 #include <cfloat>
-#include <climits>
 #include <cmath>
 #include <cstring>
 #include <iostream>
-#include <limits>
 #include <memory>
-#include <queue>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
-
-#include <atomic>
-#include <thread>
-#include <future>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

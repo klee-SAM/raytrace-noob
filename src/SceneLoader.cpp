@@ -1,6 +1,6 @@
 #include "SceneLoader.hpp"
 
-#include "umath.hpp"
+#include "util/umath.hpp"
 
 using namespace std;
 using namespace glm;

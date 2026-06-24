@@ -1,10 +1,11 @@
 #include "stn.hpp"
-#include "umath.hpp"
+
+#include "util/umath.hpp"
+#include "util/MatrixStack.hpp"
 
 #include "Camera.hpp"
 #include "Image.hpp"
 #include "Material.hpp"
-#include "MatrixStack.hpp"
 #include "Scene.hpp"
 #include "SceneLoader.hpp"
 #include "Texture.hpp"

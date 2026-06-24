@@ -1,5 +1,5 @@
 #pragma once
-#include "stn.hpp"
+#include "../stn.hpp"
 #include <stack>
 
 class MatrixStack {

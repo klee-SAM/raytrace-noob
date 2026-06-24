@@ -1,6 +1,6 @@
 #include "Image.hpp"
 
-#include "umath.hpp"
+#include "util/umath.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "external/stb_image_write.h"

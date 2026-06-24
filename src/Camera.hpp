@@ -2,10 +2,17 @@
 #include "stn.hpp"
 
 #include "Image.hpp"
-#include "MatrixStack.hpp"
 #include "Scene.hpp"
 #include "Ray.hpp"
-#include "umath.hpp"
+
+#include "util/umath.hpp"
+#include "util/MatrixStack.hpp"
+
+#include <queue>
+
+#include <atomic>
+#include <thread>
+#include <future>
 
 // For processing image rows in parallel using a limited number of threads.
 class RowQueue {
