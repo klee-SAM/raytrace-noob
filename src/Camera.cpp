@@ -555,7 +555,10 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
         if (occluded && aoHit.m) {
             // the further away the light is, the less that the ray absorbs
             const float atten = glm::clamp(aoHit.t * r_tmax, 0.f, 1.f);
-            const vec3 diff_cont = aoHit.diffuse()*std::max(0.0f, glm::dot(rec.n, rDir));
+            // Crude approximation of color blending from diffuse reflection
+            const float dCoeff = (1.f - rec.m->reflCoeff) * (1.f - rec.m->transparency);
+            const vec3 kd = aoHit.diffuse() * dCoeff;
+            const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, rDir));
             rayAbsorbed = vec3(1.f) - diff_cont * atten;
             lightAbsorption += (1.f - atten);
         }
@@ -637,7 +640,7 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
             const vec3 diff_cont = srec.diffuse()*std::max(0.0f, dot(srec.n, sray.getDir()));
             // weird behavior with spheres perhaps (the transparency being
             // very low but not zero, and the diffuse being strong)
-            // could fix by trnsMult * sum, but stronger shadows and weaker color
+            // could fix by trnsMult * sum, but darker shadows and weaker color
             s_transparency *= vec3(trnsMult) + (1.f - trnsMult)*isTrns*diff_cont;
         }
         srecs.clear();
@@ -675,8 +678,10 @@ vec3 Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec,
     // Use this method instead of has_no_change() since it plays nicer with 
     // shadow implementation (prev. method did not give good results)
     VarianceCounter<vec3> counter;
+    const Interval litThreshold(CONSTANTS::EPSILION, 1.f - CONSTANTS::EPSILION);
 
     for (int i = 0; i < light->getSamples(); ++i) {
+        // A large enough light radius increases noise of the entire image 
         const vec3 sampLightPos = light->pos + sampler()*light->getRadius();
         const vec3 new_ld = sampLightPos - rec.x;
         const float tmax = length(new_ld);
@@ -688,9 +693,10 @@ vec3 Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec,
         bool lowVari = counter.add(contrib, CounterCmps::vec3_cmp);
 
         if (i < min_i) continue;  
+        // use dot product to avoid comparing 3 components (convenience),
         const float dotMean = dot(counter.getMean(), counter.getMean());
-        const float currVis = abs(dotMean / (3.f*counter.getSamplesDone()) - 1.f);
-        const bool fullOrNoLit = currVis >= 1.f - CONSTANTS::EPSILION;
+        const float currVis = dotMean / (3.f*counter.getSamplesDone());
+        const bool fullOrNoLit = litThreshold.surrounds(currVis);
         if (lowVari || fullOrNoLit) { break; }         
     }
     return counter.getMean();

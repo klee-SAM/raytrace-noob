@@ -2,8 +2,10 @@
     "camera" : {
         "from" : [1,0,4],
         "to" : [0,-1,0],
-        "antialias" : 256,
-        "fov" : 45
+        "antialias" : 16,
+        "fov" : 45,
+        "ambientSamples" : 16,
+        "occlusionRadius" : 0.25
     },
     "materials" : {
         "red" : {
@@ -54,7 +56,8 @@
         { 
             "position": [0.0, 1.0, 0.0], 
             "intensity": 1,
-            "radius": 1
+            "radius": 0.5,
+            "samples": 16
         }
     ],
     "shapes" : [
