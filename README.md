@@ -57,6 +57,9 @@ Adding more features on a simple raytracer as a learning exercise
     - ext folder for libraries
     - util folder for umath, prand
 - [ ] mesh motion blur support, whenever BVH is done
+- [ ] Rewrite sceneloader to change scene after read all
+    - requires intermediate data structure for holding
+- [ ] support .mtl conventions for scene files
 
 ### things to consider
 - Using SoA for better cache locality
@@ -122,13 +125,17 @@ These are the resources I consulted while developing this raytracer.
 - https://jcgt.org/published/0006/01/02/paper.pdf
 - https://www.rorydriscoll.com/2009/01/07/better-sampling/
 
-### Diffuse Interreflection
-- https://raytracing2012.wordpress.com/first-bounce-diffuse-interreflections/
-
 ### Area lighting
 - https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-lighting/introduction-to-lighting-spherical-light-cone-sampling.html
 
-#### Sampling Methods
+
+### Other Optimizations
+- https://stackoverflow.com/questions/11227809
+
+### Sampling Methods
 - https://github.com/Andrew-Helmer/pmj-cpp/tree/master/sample_generation
 - https://jcgt.org/published/0008/01/04/paper.pdf
 - https://abau.io/blog/sample_patterns/
+
+### Diffuse Reflection
+- https://raytracing2012.wordpress.com/first-bounce-diffuse-interreflections/
