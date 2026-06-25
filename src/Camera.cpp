@@ -529,8 +529,8 @@ vec3 Camera::lightingFactor(const Hit &rec, const vec3 &lv,
     const float s = rec.m->exponent;
 
     const vec3 h = normalize(lv + ev);
-    const auto diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
-    const auto spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
+    const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
+    const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
     return (diff_cont*diffAtt + spec_cont);
 }
 
@@ -567,18 +567,24 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
         const bool occluded = hit(scene->getShapes(), aoray, interval, aoHit);
         vec3 rayAbsorbed = vec3(0.f);
 
+        // Convoluted 5AM tomfoolery; not 
+        constexpr auto p = [](float a, float x) {
+            const float df = ((a+1)/(2*a))*(-2.f/(1.f+a*x)+2.f);
+            return df*df;
+        };
+
         // For a red clr, green and blue are absorbed, but reflections and refractions
         // also need consideration. however, recursively calling getRayColor is expensive
         if (occluded && aoHit.m) {
-            // the further away the light is, the less that the ray absorbs
-            const float atten = glm::clamp(aoHit.t * r_tmax, 0.f, 1.f);
+            const float d = glm::clamp(aoHit.t * r_tmax, 0.f, 1.f);
             // Very crude approximation of color blending from diffuse reflection
             const float dCoeff = (1.f - rec.m->reflCoeff) * (1.f - rec.m->transparency);
             const vec3 kd = aoHit.diffuse() * dCoeff;
             const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, rDir));
-            rayAbsorbed = vec3(1.f) - diff_cont * atten;
+            rayAbsorbed = vec3(1.f) - diff_cont * p(.6f, d);
             // Transparent objects occlude less light. well, i think
-            lightAbsorption += (1.f - atten) * (1.f - rec.m->transparency);
+            // the closer the occluding, the less that light reaches
+            lightAbsorption += (1.f - d) * (1.f - rec.m->transparency);
         }
         diffuseAbsorption += rayAbsorbed;
         const bool cond = has_no_change(i, minConvergSamp, diffuseAbsorption, rayAbsorbed);
@@ -588,6 +594,8 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
     const float r_samplesDone = 1.f / currSamplesDone;
     const float occlusionCoeff = 1.f - lightAbsorption*r_samplesDone;
     diffuseFac = vec3(1.f) - (diffuseAbsorption*r_samplesDone);
+    // sqrt is a hack that make the occlusion shadows look nicer
+    diffuseFac = glm::sqrt(diffuseFac);
     
     return occlusionCoeff;
 }
