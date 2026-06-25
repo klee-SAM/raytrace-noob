@@ -509,7 +509,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     clr += localCoeff*localClr;
     clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
     // Change if reflCoeff acted like OBJECT_REFLECTIVITY from that raytracer demo
-    // const float& reflMult = reflectance; // reflClr could be modified from 
+    // const float& reflMult = reflectance; // clr could be modified from refr branch
     // const float refrMult = (1.f - reflectance)*rec.m->transparency
     // const float localCoeff = 1.f - reflMult - refrMult;
     // clr += localCoeff*localClr + reflectClr*reflMult + refractClr*refrMult;
