@@ -380,7 +380,13 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
     }
     // reflSamples must be at least 1.
     reflClr /= hit.m->reflSamples;
-
+    // A modification I could make would be to make the reflCoeff itself affect the
+    // Fresnel term by reflCoeff + (1 - reflCoeff)*rt, which would make transparent
+    // objects fully reflective at reflCoeff = 1. Good for mixing reflection and
+    // refraction independent of angle, but I need to change occlusion and shadow
+    // to account for increased reflection (increase opacity of shadows when
+    // reflectCoeff is higher, overriding transparency)
+    // Do make the above change after reflectance refract rewrite
     reflClr *= hit.m->reflCoeff;
     return reflClr;
 }
@@ -499,6 +505,14 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
                        (1.f - reflectance)*rec.m->transparency;
     clr += localCoeff*localClr;
     clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
+    // Change if reflCoeff acted like OBJECT_REFLECTIVITY from that raytracer demo
+    // const float reflMult = reflectance*(1.f - rec.m->transparency);
+    // const float refrMult = (1.f - reflectance)*rec.m->transparency
+    // const float localCoeff = 1.f - reflMult - refrMult;
+    // clr += localCoeff*localClr + reflectClr*reflMult + refractClr*refrMult;
+    // absorbDistance is 0 by default, meaning absorb = vec3(1). absorb-- as dist++
+    // vec3 absorb = glm::exp(-OBJECT_ABSORB * absorbDistance);
+    // clr *= absorb;
     clr += rec.emissive();
 
     return clr;
