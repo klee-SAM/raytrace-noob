@@ -30,7 +30,7 @@ protected:
 	// Initialized after calling setModelMatrix(),
     // used as precomputed matrices
 	glm::mat4 modelMat;
-	glm::mat4 inv_modelMat;
+	// glm::mat4 inv_modelMat;
 	// glm::mat4 invT_modelMat;
 
 	// For moving objects; contains the transforms for an
@@ -42,11 +42,7 @@ protected:
 
 	// determines if new matrices need to be constructed
 	// for this object
-	// TODO: does increasing branching with this make
-	// things better or worse?
 	bool moving = false;
-
-	// glm::mat3 textureMat; // Texture transformation matrix
 
 	std::shared_ptr<Material> material;
 
@@ -56,10 +52,10 @@ protected:
 	virtual glm::vec4 computeNormal(const glm::vec3& x) const { 
 		return glm::vec4(0.0f); 
 	}
-	Hit toWorldSpaceHit(
-		const glm::vec3& x, // hit position
-		const glm::vec3& vx, // unnormalized ray dir
-		float t) const;
+	// Hit toWorldSpaceHit(
+	// 	const glm::vec3& x, // hit position
+	// 	const glm::vec3& vx, // unnormalized ray dir
+	// 	float t) const;
 
 	Hit toWorldSpaceHit(
 		const glm::vec3& x, // hit position

@@ -12,11 +12,12 @@ using namespace CONSTANTS;
 
 void Shape::setModelMatrix(const mat4& m) {
 	modelMat = m;
-	inv_modelMat = inverse(m);
+	// inv_modelMat = inverse(m);
 	// invT_modelMat = transpose(inverse(m));
 }
 
 glm::mat4 Shape::getModelMatrix(float time) const {
+	// Faster to branch than to always do modelMatLerp()
 	if (this->moving) return modelMatLerp(time);
 	else return modelMat;
 }
@@ -31,6 +32,7 @@ void Shape::setNextModelTransforms(const glm::vec3& trns,
 	moving = true;
 }
 
+/*
 Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const 
 {
 	vec3 wld_x = vec3(modelMat*vec4(x, 1.0f));
@@ -50,6 +52,7 @@ Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const
 
 	return h;
 }
+*/
 
 Hit Shape::toWorldSpaceHit(const vec3 &x, const vec3 &vx, 
 						   const mat4 &model,
@@ -98,39 +101,12 @@ mat4 Shape::modelMatLerp(const float time) const {
 }
 
 /* what to do
-i would probably have to change most of the intersection functions 
-for each of the shapes to get() the model matrix for a current
-timestamp before testing. toWorldSpaceHit() should be overloaded with an extra
-parameter(s) modelMat (and inv_modelMat), and the inverse
-transpose should not be stored (just compute it if there's a hit)
 
-NOTE: for now i should just use the bool moving to pick 
-which of the getModel() methods to use
-
-i probably could test using boolean hacks to avoid an ifstatement
-so to generically using getModelMatrix(float tm) later
-
-when i eventually get motion blur sorta working, i should test
-whether removing precomputed inverse helps or reduces performance
-but for now, i should keep it 
+update: removing precomputed inverse is good because it's
+not useful when i have to do motion blur; kinda redundent
+and i would like to prioritize simplicity over small time gain
 
 ----
-I should test the sphere to see if it moves.
-
-TODO: modify camera class so that all secondary rays
-casted inherit the primary ray's time.
-do this by adding and using an extra parameter time
-
-// maybe should also add a note stating that
-// the next transforms should be small
-// compared to current, because code assumes
-// that the blur is only from one frame to the next
-// should also hold myself back from adding an option
-// for casting specifically motion blur rays to moving objects;
-// that is a whole nother can of worms 
-// (casting a nondeterministic number of rays)
-
-https://stackoverflow.com/questions/11227809
 */
 
 
@@ -571,6 +547,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 	// affected by motion blur properties
 
 	// transform ray to local coords
+	mat4 inv_modelMat = inverse(modelMat);
 	vec3 l_rorig = vec3(inv_modelMat*ray.pos);
 
 	// bounding sphere test
@@ -663,7 +640,6 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 }	
 
 
-bool cmp(const Hit& a, const Hit& b) { return a.t < b.t; }
 
 void pushIntervals(vector<Interval>& intervals, const vector<Hit>& hits) {
 	if (hits.empty()) {
@@ -712,7 +688,7 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 		// so just leave this alone
 		hits.push_back(std::move(it));
 	}
-	std::sort(hits.begin(), hits.end(), cmp);
+	Hit::sortHits(hits);
 
 	filter_intersections(l_intervals, r_intervals, hits);
 
