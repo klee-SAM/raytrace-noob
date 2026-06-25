@@ -116,11 +116,13 @@ These are the resources I consulted while developing this raytracer.
 - https://computergraphics.stackexchange.com/questions/7789/
 - https://stackoverflow.com/questions/53549615/
 
-### Ambient Occlusion
+### Ambient Occlusion (and Color Bleeding)
 - https://computergraphics.stackexchange.com/questions/7985/
 - https://research.pixar.com/docs/2017.Others.DBCHKLV.pdf
 - https://jcgt.org/published/0006/01/02/paper.pdf
 - https://www.rorydriscoll.com/2009/01/07/better-sampling/
+- https://www.researchgate.net/publication/234787391_Real-time_obscurances_with_color_bleeding
+- https://raytracing2012.wordpress.com/first-bounce-diffuse-interreflections/
 
 ### Area lighting
 - https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-lighting/introduction-to-lighting-spherical-light-cone-sampling.html
@@ -141,7 +143,6 @@ These are the resources I consulted while developing this raytracer.
 - https://stackoverflow.com/questions/5147378/
 
 ### Other Interesting Links
-- https://raytracing2012.wordpress.com/first-bounce-diffuse-interreflections/
 - https://stackoverflow.com/questions/11227809
 - https://www.cs.umd.edu/users/mount/Indep/Alisa_Chen/caustics.html
 - https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md

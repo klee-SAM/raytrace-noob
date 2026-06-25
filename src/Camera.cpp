@@ -567,7 +567,7 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
         const bool occluded = hit(scene->getShapes(), aoray, interval, aoHit);
         vec3 rayAbsorbed = vec3(0.f);
 
-        // Convoluted 5AM tomfoolery; not 
+        // 5AM tomfoolery; phi function for weighting contributions
         constexpr auto p = [](float a, float x) {
             const float df = ((a+1)/(2*a))*(-2.f/(1.f+a*x)+2.f);
             return df*df;
@@ -594,7 +594,7 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
     const float r_samplesDone = 1.f / currSamplesDone;
     const float occlusionCoeff = 1.f - lightAbsorption*r_samplesDone;
     diffuseFac = vec3(1.f) - (diffuseAbsorption*r_samplesDone);
-    // sqrt is a hack that make the occlusion shadows look nicer
+    // sqrt is a hack that make the color blends look nicer with the subtle occlusion
     diffuseFac = glm::sqrt(diffuseFac);
     
     return occlusionCoeff;
