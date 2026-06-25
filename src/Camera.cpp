@@ -568,6 +568,7 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
         vec3 rayAbsorbed = vec3(0.f);
 
         // 5AM tomfoolery; phi function for weighting contributions
+        // float `a` is an adjustment constant: higher `a` -> sqrt-like
         constexpr auto p = [](float a, float x) {
             const float df = ((a+1)/(2*a))*(-2.f/(1.f+a*x)+2.f);
             return df*df;
