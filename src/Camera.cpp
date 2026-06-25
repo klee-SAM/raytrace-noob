@@ -387,6 +387,7 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
     // to account for increased reflection (increase opacity of shadows when
     // reflectCoeff is higher, overriding transparency)
     // Do make the above change after reflectance refract rewrite
+    // TODO: since 
     reflClr *= hit.m->reflCoeff;
     return reflClr;
 }
@@ -459,6 +460,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
                         recursiveDepth+1, reflectance, back_face);
         
         // Deal with TIR here.
+        // TODO: change this so that reflectClr is modified only when the 
+        // hit material is not also reflective; otherwise this is redundant
         if (reflectance >= 1.f - CONSTANTS::EPSILION) {
             Ray refrRay = reflectRay(ray, rec);
             // this set the reflected ray outside the surface, making it bounce out
@@ -506,7 +509,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     clr += localCoeff*localClr;
     clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
     // Change if reflCoeff acted like OBJECT_REFLECTIVITY from that raytracer demo
-    // const float reflMult = reflectance*(1.f - rec.m->transparency);
+    // const float& reflMult = reflectance; // reflClr could be modified from 
     // const float refrMult = (1.f - reflectance)*rec.m->transparency
     // const float localCoeff = 1.f - reflMult - refrMult;
     // clr += localCoeff*localClr + reflectClr*reflMult + refractClr*refrMult;
