@@ -261,63 +261,16 @@ Ray reflectRay(const Ray &ray, const Hit &rec)
     return reflRay;
 }
 
-// Creates a new ray with a direction dependant on the material's IoR
-// Uses Schlick's approximation of Fresnel's equations for refraction.
-Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFacing) 
-{
-    float n1, n2;
-    vec3 norm = rec.n;
-    Ray refrRay = ray;
-
-    float cosI = -dot(normalize(ray.getDir()), norm);
-    assert(fabs(cosI) < 1.01f);
-
-    const float &rf_i = rec.m->refrIndex;
-    if (backFacing) {
-        // Leaving the shape
-        n1 = rf_i;
-        n2 = 1.0f;
-    } else {
-        // Entering the shape, assume outside is air
-        n1 = 1.0f;
-        n2 = rf_i;
-    }
-
-    const float eta = n1/n2;
-    const float k = 1.f - eta*eta*(1.0f-cosI*cosI);
-
-    // Total internal reflection, do nothing instead
-    if (k < 0.0f) {
-        reflectance = 1.0f;
-        // change to return an invalid ray instead (reusing the hit obj is
-        // incorrect, b/c the norm would be pointing out of the obj
-        // if I no longer modified rec.n b4 calling this func)
-        return refrRay; 
-    }
-    
-    // cos(t)^2
-    const float cosT = sqrt(k);
-    const float m = 1.0f - (n1 > n2 ? cosT : cosI);
-    // atrocity for (1 - cos)^5: (m^2)^2 * m = m^5
-    float r0 = (n1 - n2)/(n1 + n2); r0 *= r0;
-    reflectance = r0 + (1.0f-r0)*(m*m*m*m*m);
-    // reflectance = std::clamp(fabs(reflectance), 0.0f, 1.0f);
-
-    refrRay.setDir( normalize( eta*ray.getDir() + norm*(eta*cosI - cosT) ) );
-    // refrRay.setDir( normalize( eta*ray.getDir() ) + norm*(eta*cosI - cosT) ); // incorrect, commit ration
-    refrRay.setPos( rec.x + refrRay.getDir()*(float)Camera::EPSILION );
-
-    return refrRay;
-}
-
+// Creates a new ray with a direction dependent on the material's IoR
 // Returns a ray with dir = vec3(0.f) if TIR
 Ray refractRay(const Ray &ray, const Hit &rec, float eta) {
     const vec3 &norm = rec.n;
     float cosI = -dot(normalize(ray.getDir()), norm);
     cosI = std::clamp(cosI, -1.f, 1.f);
-    const float k = 1.f - eta*eta*(1.0f-cosI*cosI);
-    if (k < 0.f) return Ray(vec3(0.f), vec3(0.f), 0.f);
-    const vec3 rayDir = eta*ray.getDir()+norm*(eta*cosI-std::sqrt(k));
+    const float sinT2 = eta*eta*(1.0f-cosI*cosI);
+    if (sinT2 > 1.f) return Ray(vec3(0.f), vec3(0.f), 0.f);
+    const float cosT = std::sqrt(1.f - sinT2);
+    const vec3 rayDir = eta*ray.getDir()+norm*(eta*cosI-cosT);
     const vec3 rayPos = rec.x + rayDir*Camera::EPSILION;
     return Ray(rayPos, normalize(rayDir), ray.time);
 }
@@ -335,16 +288,15 @@ float reflectanceFromIncidentRay(const Ray &ray, const Hit &rec) {
         n1 = rec.m->refrIndex; 
         n2 = 1.f;
         cosX = -cosX;
-    } else {
-        n1 = 1.f; 
-        n2 = rec.m->refrIndex;
-        norm = -norm;
-    }
-    if (n1 > n2) {
+        // n1 > n2
         eta = n1 / n2;
         const float sin2T = eta*eta*(1.0f-cosX*cosX);
         if (sin2T > 1.0f) { return 1.f; } // TIR
         cosX = sqrt(1.f - sin2T);
+    } else {
+        n1 = 1.f; 
+        n2 = rec.m->refrIndex;
+        norm = -norm;
     }
     const float x = 1.0f - cosX;
     float r0 = (n1 - n2)/(n1 + n2); r0 *= r0;
@@ -378,7 +330,7 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
     return reflClr;
 }
 
-// modify this to handle invalid rays
+// similar to getReflectionColor(), but can return vec3(0.f) b/c TIR
 vec3 Camera::getRefractedColor(const std::unique_ptr<Scene> &scene,
                                const Ray &ray, const Hit &hit,
                                const Interval &interval, 
@@ -396,7 +348,7 @@ vec3 Camera::getRefractedColor(const std::unique_ptr<Scene> &scene,
     return refrClr;
 }
 
-// Whitted-style ray-tracing, but sometimes amalmagated
+// Whitted-style ray-tracing, but amalmagated
 vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray, 
                          const Interval& interval, uint recursiveDepth) 
 {
@@ -414,6 +366,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 
     vec3 reflectClr = vec3(0.0f);
     vec3 refractClr = vec3(0.0f);
+    // vec3 absorbClr = vec3(0.f);
 
     // If the material is not refractive, keep any reflections
     float reflectance = reflectanceFromIncidentRay(ray, rec);
@@ -486,7 +439,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         const vec3 ld = light->pos - rec.x;
         const vec3 lv = normalize(ld);
         // Construct shadow rays for each light, using world coordinates.
-        // Boolean parameter to cull the number of neglible rays casted for shadows 
+        // Boolean parameter to naively cull the number of neglible rays casted for shadows 
         const vec3 lightVisibility = shadowFactor(light, rec, scene, 
             interval, ray.time, recursiveDepth < 2);
 
@@ -599,7 +552,13 @@ private:
     glm::vec3 dx, dy;
     glm::vec3 dz;
     const float radius;
+
     float dz_len_2;
+    float sin_theta_max_2;
+    float sin_theta_max;
+    float cos_theta_max;
+    // float r_pdf = 1.f;
+
 public:
     // Akalin's method, ty scratchapixel for saving me from this area light torment nexus
     sampleCone(const glm::vec3 &ld, float sampleRadius) 
@@ -609,6 +568,16 @@ public:
         dz_len_2 = glm::dot(dz, dz);
         const float dz_len = std::sqrt(dz_len_2);
         dz /= dz_len;
+        sin_theta_max_2 = radius * radius / dz_len_2;
+        sin_theta_max = std::sqrt(sin_theta_max_2);
+        cos_theta_max = std::sqrt(std::max(0.f, 1.f - sin_theta_max_2));
+
+        // light attentuation
+        // to 2*PI or not to 2*PI?
+        // r_pdf = ((1.f - cos_theta_max));
+        // const float c = 2*PI*std::max(2.f*std::sqrt(radius), radius);
+        // r_pdf = 1.f - std::sqrt(std::max(0.f, 1.f - c/dz_len));
+        // r_pdf *= 2*PI;
 
         assignONBvec3s(dz, dx, dy);
     }
@@ -618,10 +587,6 @@ public:
         const float r1 = unifRandGen->rand();
         const float r2 = unifRandGen->rand();
 
-        const float sin_theta_max_2 = radius * radius / dz_len_2;
-        const float sin_theta_max = std::sqrt(sin_theta_max_2);
-        const float cos_theta_max = std::sqrt(std::max(0.f, 1.f - sin_theta_max_2));
-
         const float cos_theta = 1.f + (cos_theta_max - 1.f) * r1;
         const float sin_theta_2 = 1.f - cos_theta * cos_theta;
 
@@ -630,11 +595,11 @@ public:
         const float sin_alpha = std::sqrt(1.f - cos_alpha * cos_alpha);
         const float phi = 2 * PI * r2;
 
-        // PDFs are useful for path tracing, but not for this Whitted-hybrid tracer 
-        // float pdf = 1.f / (2.f * PI * (1.f - cos_theta_max));
-
         return std::cos(phi)*sin_alpha*dx + std::sin(phi)*sin_alpha*dy + cos_alpha*dz;
     }
+
+    // PDFs are useful for path tracing, but not for this Whitted-hybrid tracer 
+    // constexpr float getrPDF() const { return r_pdf; }
 };
 
 constexpr auto aboveZero = [](const vec3 &clr) { return clr.r > 0 || clr.g > 0 || clr.b > 0; };
