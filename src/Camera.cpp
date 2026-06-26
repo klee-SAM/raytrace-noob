@@ -453,7 +453,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
                         recursiveDepth+1, back_face);
         
         // Deal with TIR here. dead code for now
-        if (reflectance >= 1.f - CONSTANTS::EPSILION && !reflective) {
+        if (reflectance >= 1.f - CONSTANTS::EPSILION) {
             Ray refrRay = reflectRay(ray, rec);
             // this set the reflected ray outside the surface, making it bounce out
             // immediately again; this is not physically based.

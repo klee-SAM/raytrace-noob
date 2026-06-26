@@ -57,18 +57,19 @@ namespace {
         bool contains(float x) const { return (min <= x) && (x <= max); }
         bool surrounds(float x) const { return (x < min) && (max < x);}    
 
-        static const Interval empty, world;
+        static const Interval empty, world, signif;
     };
 
     const Interval Interval::empty = Interval(INF, -INF);
     const Interval Interval::world = Interval(-INF, INF); 
+    const Interval Interval::signif = Interval(EPSILION, 1.f - EPSILION);
 }
 
 // Returns the number without the integer part (-2.6 -> -0.6)
 constexpr float decimal(float x) { return x - static_cast<int>(x); }
 // Like decimal, but returns a positive number instead
 constexpr float fract(float x) { return x - std::floor(x); }
-// https://stackoverflow.com/questions/1903954/
+// https://stackoverflow.com/questions/1903954/: -1, 0, or 1
 constexpr int sgn(float val) { return (0.0f < val) - (val < 0.0f); }
 constexpr bool is_pow2(int n) { return n == 0 || (n & (n - 1)) == 0; }
 
