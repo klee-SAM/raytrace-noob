@@ -13,6 +13,7 @@ public:
     float reflCoeff;    // 1.0 is full reflection; 0.0 is no reflection
     float refrIndex;    // RI of material going from inside the material to a vacuum
     float transparency; // 1.0 is full refraction; 0.0 is no refraction
+    float fresnelCoeff; // 1.0 is full fresnel refl; yk what 0.0 is
 
     uint reflSamples; // 1 ray is smooth reflection, 2+ for sampling rough reflections 
     float fuzz;       // reflection roughness; 0.0 indicates no roughness
@@ -28,6 +29,7 @@ public:
                  reflCoeff{0.0f}, 
                  refrIndex{1.0f}, 
                  transparency{0.0f},
+                 fresnelCoeff{1.0f},
                  reflSamples{1U},
                  fuzz{0.05f}
                  {};

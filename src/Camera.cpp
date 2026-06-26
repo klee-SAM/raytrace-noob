@@ -280,8 +280,6 @@ Ray refractRay(const Ray &ray, const Hit &rec, float eta) {
 float reflectanceFromIncidentRay(const Ray &ray, const Hit &rec) {
     float eta, n1, n2; 
     vec3 norm = rec.n;
-    if (std::abs(rec.m->refrIndex - 1.f) < CONSTANTS::EPSILION)
-        return 1.f;
     float cosX = -dot(norm, ray.getDir());
     cosX = std::clamp(cosX, -1.f, 1.f); // jus clamp lmao
     if (cosX < 0.f) { /*true if backfacing*/
@@ -326,7 +324,6 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
     // reflectCoeff is higher, overriding transparency)
     // Do make the above change after reflectance refract rewrite
     // TODO: since 
-    reflClr *= hit.m->reflCoeff;
     return reflClr;
 }
 
@@ -344,7 +341,6 @@ vec3 Camera::getRefractedColor(const std::unique_ptr<Scene> &scene,
     if (vec3(0.f) != ray.getDir()) {
         refrClr = getRayColor(scene, refrRay, interval, recursions);
     } // otherwise, no refracted clr b/c TIR, modify reflected instead
-    refrClr *= hit.m->transparency;
     return refrClr;
 }
 
@@ -370,10 +366,12 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 
     // If the material is not refractive, keep any reflections
     float reflectance = reflectanceFromIncidentRay(ray, rec);
-    const bool inReflThres = reflectance > CONSTANTS::EPSILION;
-    // const bool inRefrThres = reflectance < 1.f - CONSTANTS::EPSILION;
+    reflectance = rec.m->reflCoeff + (1.f - rec.m->reflCoeff)*reflectance;
     const bool reflective = rec.m->reflCoeff > MINIMUM_COEFF;
     const bool transparent = rec.m->transparency > MINIMUM_COEFF;
+    // For Fresnel's reflectance on transparent objects 
+    const bool inReflThres = reflectance > CONSTANTS::EPSILION;
+    const bool inRefrThres = reflectance < 1.f - CONSTANTS::EPSILION;
 
     // Determine if the ray is inside or outside the object,
     // only to handle the case of lighting for CSG.
@@ -381,19 +379,16 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     // this possibility via parameter
     const bool back_face = dot(ray.getDir(), rec.n) > 0.0f; // true if inside
 
-    // TODO: calculate reflectance first, and if it hits certain
-    // thresholds, do not recurse one or the other
-
     // Avoid casting additional reflection rays if inside the object, this
     // avoids massively expensive and unnecessary computation (3x increase)
-    // TIR reflections are done in refraction case
-    if (reflective && !back_face && inReflThres) { 
+    // TIR reflections are done here (Fresnel)
+    if ((reflective || (transparent && inReflThres)) && !back_face) { 
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         reflectClr = getReflectionColor(scene, ray, rec, interval, recursiveDepth+1);
     }
 
     // Objects must be transparent in order to refract light.
-    if (transparent) {
+    if (transparent && inRefrThres) {
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         // flip the normal for refraction, if inside
         // this must be done since *every* following calculation needs to
@@ -401,19 +396,9 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         // the incident ray; otherwise, strange glints are caused by an
         // invisible surface. If it not nested in this if statement,
         // bright specks may appear on meshes w/ backface culling enabled.
-        if (back_face) rec.n = -rec.n;  
+        if (back_face) rec.n = -rec.n;
         refractClr = getRefractedColor(scene, ray, rec, interval, 
-                        recursiveDepth+1, back_face);
-        
-        // Deal with TIR here. dead code for now
-        if (reflectance >= 1.f - CONSTANTS::EPSILION) {
-            Ray refrRay = reflectRay(ray, rec);
-            // this set the reflected ray outside the surface, making it bounce out
-            // immediately again; this is not physically based.
-            // refrRay.setPos( rec.x - 2.f*Camera::EPSILION*refrRay.getDir() );
-            reflectClr = getRayColor(scene, refrRay, interval, recursiveDepth+1);
-            reflectClr *= rec.m->reflCoeff;
-        }
+                    recursiveDepth+1, back_face);
     }
 
     // The eye vector does not point to the camera when reflecting/refracting
@@ -448,15 +433,10 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     }
 
     // ki = 1 - refl*kr - (1-refl)*kt
-    float localCoeff = 1.f - reflectance*rec.m->reflCoeff -
-                       (1.f - reflectance)*rec.m->transparency;
-    clr += localCoeff*localClr;
-    clr += reflectClr*reflectance + refractClr*(1.0f-reflectance);
-    // Change if reflCoeff acted like OBJECT_REFLECTIVITY from that raytracer demo
-    // const float& reflMult = reflectance; // clr could be modified from refr branch
-    // const float refrMult = (1.f - reflectance)*rec.m->transparency
-    // const float localCoeff = 1.f - reflMult - refrMult;
-    // clr += localCoeff*localClr + reflectClr*reflMult + refractClr*refrMult;
+    const float reflMult = reflectance*rec.m->fresnelCoeff;
+    const float refrMult = (1.f - reflectance)*rec.m->transparency;
+    const float localCoeff = 1.f - reflMult - refrMult;
+    clr += localCoeff*localClr + reflectClr*reflMult + refractClr*refrMult;
     // absorbDistance is 0 by default, meaning absorb = vec3(1). absorb-- as dist++
     // vec3 absorb = glm::exp(-OBJECT_ABSORB * absorbDistance);
     // clr *= absorb;
@@ -525,8 +505,9 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
             // Very crude approximation of color blending from diffuse reflection
             const float dCoeff = (1.f - rec.m->reflCoeff) * (1.f - rec.m->transparency);
             const vec3 kd = aoHit.diffuse() * dCoeff;
+            const float r_maxComp = 1.f / std::max(std::max(kd.r, kd.g), kd.b);
             const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, rDir));
-            rayAbsorbed = vec3(1.f) - diff_cont * p(.6f, d);
+            rayAbsorbed = vec3(1.f) - diff_cont * p(.6f, d) * r_maxComp;
             // Transparent objects occlude less light. well, i think
             // the closer the occluding, the less that light reaches
             lightAbsorption += (1.f - d) * (1.f - rec.m->transparency);
@@ -617,7 +598,6 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
             const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
             const bool isEmiss = srec.m && aboveZero(srec.emissive());
             float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
-            trnsMult = std::clamp(trnsMult, 0.f, 1.f);
             const vec3 diff_cont = srec.diffuse()*std::max(0.0f, dot(srec.n, sray.getDir()));
             // weird behavior with spheres perhaps (the transparency being
             // very low but not zero, and the diffuse being strong)
