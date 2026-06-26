@@ -2,7 +2,7 @@
     "camera" : {
         "from" : [1,0,4],
         "to" : [0,-1,0],
-        "antialias" : 16,
+        "antialias" : 1,
         "fov" : 45,
         "ambientSamples" : 16,
         "occlusionRadius" : 0.25
@@ -13,7 +13,7 @@
             "diffuse" : [1, 0.3, 0.25],
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0,
-            "reflective" : 0.125,
+            "fresnelCoeff" : 0.25,
             "refrIndex" : 1.5,
             "transparency" : 0.375
         },

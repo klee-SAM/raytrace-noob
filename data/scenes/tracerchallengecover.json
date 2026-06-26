@@ -20,7 +20,7 @@
             "diffuse" : [0.2611, 0.6328, 0.595],
             "specular" : [1.0, 1.0, 1.0],
             "exponent" : 200.0,
-            "reflective" : 0.7,
+            "fresnelCoeff" : 0.7,
             "refrIndex" : 1.5,
             "transparency" : 0.7
         },

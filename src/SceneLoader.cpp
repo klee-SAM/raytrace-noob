@@ -261,6 +261,8 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
                 material->refrIndex = doubleFromToken(value);
             } else if (jsonstreq(key, "transparency")) {
                 material->transparency = doubleFromToken(value);
+            } else if (jsonstreq(key, "fresnelCoeff")) {
+                material->fresnelCoeff = doubleFromToken(value);    
             } else if (jsonstreq(key, "fuzz")) {
                 material->fuzz = doubleFromToken(value);
             } else if (jsonstreq(key, "reflectionSamples")) {

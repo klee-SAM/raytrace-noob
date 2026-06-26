@@ -89,7 +89,7 @@
             "specular": [0,0,0],
             "exponent": 0.0,
             "refrIndex" : 1.5,
-            "reflCoeff" : 1.0,
+            "fresnelCoeff" : 1.0,
             "transparency" : 1.0
         },
         "refractive2" : {

@@ -126,12 +126,12 @@
         },
         "refractive" : {
             "ambient" : [0.0,0,0.0],
-            "diffuse" : [2,0,2],
+            "diffuse" : [3,0,3],
             "specular": [1,1,0.5],
             "exponent": 300.0,
-            "reflCoeff": 1,
+            "reflCoeff": 0.0,
             "refrIndex" : 1.015625,
-            "transparency" : 0.75
+            "transparency" : 0.875
         }
     }
 }
