@@ -310,31 +310,19 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
     return refrRay;
 }
 
-//
-Ray refractRay(const Ray &ray, const Hit &rec) {
-    float n1, n2;
-    vec3 norm = rec.n;
-    float cosI = -dot(norm, ray.getDir());
-    // backfacing if true
-    if (cosI < 0.f) {
-        n1 = rec.m->refrIndex; 
-        n2 = 1.f;
-        cosI = -cosI;
-    } else {
-        n1 = 1.f; 
-        n2 = rec.m->refrIndex;
-        norm = -norm;
-    }
-    const float eta = n1/n2;
+// Returns a ray with dir = vec3(0.f) if TIR
+Ray refractRay(const Ray &ray, const Hit &rec, float eta) {
+    const vec3 &norm = rec.n;
+    float cosI = -dot(normalize(ray.getDir()), norm);
+    cosI = std::clamp(cosI, -1.f, 1.f);
     const float k = 1.f - eta*eta*(1.0f-cosI*cosI);
     if (k < 0.f) return Ray(vec3(0.f), vec3(0.f), 0.f);
     const vec3 rayDir = eta*ray.getDir()+norm*(eta*cosI-std::sqrt(k));
     const vec3 rayPos = rec.x + rayDir*Camera::EPSILION;
-    return Ray(normalize(rayDir), rayPos, ray.time);
+    return Ray(rayPos, normalize(rayDir), ray.time);
 }
 
-// To be tested even when there is no refraction, rewrite reflection
-// and refraction with the fixes
+// Uses Schlick's approximation of Fresnel's equations for refraction.
 // https://computergraphics.stackexchange.com/questions/4573/
 float reflectanceFromIncidentRay(const Ray &ray, const Hit &rec) {
     float eta, n1, n2; 
@@ -390,17 +378,20 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
     return reflClr;
 }
 
+// modify this to handle invalid rays
 vec3 Camera::getRefractedColor(const std::unique_ptr<Scene> &scene,
                                const Ray &ray, const Hit &hit,
                                const Interval &interval, 
                                uint recursions, bool back_face) 
 {
-    float _dummy;
-    const Ray refrRay = refractRay(ray, hit, _dummy, back_face);
+    float n1, n2;
+    if (back_face) { n1 = hit.m->refrIndex; n2 = 1.f;} 
+    else { n1 = 1.f; n2 = hit.m->refrIndex; }
+    const Ray refrRay = refractRay(ray, hit, n1/n2);
     vec3 refrClr = vec3(0.f);
-    if (_dummy < 1.f - CONSTANTS::EPSILION) {
+    if (vec3(0.f) != ray.getDir()) {
         refrClr = getRayColor(scene, refrRay, interval, recursions);
-    } // otherwise, no refracted clr, modify reflected instead
+    } // otherwise, no refracted clr b/c TIR, modify reflected instead
     refrClr *= hit.m->transparency;
     return refrClr;
 }
@@ -424,7 +415,10 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     vec3 reflectClr = vec3(0.0f);
     vec3 refractClr = vec3(0.0f);
 
-    float reflectance = 1.0f; // If the material is not refractive, keep any reflections
+    // If the material is not refractive, keep any reflections
+    float reflectance = reflectanceFromIncidentRay(ray, rec);
+    const bool inReflThres = reflectance > CONSTANTS::EPSILION;
+    // const bool inRefrThres = reflectance < 1.f - CONSTANTS::EPSILION;
     const bool reflective = rec.m->reflCoeff > MINIMUM_COEFF;
     const bool transparent = rec.m->transparency > MINIMUM_COEFF;
 
@@ -440,30 +434,26 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     // Avoid casting additional reflection rays if inside the object, this
     // avoids massively expensive and unnecessary computation (3x increase)
     // TIR reflections are done in refraction case
-    if (reflective && !back_face) { 
+    if (reflective && !back_face && inReflThres) { 
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         reflectClr = getReflectionColor(scene, ray, rec, interval, recursiveDepth+1);
     }
-
-    reflectance = reflectanceFromIncidentRay(ray, rec);
 
     // Objects must be transparent in order to refract light.
     if (transparent) {
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         // flip the normal for refraction, if inside
-        // this must be done before calculating cosI for reflection, or
-        // else strange glint appear on refractive surfaces, even if
-        // the cosI and norm are negated after checks
+        // this must be done since *every* following calculation needs to
+        // compute the color as if the normal of the surface faced towards
+        // the incident ray; otherwise, strange glints are caused by an
+        // invisible surface. If it not nested in this if statement,
+        // bright specks may appear on meshes w/ backface culling enabled.
         if (back_face) rec.n = -rec.n;  
-        // If the above line is not nested in this if statement,
-        // bright specks may appear on meshes w/ backface culling enabled. 
         refractClr = getRefractedColor(scene, ray, rec, interval, 
                         recursiveDepth+1, back_face);
         
-        // Deal with TIR here.
-        // TODO: change this so that reflectClr is modified only when the 
-        // hit material is not also reflective; otherwise this is redundant
-        if (reflectance >= 1.f - CONSTANTS::EPSILION) {
+        // Deal with TIR here. dead code for now
+        if (reflectance >= 1.f - CONSTANTS::EPSILION && !reflective) {
             Ray refrRay = reflectRay(ray, rec);
             // this set the reflected ray outside the surface, making it bounce out
             // immediately again; this is not physically based.
