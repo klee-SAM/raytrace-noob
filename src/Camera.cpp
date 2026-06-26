@@ -310,6 +310,7 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
     return refrRay;
 }
 
+//
 Ray refractRayAgain(const Ray &ray, const Hit &rec) {
     float n1, n2;
     vec3 norm = rec.n;
