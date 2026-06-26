@@ -311,7 +311,7 @@ Ray refractRay(const Ray &ray, const Hit &rec, float &reflectance, bool backFaci
 }
 
 //
-Ray refractRayAgain(const Ray &ray, const Hit &rec) {
+Ray refractRay(const Ray &ray, const Hit &rec) {
     float n1, n2;
     vec3 norm = rec.n;
     float cosI = -dot(norm, ray.getDir());
@@ -335,11 +335,8 @@ Ray refractRayAgain(const Ray &ray, const Hit &rec) {
 
 // To be tested even when there is no refraction, rewrite reflection
 // and refraction with the fixes
-// also i WILL attempt to modify refraction and reflection again,
-// but maybe after thursday
-// this returns 1 if eta == 1. reduces reflection when =/= 1
 // https://computergraphics.stackexchange.com/questions/4573/
-float reflectance(const Ray &ray, const Hit &rec) {
+float reflectanceFromIncidentRay(const Ray &ray, const Hit &rec) {
     float eta, n1, n2; 
     vec3 norm = rec.n;
     if (std::abs(rec.m->refrIndex - 1.f) < CONSTANTS::EPSILION)
@@ -396,12 +393,12 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
 vec3 Camera::getRefractedColor(const std::unique_ptr<Scene> &scene,
                                const Ray &ray, const Hit &hit,
                                const Interval &interval, 
-                               uint recursions, float &reflectance,
-                               bool back_face) 
+                               uint recursions, bool back_face) 
 {
-    const Ray refrRay = refractRay(ray, hit, reflectance, back_face);
+    float _dummy;
+    const Ray refrRay = refractRay(ray, hit, _dummy, back_face);
     vec3 refrClr = vec3(0.f);
-    if (reflectance < 1.f - CONSTANTS::EPSILION) {
+    if (_dummy < 1.f - CONSTANTS::EPSILION) {
         refrClr = getRayColor(scene, refrRay, interval, recursions);
     } // otherwise, no refracted clr, modify reflected instead
     refrClr *= hit.m->transparency;
@@ -446,7 +443,10 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     if (reflective && !back_face) { 
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         reflectClr = getReflectionColor(scene, ray, rec, interval, recursiveDepth+1);
-    }   
+    }
+
+    reflectance = reflectanceFromIncidentRay(ray, rec);
+
     // Objects must be transparent in order to refract light.
     if (transparent) {
         if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
@@ -458,7 +458,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         // If the above line is not nested in this if statement,
         // bright specks may appear on meshes w/ backface culling enabled. 
         refractClr = getRefractedColor(scene, ray, rec, interval, 
-                        recursiveDepth+1, reflectance, back_face);
+                        recursiveDepth+1, back_face);
         
         // Deal with TIR here.
         // TODO: change this so that reflectClr is modified only when the 
