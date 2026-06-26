@@ -572,12 +572,9 @@ public:
         sin_theta_max = std::sqrt(sin_theta_max_2);
         cos_theta_max = std::sqrt(std::max(0.f, 1.f - sin_theta_max_2));
 
-        // light attentuation
-        // to 2*PI or not to 2*PI?
-        // r_pdf = ((1.f - cos_theta_max));
-        // const float c = 2*PI*std::max(2.f*std::sqrt(radius), radius);
-        // r_pdf = 1.f - std::sqrt(std::max(0.f, 1.f - c/dz_len));
-        // r_pdf *= 2*PI;
+        // final light attentuation
+        // const float radj = max(std::sqrt(r), r);
+        // falloff = 1.f - std::max(0.f, 1.f - radj/dz_len);
 
         assignONBvec3s(dz, dx, dy);
     }
@@ -599,6 +596,7 @@ public:
     }
 
     // PDFs are useful for path tracing, but not for this Whitted-hybrid tracer 
+    // pdf = 1.f / (2.f*PI(1.f - cos_theta_max));
     // constexpr float getrPDF() const { return r_pdf; }
 };
 
