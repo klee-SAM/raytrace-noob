@@ -48,6 +48,7 @@ public:
     inline vec3 diffuse() const { return m ? m->diffuse->value(uv, x) : glm::vec3(0.f); }
     inline vec3 specular() const { return m ? m->specular->value(uv, x) : glm::vec3(0.f); }
     inline vec3 emissive() const { return m ? m->emissive->value(uv, x) : glm::vec3(0.f); }
+    inline vec3 absorb() const { return m ? m->absorb->value(uv, x) : glm::vec3(0.f); }
 
     static inline void sortHits(std::vector<Hit>& hits) { 
         constexpr auto cmp = [](const Hit& a, const Hit& b) { return a.t < b.t; };

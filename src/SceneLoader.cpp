@@ -536,6 +536,17 @@ bool SceneLoader::tryLoadMaterialComps(
     {
         if (isFloat3) material->emissive->init(float3FromToken(value));
         else if (isFilename) material->emissive = make_shared<ImageTexture>(textureFilePath);
+    } else if (jsonstreq(key, "absorb")) 
+    {
+        if (isFloat3) { 
+            // Leave as-is unless the highest allowed clr changes
+            vec3 clr = float3FromToken(value);
+            material->absorb->init(clr); 
+        }
+        else if (isFilename) {
+            // absorbCoeff would be calculated from the highest clr component
+            material->absorb = make_shared<ImageTexture>(textureFilePath);
+        }        
     }
 
     return true;

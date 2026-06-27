@@ -1,0 +1,56 @@
+{
+    "camera" : {
+        "distance" : 3.0,
+        "antialias" : 1,
+        "fov" : 45.0,
+        "rotation" : [150, 22.5, 0],
+        "sky" : "haze"
+    },
+    "materials" : {
+        "red" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [1.0, 0.0, 0.0],
+            "specular" : [1.0, 1.0, 1.0],
+            "exponent" : 100.0
+        },
+        "green" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.0, 1.0, 0.0],
+            "specular" : [1.0, 1.0, 1.0],
+            "exponent" : 100.0,
+            "transparency": 1,
+            "refrIndex" : 1.0,
+            "absorb" : [8.0, 2.0, 0.1]
+        },
+        "blue" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : [0.8, 0.8, 1.0],
+            "specular" : [0.0, 0.0, 0.0],
+            "exponent" : 1
+        }
+    },
+    "lights" : [
+        { 
+            "position": [2.0, 20, -2.0], 
+            "intensity": 1
+        },
+        { 
+            "position": [0.0, 0.0, -2.0], 
+            "intensity": 0.25
+        }
+    ],
+    "shapes" : [
+        {
+            "shape" : "box",
+            "position" : [0, -2.515625, 0],
+            "scale" : [1, 2, 1],
+            "material" : "blue"
+        },
+        {
+            "shape" : "box",
+            "position" : [0.0, 0.0, 0.0],
+            "scale" : [0.5, 0.5, 0.5],
+            "material" : "green"
+        }
+    ]
+}

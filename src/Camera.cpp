@@ -359,7 +359,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 
     vec3 reflectClr = vec3(0.0f);
     vec3 refractClr = vec3(0.0f);
-    vec3 absorbClr = vec3(1.0f);
+    vec3 absorbClr = vec3(1.0f); // Reduce nothing by default
 
     // If the material is not refractive, keep any reflections
     float reflectance = reflectanceFromIncidentRay(ray, rec);
@@ -400,8 +400,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         // bright specks may appear on meshes w/ backface culling enabled.
         if (back_face) { 
             rec.n = -rec.n;
-            constexpr vec3 OBJECT_ABSORB = vec3(8.0, 2.0, 0.1);
-            absorbClr = glm::exp(-OBJECT_ABSORB * rec.t);
+            // constexpr vec3 OBJECT_ABSORB = vec3(8.0, 2.0, 0.1);
+            absorbClr = glm::exp(-rec.absorb() * rec.m->absorbCoeff * rec.t);
         }
         refractClr = getRefractedColor(scene, ray, rec, interval, 
                     recursiveDepth+1, back_face);
