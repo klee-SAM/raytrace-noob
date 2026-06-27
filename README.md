@@ -16,12 +16,8 @@ Adding more features on a simple raytracer as a learning exercise
 - [X] Texture mapping
 - [X] Refraction
 - [X] Reflection roughness
-- [ ] Enviroment mapping
-- [ ] Object/Regional Light Attentuation
-    - "fog!"
-    - calculate distance traveled through fog material object, 
-    - then comp-wise multiply color by attenuation based on distance
-    - (backtracing with hit())
+- [ ] Environment mapping
+- [X] Object/Regional Light Attentuation
 - [X] Area lights
 - [X] Ambient occlusion
 
@@ -54,7 +50,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] Rewrite sceneloader to change scene after read all
     - requires intermediate data structure for holding
 - [ ] support .mtl conventions for scene files
-- [ ] reimplement refraction with better practices
+- [x] reimplement refraction with better practices
 
 ### things to consider
 - creating a custom math library instead of using GLM
@@ -129,6 +125,14 @@ These are the resources I consulted while developing this raytracer.
 
 ### Motion blur
 - https://stackoverflow.com/questions/46156903/how-to-lerp-between-two-quaternions
+
+### Object Light Attenuation
+- https://blog.demofox.org/2017/01/09/raytracing-reflection-refraction-fresnel-total-internal-reflection-and-beers-law/
+
+### CSG
+- The Ray Tracer Challenge chapter on CSG
+- https://groups.csail.mit.edu/graphics/classes/6.838/F01/lectures/SmoothSurfaces/0the_s040.html
+- https://github.com/jtsiomb/csgray
 
 ### BVH and GPU Acceleration
 - https://github.com/AdaptiveCpp/AdaptiveCpp
