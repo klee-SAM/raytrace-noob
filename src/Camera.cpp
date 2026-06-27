@@ -286,15 +286,16 @@ float reflectanceFromIncidentRay(const Ray &ray, const Hit &rec) {
         n1 = rec.m->refrIndex; 
         n2 = 1.f;
         cosX = -cosX;
-        // n1 > n2
-        eta = n1 / n2;
-        const float sin2T = eta*eta*(1.0f-cosX*cosX);
-        if (sin2T > 1.0f) { return 1.f; } // TIR
-        cosX = sqrt(1.f - sin2T);
     } else {
         n1 = 1.f; 
         n2 = rec.m->refrIndex;
         norm = -norm;
+    }
+    if (n1 > n2) {
+        eta = n1 / n2;
+        const float sin2T = eta*eta*(1.0f-cosX*cosX);
+        if (sin2T > 1.0f) { return 1.f; } // TIR
+        cosX = sqrt(1.f - sin2T);
     }
     const float x = 1.0f - cosX;
     float r0 = (n1 - n2)/(n1 + n2); r0 *= r0;
@@ -316,14 +317,6 @@ vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
     }
     // reflSamples must be at least 1.
     reflClr /= hit.m->reflSamples;
-    // A modification I could make would be to make the reflCoeff itself affect the
-    // Fresnel term by reflCoeff + (1 - reflCoeff)*rt, which would make transparent
-    // objects fully reflective at reflCoeff = 1. Good for mixing reflection and
-    // refraction independent of angle, but I need to change occlusion and shadow
-    // to account for increased reflection (increase opacity of shadows when
-    // reflectCoeff is higher, overriding transparency)
-    // Do make the above change after reflectance refract rewrite
-    // TODO: since 
     return reflClr;
 }
 
@@ -362,7 +355,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 
     vec3 reflectClr = vec3(0.0f);
     vec3 refractClr = vec3(0.0f);
-    // vec3 absorbClr = vec3(0.f);
+    vec3 absorbClr = vec3(1.0f);
 
     // If the material is not refractive, keep any reflections
     float reflectance = reflectanceFromIncidentRay(ray, rec);
@@ -396,7 +389,12 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         // the incident ray; otherwise, strange glints are caused by an
         // invisible surface. If it not nested in this if statement,
         // bright specks may appear on meshes w/ backface culling enabled.
-        if (back_face) rec.n = -rec.n;
+
+        if (back_face) { 
+            rec.n = -rec.n;
+            // constexpr vec3 OBJECT_ABSORB = vec3(1.0, 3.5, 1.0);
+            // absorbClr = glm::exp(-OBJECT_ABSORB * rec.t);
+        }
         refractClr = getRefractedColor(scene, ray, rec, interval, 
                     recursiveDepth+1, back_face);
     }
@@ -439,7 +437,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     clr += localCoeff*localClr + reflectClr*reflMult + refractClr*refrMult;
     // absorbDistance is 0 by default, meaning absorb = vec3(1). absorb-- as dist++
     // vec3 absorb = glm::exp(-OBJECT_ABSORB * absorbDistance);
-    // clr *= absorb;
+    clr *= absorbClr;
     clr += rec.emissive();
 
     return clr;
