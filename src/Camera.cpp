@@ -345,6 +345,10 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     vec3 clr = vec3(0.0f);
     if (!hit(scene->getShapes(), ray, interval, rec)) return getSkyColor(ray);
 
+    // Required for reflection and refraction; prevent possible
+    // infinite recursion of raytracing (which leads to segfaults)
+    if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
+
     #ifdef SHOW_NORMALS
     clr = rec.n;
     clr.r = .5f*clr.r+.5f;
@@ -372,28 +376,32 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     // this possibility via parameter
     const bool back_face = dot(ray.getDir(), rec.n) > 0.0f; // true if inside
 
-    // Avoid casting additional reflection rays if inside the object, this
+    // Avoid casting additional glossy reflection rays if inside the object, this
     // avoids massively expensive and unnecessary computation (3x increase)
-    // TIR reflections are done here (Fresnel)
+    // TIR reflections are done in elseif (Fresnel)
     if ((reflective || (transparent && inReflThres)) && !back_face) { 
-        if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
+        // if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         reflectClr = getReflectionColor(scene, ray, rec, interval, recursiveDepth+1);
+    } else if (transparent && !inRefrThres) {
+        // if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
+        // However, do (non-glossy) reflection if TIR inside the object
+        Ray reflRay = reflectRay(ray, rec);
+        reflectClr = getRayColor(scene, reflRay, interval, recursiveDepth+1);
     }
 
     // Objects must be transparent in order to refract light.
     if (transparent && inRefrThres) {
-        if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
+        // if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         // flip the normal for refraction, if inside
         // this must be done since *every* following calculation needs to
         // compute the color as if the normal of the surface faced towards
         // the incident ray; otherwise, strange glints are caused by an
         // invisible surface. If it not nested in this if statement,
         // bright specks may appear on meshes w/ backface culling enabled.
-
         if (back_face) { 
             rec.n = -rec.n;
-            // constexpr vec3 OBJECT_ABSORB = vec3(1.0, 3.5, 1.0);
-            // absorbClr = glm::exp(-OBJECT_ABSORB * rec.t);
+            constexpr vec3 OBJECT_ABSORB = vec3(8.0, 2.0, 0.1);
+            absorbClr = glm::exp(-OBJECT_ABSORB * rec.t);
         }
         refractClr = getRefractedColor(scene, ray, rec, interval, 
                     recursiveDepth+1, back_face);
@@ -414,7 +422,6 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         const auto occlArea = Interval(interval.min, occludingRadius);
         const float occlFac = occlusionDiffuseFactor(rec, scene, 
             occlArea, diffuseFac, ray.time);
-        // sqrt was a hack that made the shadows softer
         localClr *= occlFac;
     }
 
@@ -434,10 +441,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     const float reflMult = reflectance*rec.m->fresnelCoeff;
     const float refrMult = (1.f - reflectance)*rec.m->transparency;
     const float localCoeff = 1.f - reflMult - refrMult;
-    clr += localCoeff*localClr + reflectClr*reflMult + refractClr*refrMult;
-    // absorbDistance is 0 by default, meaning absorb = vec3(1). absorb-- as dist++
-    // vec3 absorb = glm::exp(-OBJECT_ABSORB * absorbDistance);
-    clr *= absorbClr;
+    const vec3 f_refractClr = refractClr*absorbClr*refrMult;
+    clr += localCoeff*localClr + reflectClr*reflMult + f_refractClr;
     clr += rec.emissive();
 
     return clr;
