@@ -430,6 +430,12 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         localClr *= occlFac;
     }
 
+    #ifndef NDEBUG
+    // Debugging code for NaNs
+    auto isnan = glm::all(glm::isnan(localClr));
+    if (isnan) return vec3(1, 0, 1);
+    #endif
+
     for (auto& light : scene->getLights()) {
         const vec3 ld = light->pos - rec.x;
         const vec3 lv = normalize(ld);
@@ -501,6 +507,7 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
 
         // 5AM tomfoolery; phi function for weighting contributions
         // float `a` is an adjustment constant: higher `a` -> sqrt-like
+        // certain values of x below 0 can cause NaN's b/c asymptotes
         constexpr auto p = [](float a, float x) {
             const float df = ((a+1)/(2*a))*(-2.f/(1.f+a*x)+2.f);
             return df*df;
@@ -513,9 +520,11 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
             // Very crude approximation of color blending from diffuse reflection
             const float dCoeff = (1.f - rec.m->reflCoeff) * (1.f - rec.m->transparency);
             const vec3 kd = aoHit.diffuse() * dCoeff;
-            const float r_maxComp = 1.f / std::max(std::max(kd.r, kd.g), kd.b);
+            // r_maxComp used to reduce diff_cont highest to 1, but that causes NaNs when dCoeff == 0
+            // const float r_maxComp = 1.f / std::max(std::max(kd.r, kd.g), kd.b);  
             const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, rDir));
-            rayAbsorbed = vec3(1.f) - diff_cont * p(.6f, d) * r_maxComp;
+            // rayAbsorbed = vec3(1.f) - diff_cont * p(.6f, d) * r_maxComp;
+            rayAbsorbed = vec3(1.f) - diff_cont * p(.6f, d);
             // Transparent objects occlude less light. well, i think
             // the closer the occluding, the less that light reaches
             lightAbsorption += (1.f - d) * (1.f - rec.m->transparency);
@@ -529,7 +538,8 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
     const float occlusionCoeff = 1.f - lightAbsorption*r_samplesDone;
     diffuseFac = vec3(1.f) - (diffuseAbsorption*r_samplesDone);
     // sqrt is a hack that make the color blends look nicer with the subtle occlusion
-    diffuseFac = glm::sqrt(diffuseFac);
+    // also multiply by sign to preserve stability with sqrt
+    diffuseFac = glm::sqrt(diffuseFac*glm::sign(diffuseFac));
     
     return occlusionCoeff;
 }
