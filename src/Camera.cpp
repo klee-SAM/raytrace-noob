@@ -520,10 +520,7 @@ float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &sc
             // Very crude approximation of color blending from diffuse reflection
             const float dCoeff = (1.f - rec.m->reflCoeff) * (1.f - rec.m->transparency);
             const vec3 kd = aoHit.diffuse() * dCoeff;
-            // r_maxComp used to reduce diff_cont highest to 1, but that causes NaNs when dCoeff == 0
-            // const float r_maxComp = 1.f / std::max(std::max(kd.r, kd.g), kd.b);  
             const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, rDir));
-            // rayAbsorbed = vec3(1.f) - diff_cont * p(.6f, d) * r_maxComp;
             rayAbsorbed = vec3(1.f) - diff_cont * p(.6f, d);
             // Transparent objects occlude less light. well, i think
             // the closer the occluding, the less that light reaches

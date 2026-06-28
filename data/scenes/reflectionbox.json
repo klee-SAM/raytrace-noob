@@ -15,7 +15,8 @@
             "exponent" : 100.0,
             "fresnelCoeff" : 0.25,
             "refrIndex" : 1.5,
-            "transparency" : 0.375
+            "transparency" : 0.75,
+            "absorb" : [0.0, 0.7, 0.75]
         },
         "green" : {
             "ambient" : [0.1, 0.1, 0.1],
