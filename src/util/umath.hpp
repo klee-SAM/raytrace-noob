@@ -10,6 +10,7 @@ typedef glm::vec2 vec2;
 namespace CONSTANTS {
     constexpr float PI = 3.14159265358979323846f;
     constexpr float R_PI = 1.0f / PI;
+    static const float R_SQRT3 = 1.f / std::sqrt(3.f);
 
     constexpr float INF = std::numeric_limits<float>::infinity();
     constexpr float EPSILION = glm::epsilon<float>();

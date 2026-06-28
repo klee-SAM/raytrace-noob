@@ -23,6 +23,11 @@ constexpr float SAMP_DIFF_EPSILION = 2.f/255.f;
 
 // Returns the closest intersection in the interval.
 bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& closestHit);
+
+// Returns a sorted list of intersections in the interval.
+bool hit(ShapesVector shapes, const Ray& ray, 
+         const Interval& interval, vector<Hit>& allHits);
+
 // True if currClr*(i+1) equals culmClr within sampBreak threshold; should be called
 // after currClr is added to culmClr.
 bool has_no_change(uint i, uint break_i, const vec3 &culmClr, 
@@ -214,7 +219,7 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
 }
 
 // Like the above, except this is used
-// for cases where all hits for a ray are needed
+// for cases where all sorted hits for a ray are needed
 bool hit(ShapesVector shapes, const Ray& ray, 
          const Interval& interval, vector<Hit>& allHits) 
 {
@@ -596,16 +601,25 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
     } else {
         // 1.0f is fully lit by default, which is when point has unobstructed path to light
         vec3 s_transparency(1.f); // if behind, return value from 0.0f to 1.0f
+        float t_prev = 0.f;       // running difference of curr and last
+
         hit(scene->getShapes(), sray, t_int, srecs);
         for (const Hit& srec : srecs) {
             const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
             const bool isEmiss = srec.m && aboveZero(srec.emissive());
             float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
+
+            constexpr float alpha = 0.5f; // concentration parameter for "dulled" shadows
+            const float bf = static_cast<float>(dot(sray.getDir(), srec.n) > 0.0f);
+            const float t_diff = srec.t - t_prev; // doesn't account for objects inside objects
+            const vec3 absorb_cont = glm::exp(alpha * bf * -srec.absorb() * t_diff);
+
             const vec3 diff_cont = srec.diffuse()*std::max(0.0f, dot(srec.n, sray.getDir()));
             // weird behavior with spheres perhaps (the transparency being
             // very low but not zero, and the diffuse being strong)
             // could fix by trnsMult * sum, but darker shadows and weaker color
-            s_transparency *= vec3(trnsMult) + (1.f - trnsMult)*isTrns*diff_cont;
+            s_transparency *= vec3(trnsMult*absorb_cont) + (1.f - trnsMult)*isTrns*diff_cont;
+            t_prev = srec.t;
         }
         srecs.clear();
         return s_transparency;
