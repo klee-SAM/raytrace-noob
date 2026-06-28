@@ -111,6 +111,7 @@ These are the resources I consulted while developing this raytracer.
 - https://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf
 - https://computergraphics.stackexchange.com/questions/7789/
 - https://stackoverflow.com/questions/53549615/
+- https://computergraphics.stackexchange.com/questions/4573/
 
 ### Ambient Occlusion (and Color Bleeding)
 - https://computergraphics.stackexchange.com/questions/7985/
@@ -128,11 +129,20 @@ These are the resources I consulted while developing this raytracer.
 
 ### Object Light Attenuation
 - https://blog.demofox.org/2017/01/09/raytracing-reflection-refraction-fresnel-total-internal-reflection-and-beers-law/
+- https://blog.demofox.org/2014/06/22/analytic-fog-density/
+- https://www.cs.rpi.edu/~cutler/classes/advancedgraphics/S07/final_projects/fischc/fog_simulation.html
+- https://iquilezles.org/articles/fog/
+- https://sberkun.github.io/184-final-proj/report/
+- https://justgood.dev/docs/740-paper.pdf
 
 ### CSG
 - The Ray Tracer Challenge chapter on CSG
 - https://groups.csail.mit.edu/graphics/classes/6.838/F01/lectures/SmoothSurfaces/0the_s040.html
 - https://github.com/jtsiomb/csgray
+
+### Texture Mapping
+- http://raytracerchallenge.com/bonus/texture-mapping.html (Not secure)
+- https://polyhaven.com/hdris
 
 ### BVH and GPU Acceleration
 - https://github.com/AdaptiveCpp/AdaptiveCpp
