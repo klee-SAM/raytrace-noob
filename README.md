@@ -16,7 +16,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [X] Texture mapping
 - [X] Refraction
 - [X] Reflection roughness
-- [ ] Environment mapping
+- [X] Environment mapping
 - [X] Object/Regional Light Attentuation
 - [X] Area lights
 - [X] Ambient occlusion
