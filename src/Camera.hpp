@@ -145,8 +145,9 @@ public:
     void setGlobalAmbientColor(const glm::vec3 &clr) { globalAmbient = clr; }
     void setAmbientOccludingRadius(float r) { occludingRadius = r; }
 
-    enum class SkyType {Void, Haze, SphereMap};
+    enum class SkyType {Void, Haze, SphereMap, Ambient};
     void setSky(SkyType s) { sky = s; }
+    void setSkyTexture(std::unique_ptr<ImageTexture>&& texture) { skyTexture = std::move(texture); }
 
     std::unique_ptr<Image> render(std::unique_ptr<Scene>&, const glm::mat4&, const glm::mat4&);
     void setRow(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image, uint y);
@@ -172,9 +173,9 @@ private:
 
     uint AAsamples = 1;                        // must be at least 1
     uint occlusionSamples = 0;                 // actual count is divided by AA samples
-    glm::vec3 globalAmbient = glm::vec3(0.0f); // global ambient color.
-    float occludingRadius = 0.25f;
-    SkyType sky = SkyType::Void;
+    float occludingRadius = 0.25f;             // radius of occluding hemisphere
+    glm::vec3 globalAmbient = glm::vec3(0.0f); // ambient color added to all objects.
+    SkyType sky = SkyType::Ambient;
     std::unique_ptr<ImageTexture> skyTexture;
 
     // variables computed in render()

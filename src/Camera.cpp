@@ -252,6 +252,8 @@ vec3 Camera::getSkyColor(const Ray& ray)
         uv.s = 0.5f + std::atan2(ray.dir.z, ray.dir.x)*R_PI*0.5f;
         uv.t = 0.5f + std::asin(ray.dir.y)*R_PI;
         return skyTexture->value(uv);
+    case (Camera::SkyType::Ambient): 
+        return this->globalAmbient;
     case (Camera::SkyType::Void):
     default:
         return vec3(0.0f);

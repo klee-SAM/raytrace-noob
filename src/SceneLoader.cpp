@@ -156,8 +156,23 @@ int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::unique_ptr
         } else if (jsonstreq(key, "sky")) {
             if (jsonstreq(value, "haze")) {
                 cam->setSky(Camera::SkyType::Haze);
-            } else if (!jsonstreq(value, "void")) {
-                std::cerr << "Unknown sky type: " << print_token(value) << '\n';  
+            } else if (jsonstreq(value, "ambient")) {
+                cam->setSky(Camera::SkyType::Ambient);
+            } else if (jsonstreq(value, "void")) {
+                 cam->setSky(Camera::SkyType::Void);
+            } else if (value->type == JSMN_STRING) {
+                string textureFilePath = textureDir + stringFromToken(value);
+                cam->setSky(Camera::SkyType::SphereMap);
+                // https://stackoverflow.com/questions/12774207/
+                ifstream f(textureFilePath.c_str());
+                if (!f.good()) {
+                    std::cerr << "Unknown sky type: " 
+                              << print_token(value) << '\n'; 
+                } else {
+                    cam->setSkyTexture(std::move(
+                        make_unique<ImageTexture>(textureFilePath)
+                    ));
+                }
             }
         } else if (jsonstreq(key, "rotation")) {
             // [yaw, pitch, roll]
