@@ -1,7 +1,7 @@
 #pragma once
 #include "stn.hpp"
 
-#include "Image.hpp"
+#include "Texture.hpp"
 #include "Scene.hpp"
 #include "Ray.hpp"
 
@@ -145,7 +145,7 @@ public:
     void setGlobalAmbientColor(const glm::vec3 &clr) { globalAmbient = clr; }
     void setAmbientOccludingRadius(float r) { occludingRadius = r; }
 
-    enum class SkyType {Void, Haze};
+    enum class SkyType {Void, Haze, SphereMap};
     void setSky(SkyType s) { sky = s; }
 
     std::unique_ptr<Image> render(std::unique_ptr<Scene>&, const glm::mat4&, const glm::mat4&);
@@ -175,6 +175,7 @@ private:
     glm::vec3 globalAmbient = glm::vec3(0.0f); // global ambient color.
     float occludingRadius = 0.25f;
     SkyType sky = SkyType::Void;
+    std::unique_ptr<ImageTexture> skyTexture;
 
     // variables computed in render()
     glm::vec4 cameraPos; // contains world-space position of camera

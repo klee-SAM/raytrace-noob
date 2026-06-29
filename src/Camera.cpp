@@ -241,19 +241,23 @@ bool hit(ShapesVector shapes, const Ray& ray,
 
 vec3 Camera::getSkyColor(const Ray& ray) 
 {
-    float cx, cy, cz;
+    float cx, cy, cz; vec2 uv;
     switch(this->sky) {
     case (Camera::SkyType::Haze):
         cx = .5*(ray.dir.x)+.5;
         cy = .5*(ray.dir.y)+.5;
         cz = .5*(ray.dir.z)+.5;
         return vec3(cx, cz, cy);
+    case (Camera::SkyType::SphereMap):
+        uv.s = 0.5f + std::atan2(ray.dir.z, ray.dir.x)*R_PI*0.5f;
+        uv.t = 0.5f + std::asin(ray.dir.y)*R_PI;
+        return skyTexture->value(uv);
     case (Camera::SkyType::Void):
     default:
         return vec3(0.0f);
         break;
     }
-    return vec3(0.0f);
+    return vec3(1.f, 1.f, 0.0f);
 }
 
 Ray reflectRay(const Ray &ray, const Hit &rec) 
@@ -614,14 +618,15 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
         for (const Hit& srec : srecs) {
             const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
             const bool isEmiss = srec.m && aboveZero(srec.emissive());
-            float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
+            const float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
+            const float cosI = dot(sray.getDir(), srec.n);
 
             constexpr float alpha = 0.5f; // concentration parameter for "dulled" shadows
-            const float bf = static_cast<float>(dot(sray.getDir(), srec.n) > 0.0f);
+            const float bf = static_cast<float>(cosI > 0.0f);
             const float t_diff = srec.t - t_prev; // doesn't account for objects inside objects
             const vec3 absorb_cont = glm::exp(alpha * bf * -srec.absorb() * t_diff);
 
-            const vec3 diff_cont = srec.diffuse()*std::max(0.0f, dot(srec.n, sray.getDir()));
+            const vec3 diff_cont = srec.diffuse()*std::max(0.0f, cosI);
             // weird behavior with spheres perhaps (the transparency being
             // very low but not zero, and the diffuse being strong)
             // could fix by trnsMult * sum, but darker shadows and weaker color

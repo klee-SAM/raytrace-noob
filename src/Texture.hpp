@@ -40,7 +40,9 @@ public:
     ColorTexture(const glm::vec3& clr) : Texture(clr) {}
     virtual ~ColorTexture() = default;
 
-    glm::vec3 value(const glm::vec2&, const glm::vec3&) const override { return color; }
+    glm::vec3 value(const glm::vec2& = glm::vec2(0.f), 
+                    const glm::vec3& = glm::vec3(0.f)) 
+                    const override { return color; }
 };
 
 class GradientTexture : public Texture {
@@ -60,7 +62,8 @@ public:
     ImageTexture(const std::shared_ptr<Image> &img) : Texture(img) {} 
     virtual ~ImageTexture() = default;
 
-    glm::vec3 value(const glm::vec2& uv, const glm::vec3&) const override;
+    glm::vec3 value(const glm::vec2& uv, 
+                    const glm::vec3& = glm::vec3(0.f)) const override;
 };
 
 

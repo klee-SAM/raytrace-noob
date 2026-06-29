@@ -12,9 +12,7 @@ vec3 GradientTexture::value(const glm::vec2&, const vec3& p) const {
 
 
 vec3 ImageTexture::value(const glm::vec2 &uv, const vec3& p) const {
-    #ifndef NDEBUG
     if (!img->isLoaded()) return glm::vec3(1.0f, 0.0f, 1.0f);
-    #endif 
     // Just realized that img->getPixel does most of the work haha
     glm::vec3 pixelColor;
     img->getPixel(uv.s, uv.t, pixelColor);
