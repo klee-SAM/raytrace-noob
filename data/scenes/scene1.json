@@ -131,7 +131,8 @@
             "exponent": 300.0,
             "reflCoeff": 0.0,
             "refrIndex" : 1.015625,
-            "transparency" : 0.875
+            "transparency" : 0.875,
+            "absorb" : [0, 0.25, 0]
         }
     }
 }

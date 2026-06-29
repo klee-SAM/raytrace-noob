@@ -251,6 +251,7 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
         }
 
         std::shared_ptr<Material> material = std::make_shared<Material>();
+        bool fresnelExplicitSet = false;
 
         int prop_ind = 1;
         for (int prop = 0; prop < mat_prop_tok->size; ++prop) {
@@ -272,6 +273,10 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
                 material->exponent = doubleFromToken(value);
             } else if (isReflectProp()) {
                 material->reflCoeff = doubleFromToken(value);
+                if (!fresnelExplicitSet) {
+                    fresnelExplicitSet = true;
+                    material->fresnelCoeff = 1.f;
+                }
             } else if (isRefractProp()) {
                 material->refrIndex = doubleFromToken(value);
             } else if (jsonstreq(key, "transparency")) {

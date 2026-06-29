@@ -32,7 +32,7 @@ public:
                  reflCoeff{0.0f}, 
                  refrIndex{1.0f}, 
                  transparency{0.0f},
-                 fresnelCoeff{1.0f},
+                 fresnelCoeff{0.0f},
                  absorbCoeff{1.0f},
                  reflSamples{1U},
                  fuzz{0.05f}
