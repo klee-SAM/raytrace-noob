@@ -136,7 +136,7 @@ These are the resources I consulted while developing this raytracer.
 - https://justgood.dev/docs/740-paper.pdf
 
 ### CSG
-- The Ray Tracer Challenge chapter on CSG
+- The Ray Tracer Challenge Chapter 16: CSG
 - https://groups.csail.mit.edu/graphics/classes/6.838/F01/lectures/SmoothSurfaces/0the_s040.html
 - https://github.com/jtsiomb/csgray
 
