@@ -16,6 +16,8 @@ vec3 ImageTexture::value(const glm::vec2 &uv, const vec3& p) const {
     // Just realized that img->getPixel does most of the work haha
     glm::vec3 pixelColor;
     img->getPixel(uv.s, uv.t, pixelColor);
+    // idea for tinting images: object in json file specifying the 
+    // file, procedural (or flat) color, and alpha value to blend
     return pixelColor;
 }
 
