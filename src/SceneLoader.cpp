@@ -532,8 +532,13 @@ bool SceneLoader::tryLoadMaterialComps(
         return false;
     }
     else if (isFilename) textureFilePath = textureDir+stringFromToken(value);
-    // TODO: should actually check if the filepath is valid,
-    // and maybe check the srcDir if texture exists in base-level only
+
+    auto f = ifstream(textureFilePath);
+    bool fileLoaded = f.good();
+    if (isFilename && !fileLoaded) {
+        std::cerr << "Failed to load file: " << textureFilePath << '\n';
+        return false;
+    }
 
     if (jsonstreq(key, "ambient")) 
     {
