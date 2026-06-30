@@ -575,6 +575,31 @@ bool SceneLoader::tryLoadMaterialComps(
     return true;
 }
 
+/*
+\texture\ definition
+
+// signature checking...
+{
+	"diffuse" : {
+		"file" : "filepath", 
+		"color" : [0,0,0], 
+		"alpha" : 0, 
+	}, // file with color
+	
+	"ambient" : {
+		"even" : {},
+		"odd" : {}
+	}, // checker texture
+	"specular" : [0,0,0], // plain color
+	"emissive" : "filename.png" // plain file
+}
+
+// complicated stuff; ig i figure this out
+
+*/
+
+int parseTexture(const jsmntok_t* obj_tok, std::shared_ptr<Texture>& text);
+
 // Token conversion
 
 glm::vec3 SceneLoader::float3FromToken(const jsmntok_t* tok)

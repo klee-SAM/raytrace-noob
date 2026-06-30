@@ -55,6 +55,7 @@ private:
     int parseShapes(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& scene);
     int parseShape(const jsmntok_t* obj_tok, std::unique_ptr<Scene>& scene, 
         std::shared_ptr<Shape>& parentShape);
+    int parseTexture(const jsmntok_t* obj_tok, std::shared_ptr<Texture>& text);
 
     enum class SHAPE_TYPE {none, cylinder, sphere, box, plane, mesh, csg};
 
