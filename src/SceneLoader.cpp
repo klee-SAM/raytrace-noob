@@ -2,6 +2,8 @@
 
 #include "util/umath.hpp"
 
+#include <optional>
+
 using namespace std;
 using namespace glm;
 
@@ -598,7 +600,61 @@ bool SceneLoader::tryLoadMaterialComps(
 
 */
 
-int parseTexture(const jsmntok_t* obj_tok, std::shared_ptr<Texture>& text);
+struct TextureProperties {
+    optional<string> filename;
+    optional<vec3> color;
+    optional<float> alpha;
+
+    optional<shared_ptr<Texture>> even;
+    optional<shared_ptr<Texture>> odd;
+
+    constexpr bool isImageTexture() { return filename.has_value(); };
+    constexpr bool isCheckerTexture() { return even.has_value() && odd.has_value(); };
+};
+
+// Assume that t_tok is a value from a key-value pair 
+int SceneLoader::parseTexture(const jsmntok_t* t_tok, shared_ptr<Texture>& text) {
+    bool isFilePath = t_tok->type == JSMN_STRING;
+    bool isVec = t_tok->type == JSMN_ARRAY;
+    bool isObj = t_tok->type == JSMN_OBJECT;
+
+    int prop_ind = 1;
+    
+    if (isFilePath) { 
+        // using an image for the texture, plain as it is
+        const string textureFilePath = textureDir+stringFromToken(t_tok);
+        text = make_shared<ImageTexture>(textureFilePath);
+        // By convention, return >= 1 so that when this function returns,
+        // this offset, when added, sets the pointer to the next key to be parsed
+        // parseShape() is a great example of this 
+        return prop_ind; 
+    } else if (isVec) {
+        const vec3 clr = float3FromToken(t_tok);
+        text = make_shared<ColorTexture>(clr);
+        return prop_ind;
+    } else if (!isObj) {
+        std::cerr << "invalid value type; must be a string, numeric array, or object: "
+                  << print_token(t_tok) << '\n';
+        return prop_ind;
+    }
+
+    TextureProperties tp;
+    
+    // object parsing to get various properties of a texture;
+    // the presence of certain initialized properties are used
+    // to determine what texture to create, but an invalid combination
+    // outputs an error instead (default to set color or black)
+    for (int p = 0; p < t_tok->size; ++p) {
+        const jsmntok_t *key = t_tok + prop_ind, *value = key + 1;
+        
+        // ...
+
+
+        prop_ind += 1 + offsetToNextKey(value);
+    }
+
+    return prop_ind;
+}
 
 // Token conversion
 
