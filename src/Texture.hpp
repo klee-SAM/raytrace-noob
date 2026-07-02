@@ -57,6 +57,8 @@ public:
 
 class ImageTexture : public Texture {
 public: 
+    float alpha;
+
     ImageTexture() {};
     ImageTexture(const std::string &str) : Texture(str) {}
     ImageTexture(const std::shared_ptr<Image> &img) : Texture(img) {} 

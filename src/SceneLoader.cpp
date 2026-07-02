@@ -647,10 +647,37 @@ int SceneLoader::parseTexture(const jsmntok_t* t_tok, shared_ptr<Texture>& text)
     for (int p = 0; p < t_tok->size; ++p) {
         const jsmntok_t *key = t_tok + prop_ind, *value = key + 1;
         
-        // ...
-
+        if (jsonstreq(key, "file")) {
+            tp.filename = stringFromToken(value);
+        } else if (jsonstreq(key, "color")) {
+            tp.color = float3FromToken(value);
+        } else if (jsonstreq(key, "alpha")) {
+            tp.alpha = doubleFromToken(value);
+        } else if (jsonstreq(key, "even")) {
+            shared_ptr<Texture> etext;
+            prop_ind += 1 + parseTexture(value, etext);
+            tp.even = etext;
+            continue; // continue since alr increment  prop_ind
+        } else if (jsonstreq(key, "odd")) {
+            shared_ptr<Texture> otext;
+            prop_ind += 1 + parseTexture(value, otext);
+            tp.odd = otext;
+            continue;
+        } else {
+            std::cerr << "Unknown key: " << print_token(key) << '\n';
+        }
 
         prop_ind += 1 + offsetToNextKey(value);
+    }
+
+    if (tp.isImageTexture()) {
+        const string textureFilePath = textureDir + tp.filename.value();
+        auto imgText = make_shared<ImageTexture>(textureFilePath);
+        imgText->init(tp.color.value_or(vec3(0.f)));
+        imgText->alpha = tp.alpha.value_or(0.f);
+        text = imgText;
+    } else if (tp.isCheckerTexture()) {
+        // ...
     }
 
     return prop_ind;
