@@ -1,11 +1,15 @@
 #include "Camera.hpp"
+
 #include "util/prand.hpp"
+#include "util/counter.hpp"
 
 // #define SHOW_NORMALS
 
 using std::vector;
 using std::shared_ptr;
 using std::unique_ptr;
+
+using namespace CONSTANTS;
 
 typedef const vector<shared_ptr<Shape>>& ShapesVector;
 
@@ -175,7 +179,7 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
                     << totalCasts << " scans completed " << std::flush;
             // Results in displayed times being larger than actual times
             // for very simple and fast scenes, but less thread switching 
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     };
     

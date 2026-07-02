@@ -43,28 +43,21 @@ private:
 	glm::vec3 rotation = glm::vec3(0.0f); // contains the Euler angles for each axis
 };
 
-// Create an anonymous namespace so the linker doesn't complain
-// about multiple definitions
-namespace {
-    using namespace CONSTANTS;
-    class Interval {
-    public:
-        float min, max;
+class Interval {
+public:
+    float min, max;
 
-        Interval() : min(INF), max(-INF) {} // empty
-        Interval(float min, float max) : min(min), max(max) {}
+    Interval() : min(CONSTANTS::INF), max(-CONSTANTS::INF) {} // empty
+    Interval(float min, float max) : min(min), max(max) {}
 
-        float size() const { return max - min; }
-        bool contains(float x) const { return (min <= x) && (x <= max); }
-        bool surrounds(float x) const { return (x < min) && (max < x);}    
+    float size() const { return max - min; }
+    bool contains(float x) const { return (min <= x) && (x <= max); }
+    bool surrounds(float x) const { return (x < min) && (max < x);}
 
-        static const Interval empty, world, signif;
-    };
-
-    const Interval Interval::empty = Interval(INF, -INF);
-    const Interval Interval::world = Interval(-INF, INF); 
-    const Interval Interval::signif = Interval(EPSILION, 1.f - EPSILION);
-}
+    static inline Interval empty() { return Interval(CONSTANTS::INF, -CONSTANTS::INF); }
+    static inline Interval world() { return Interval(-CONSTANTS::INF, CONSTANTS::INF); }
+    static inline Interval signif() { return Interval(CONSTANTS::EPSILION, 1.f - CONSTANTS::EPSILION); }
+};
 
 // Returns the number without the integer part (-2.6 -> -0.6)
 constexpr float decimal(float x) { return x - static_cast<int>(x); }
@@ -89,7 +82,7 @@ inline void assignONBvec3s(const glm::vec3& n, glm::vec3& b1, glm::vec3& b2)
 inline glm::vec3 cosineSampleHemisphere(float u1, float u2) 
 {   // thank you rory
     const float r = sqrt(u1);
-    const float theta = 2 * PI * u2;
+    const float theta = 2 * CONSTANTS::PI * u2;
     const float x = r*cos(theta);
     const float y = r*sin(theta);
     // Modification: assume u1 can never go above 1.0f

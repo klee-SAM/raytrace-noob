@@ -6,6 +6,8 @@
 // #define BACKFACE_CULLING
 #include "Shape.hpp"
 
+using namespace CONSTANTS;
+
 using std::vector;
 using std::string;
 using std::clog; 
@@ -624,7 +626,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 void pushIntervals(vector<Interval>& intervals, const vector<Hit>& hits) {
 	if (hits.empty()) {
-		intervals.push_back(Interval::empty);
+		intervals.push_back(Interval::empty());
 		return;
 	}
 	

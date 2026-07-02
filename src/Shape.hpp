@@ -5,14 +5,31 @@
 
 #include "util/umath.hpp"
 
-class Shape {
+class Geometry {
+public:
+	Geometry() {}
+	virtual ~Geometry() = default;
+	virtual void initialize() {}
+	virtual void intersect(const Ray&, std::vector<Hit>& hits) = 0;
+};
+
+// Axis-Aligned Bounding Boxes
+class BVHNode : public Geometry {
+public:
+	// ...
+private:
+	Interval x, y, z;
+	std::unique_ptr<BVHNode> left, right;
+};
+
+class Shape : public Geometry {
 public:
 	Shape() {}
 	virtual ~Shape() = default;
 
 	// Called when the shape needs to precompute matrices or other members
 	// TODO: bounding box function 
-	virtual void initialize() {}
+	void initialize() {}
 
 	// Sets the initial transform.
 	void setModelMatrix(const glm::mat4& m) { modelMat = m; }
@@ -25,7 +42,7 @@ public:
 	glm::mat4 getModelMatrix(float tm) const;
 	void setMaterial(const std::shared_ptr<Material>& mat) { material = mat; }
 
-	virtual void intersect(const Ray& ray, std::vector<Hit>& hits) = 0;
+	void intersect(const Ray& ray, std::vector<Hit>& hits) {}
 	
 protected:
 	// Initialized after calling setModelMatrix(),
@@ -59,8 +76,8 @@ protected:
 	// 	float t) const;
 
 	Hit toWorldSpaceHit(
-		const glm::vec3& x, // hit position
-		const glm::vec3& vx, // unnormalized ray dir
+		const glm::vec3 &x, // hit position
+		const glm::vec3 &vx, // unnormalized ray dir
 		const glm::mat4 &model,
 		const glm::mat4 &invMod,
 		float t) const;
