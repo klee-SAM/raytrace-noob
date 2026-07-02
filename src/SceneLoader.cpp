@@ -2,7 +2,6 @@
 
 #include "util/umath.hpp"
 
-// #include <optional>
 #include "util/optional.hpp"
 
 using namespace std;
@@ -610,7 +609,7 @@ struct TextureProperties {
     optional<shared_ptr<Texture>> odd;
 
     constexpr bool isImageTexture() { return filename.has_value(); };
-    constexpr bool isCheckerTexture() { return even.has_value() && odd.has_value(); };
+    constexpr bool isCheckerTexture() { return even.has_value() || odd.has_value(); };
 };
 
 // Assume that t_tok is a value from a key-value pair 
@@ -678,7 +677,16 @@ int SceneLoader::parseTexture(const jsmntok_t* t_tok, shared_ptr<Texture>& text)
         imgText->alpha = tp.alpha.value_or(0.f);
         text = imgText;
     } else if (tp.isCheckerTexture()) {
-        // ...
+        auto checkText = make_shared<CheckerTexture>();
+        if (tp.even.has_value()) checkText->setEven(tp.even.value());
+        if (tp.odd.has_value()) checkText->setOdd(tp.odd.value());
+        text = checkText;
+    } else if (tp.color.has_value()) {
+        auto clrText = make_shared<ColorTexture>(tp.color.value());
+        text = clrText;
+    } else {
+        auto defaultCheckText = make_shared<CheckerTexture>();
+        text = defaultCheckText;
     }
 
     return prop_ind;

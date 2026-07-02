@@ -469,6 +469,9 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     return clr;
 }
 
+// ToDo: maybe experiment with mixing shadow calc
+// and local Blinn-Phong calc again, as suggested by RTC
+// if there is barely any change to performance, keep the change
 vec3 Camera::lightingFactor(const Hit &rec, const vec3 &lv, 
                             const vec3 &ev, const vec3 &diffAtt)
 {
