@@ -18,7 +18,7 @@ private:
 public:
     static constexpr T EPSI2 = T(0.05f);
 
-    VarianceCounter() : mean(T(0)), m2(T(0)), samplesDone(0.f) {}
+    VarianceCounter() noexcept : mean(T(0)), m2(T(0)), samplesDone(0.f) {}
     inline T getMean() const { return mean; }
     inline float getSamplesDone() const {return samplesDone; }
     // Adds contrib to the mean counter and returns whether the
