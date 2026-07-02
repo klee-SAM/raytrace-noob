@@ -42,3 +42,62 @@ private:
     std::vector<std::shared_ptr<Light>> lights;
     std::unordered_map<std::string, std::shared_ptr<Material>> materials;
 };
+
+
+// new inner class Frame that holds vector of shapes and lights
+// ofc, move the getters for shapes and lights to the frame class
+/* Animated Scene JSON
+{
+// For defining common values to be used in transform and 
+// material properties:
+"defines" : { ... },    
+
+// Defining materials for one or more shapes each.
+"materials" : { ... },
+
+// Camera settings that are shared across multiple frames.
+"camera" : 
+{ 
+    "spp" : 0,
+    "spr" : 0,
+    "ao_spr" : 0,
+    "ao_radius" : 0.0,
+    "shd_spr" : 0,
+    "sky" : "../filepath"
+},
+"lights" : [ ... ],
+"shapes" : [ 
+    ...
+    {
+        ...
+        "transforms" : [ ... ],
+        "blur_transforms" : [],     // Can explicitly specify transforms to use for
+        "blur_next_frame" : true,   // motion blur, or just use next frame transforms
+                                    // for motion blur, if it is present
+        "id" : 1234,                // identifier for frame data
+        ...
+    }, 
+    ...
+],
+
+// optional; when any property is specified here, it persists
+// for subsequent frames until explicitly changed, and forces
+// the program to render # of frames as scenes 
+"frames" : [
+    ...
+    {
+        "camera" : [ ... ], // frame-specific settings
+        "next" : [ 
+            ...
+            {
+                "id" : 1234,
+                "transforms" : [ ... ], // new transforms for object of ID
+                "visible" : true,       // whether or not this object is constructed
+            },
+            ... 
+        ] // 
+    },
+    ...
+]
+}
+*/
