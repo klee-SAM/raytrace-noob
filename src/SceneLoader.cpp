@@ -587,7 +587,6 @@ pair<bool, int> SceneLoader::tryLoadMaterialComps(
 /*
 \texture\ definition
 
-// signature checking...
 {
 	"diffuse" : {
 		"file" : "filepath", 
@@ -602,9 +601,6 @@ pair<bool, int> SceneLoader::tryLoadMaterialComps(
 	"specular" : [0,0,0], // plain color
 	"emissive" : "filename.png" // plain file
 }
-
-// complicated stuff; ig i figure this out
-
 */
 
 struct TextureProperties {
@@ -620,9 +616,8 @@ struct TextureProperties {
 };
 
 // Assume that t_tok is a value from a key-value pair 
-
-// this is faulty rn
 int SceneLoader::parseTexture(const jsmntok_t* t_tok, shared_ptr<Texture>& text) {
+    // the isFilePath and isVec checks are for recursive calls
     bool isFilePath = t_tok->type == JSMN_STRING;
     bool isVec = t_tok->type == JSMN_ARRAY && 
                  charIsNumeric((t_tok+1)->start);
@@ -632,8 +627,8 @@ int SceneLoader::parseTexture(const jsmntok_t* t_tok, shared_ptr<Texture>& text)
         // using an image for the texture, plain as it is
         const string textureFilePath = textureDir+stringFromToken(t_tok);
         text = make_shared<ImageTexture>(textureFilePath);
-        // By convention, return >= 1 so that when this function returns,
-        // this offset, when added, sets the pointer right b4 the next key to be parsed
+        // Return just offsetToNextKey() so that the upper level 
+        // function has to +1 to match convention
         return offsetToNextKey(t_tok); 
     } else if (isVec) {
         const vec3 clr = float3FromToken(t_tok);
@@ -682,7 +677,7 @@ int SceneLoader::parseTexture(const jsmntok_t* t_tok, shared_ptr<Texture>& text)
         const string textureFilePath = textureDir + tp.filename.value();
         auto imgText = make_shared<ImageTexture>(textureFilePath);
         imgText->init(tp.color.value_or(vec3(0.f)));
-        imgText->alpha = tp.alpha.value_or(0.f);
+        imgText->setAlpha(tp.alpha.value_or(0.f));
         text = imgText;
     } else if (tp.isCheckerTexture()) {
         auto checkText = make_shared<CheckerTexture>();
