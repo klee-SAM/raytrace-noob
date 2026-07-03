@@ -27,7 +27,7 @@ protected:
     Texture(const std::shared_ptr<Image> &img) : color(0.0f) { this->img = img; } 
 
     glm::vec3 color; // for flat colors or procedural textures
-    glm::mat3 textureMat; // Texture transformation matrix
+    // glm::mat3 textureMat; // Texture transformation matrix
 
     // multiple distinct materials could point to the same
     // image data, so shared ptr it is
@@ -57,15 +57,17 @@ public:
 
 class ImageTexture : public Texture {
 public: 
-    float alpha;
-
-    ImageTexture() {};
-    ImageTexture(const std::string &str) : Texture(str) {}
-    ImageTexture(const std::shared_ptr<Image> &img) : Texture(img) {} 
+    ImageTexture() : alpha{1.f} {};
+    ImageTexture(const std::string &str) : Texture(str), alpha{0.f} {}
+    ImageTexture(const std::shared_ptr<Image> &img) : Texture(img), alpha{0.f} {} 
     virtual ~ImageTexture() = default;
+
+    void setAlpha(float x) { alpha = std::clamp(x, 0.f, 1.f); }
 
     glm::vec3 value(const glm::vec2& uv, 
                     const glm::vec3& = glm::vec3(0.f)) const override;
+private:
+    float alpha;
 };
 
 
