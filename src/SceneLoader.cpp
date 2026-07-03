@@ -293,9 +293,16 @@ int SceneLoader::parseMaterials(const jsmntok_t* obj_tok, std::unique_ptr<Scene>
                               << print_token(value) << '\n';
                 } else material->reflSamples = reflSamples;
                 
-            } else if (!tryLoadMaterialComps(material, key, value)) {
-                std::cerr << "invalid property : " << print_token(key) << '\n';
-            };
+            } else {
+                int incr = 0;
+                bool success = tryLoadMaterialComps(material, key, value, incr);
+                if (!success) {
+                    std::cerr << "invalid property : " << print_token(key) << '\n';
+                } else { prop_ind += incr; }
+            } 
+            // else if (!tryLoadMaterialComps(material, key, value)) {
+            //     std::cerr << "invalid property : " << print_token(key) << '\n';
+            // };
             
             prop_ind += 1 + offsetToNextKey(value); 
         }
@@ -520,7 +527,8 @@ void SceneLoader::ShapeProperties::applyProperties(shared_ptr<Shape>& shape)
 bool SceneLoader::tryLoadMaterialComps(
     shared_ptr<Material>& material, 
     const jsmntok_t *key, 
-    const jsmntok_t *value) 
+    const jsmntok_t *value,
+    int &nextOffset) 
 {
     bool isFilename = value->type == JSMN_STRING;
     bool isFloat3 = value->type == JSMN_ARRAY && 
@@ -529,9 +537,9 @@ bool SceneLoader::tryLoadMaterialComps(
     string textureFilePath;
 
     if (!isFilename && !isFloat3) {
-        std::cerr << "invalid value type; must be a string or numeric array: "
-                  << print_token(value) << '\n';
-        return false;
+        // std::cerr << "invalid value type; must be a string or numeric array: "
+                //   << print_token(value) << '\n';
+        // return false;
     }
     else if (isFilename) textureFilePath = textureDir+stringFromToken(value);
 
@@ -539,7 +547,7 @@ bool SceneLoader::tryLoadMaterialComps(
     bool fileLoaded = f.good();
     if (isFilename && !fileLoaded) {
         std::cerr << "Failed to load file: " << textureFilePath << '\n';
-        return false;
+        // return false;
     }
 
     if (jsonstreq(key, "ambient")) 
@@ -549,8 +557,13 @@ bool SceneLoader::tryLoadMaterialComps(
     } 
     else if (jsonstreq(key, "diffuse")) 
     {
-        if (isFloat3) material->diffuse->init(float3FromToken(value));
-        else if (isFilename) material->diffuse = make_shared<ImageTexture>(textureFilePath);
+        // TODO: keep this boilerplate; must only call parseTexture
+        // when value is an object, and must think about why I add 2
+        // to the nextOffset
+        nextOffset = 2 + parseTexture(value, material->diffuse);
+        if (value->type != JSMN_OBJECT) nextOffset = 0;
+        // if (isFloat3) material->diffuse->init(float3FromToken(value));
+        // else if (isFilename) material->diffuse = make_shared<ImageTexture>(textureFilePath);
     } 
     else if (jsonstreq(key, "specular")) 
     {
@@ -561,7 +574,8 @@ bool SceneLoader::tryLoadMaterialComps(
     {
         if (isFloat3) material->emissive->init(float3FromToken(value));
         else if (isFilename) material->emissive = make_shared<ImageTexture>(textureFilePath);
-    } else if (jsonstreq(key, "absorb")) 
+    } 
+    else if (jsonstreq(key, "absorb")) 
     {
         if (isFloat3) { 
             // Leave as-is unless the highest allowed clr changes
@@ -571,8 +585,23 @@ bool SceneLoader::tryLoadMaterialComps(
         else if (isFilename) {
             // absorbCoeff would be calculated from the highest clr component
             material->absorb = make_shared<ImageTexture>(textureFilePath);
-        }        
+        }    
     }
+
+    // TODO: move this back up, and modify to tolerate objects
+    // if (!isFilename && !isFloat3) {
+    //     // std::cerr << "invalid value type; must be a string or numeric array: "
+    //             //   << print_token(value) << '\n';
+    //     return false;
+    // }
+    // else if (isFilename) textureFilePath = textureDir+stringFromToken(value);
+
+    // auto f = ifstream(textureFilePath);
+    // bool fileLoaded = f.good();
+    // if (isFilename && !fileLoaded) {
+    //     // std::cerr << "Failed to load file: " << textureFilePath << '\n';
+    //     return false;
+    // }
 
     return true;
 }
@@ -613,31 +642,32 @@ struct TextureProperties {
 };
 
 // Assume that t_tok is a value from a key-value pair 
+
+// this is faulty rn
 int SceneLoader::parseTexture(const jsmntok_t* t_tok, shared_ptr<Texture>& text) {
     bool isFilePath = t_tok->type == JSMN_STRING;
-    bool isVec = t_tok->type == JSMN_ARRAY;
+    bool isVec = t_tok->type == JSMN_ARRAY && 
+                 charIsNumeric((t_tok+1)->start);
     bool isObj = t_tok->type == JSMN_OBJECT;
-
-    int prop_ind = 1;
     
     if (isFilePath) { 
         // using an image for the texture, plain as it is
         const string textureFilePath = textureDir+stringFromToken(t_tok);
         text = make_shared<ImageTexture>(textureFilePath);
         // By convention, return >= 1 so that when this function returns,
-        // this offset, when added, sets the pointer to the next key to be parsed
-        // parseShape() is a great example of this 
-        return prop_ind; 
+        // this offset, when added, sets the pointer right b4 the next key to be parsed
+        return offsetToNextKey(t_tok); 
     } else if (isVec) {
         const vec3 clr = float3FromToken(t_tok);
         text = make_shared<ColorTexture>(clr);
-        return prop_ind;
+        return offsetToNextKey(t_tok);
     } else if (!isObj) {
         std::cerr << "invalid value type; must be a string, numeric array, or object: "
                   << print_token(t_tok) << '\n';
-        return prop_ind;
+        return offsetToNextKey(t_tok);
     }
 
+    int prop_ind = 1;
     TextureProperties tp;
     
     // object parsing to get various properties of a texture;

@@ -100,7 +100,8 @@ private:
     bool tryLoadMaterialComps(
         std::shared_ptr<Material>& mat, 
         const jsmntok_t *key, 
-        const jsmntok_t *value);
+        const jsmntok_t *value,
+        int &newOffset);
 
     int intFromToken(const jsmntok_t* tok);
     bool boolFromToken(const jsmntok_t* tok);
