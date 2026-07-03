@@ -633,18 +633,22 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
 // ToDo: maybe experiment with mixing shadow calc
 // and local Blinn-Phong calc again, as suggested by RTC
 // if there is barely any change to performance, keep the change
-inline vec3 Camera::lightingContrib(const Hit &rec, const vec3 &lv, 
-                             const vec3 &ev, const vec3 &diffAtt) const
-{
-    const vec3 kd = rec.diffuse(), 
-               ks = rec.specular();
-    const float s = rec.m->exponent;
+// inline vec3 Camera::lightingContrib(const Hit &rec, const vec3 &lv, 
+//                              const vec3 &ev, const vec3 &diffAtt) const
+// {
+//     const vec3 kd = rec.diffuse(), 
+//                ks = rec.specular();
+//     const float s = rec.m->exponent;
 
-    const vec3 h = normalize(lv + ev);
-    const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
-    const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
-    return (diff_cont*diffAtt + spec_cont);
-}
+//     const vec3 h = normalize(lv + ev);
+//     const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
+//     const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
+//     return (diff_cont*diffAtt + spec_cont);
+// }
+
+inline auto lightingContrib = []() {
+
+};
 
 // Randomly samples points on area lights depending on their radius.
 vec3 Camera::lightingFactor(const std::shared_ptr<Light> &light, 
@@ -672,8 +676,19 @@ vec3 Camera::lightingFactor(const std::shared_ptr<Light> &light,
     srecs.reserve(16);
 
     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { 
+        // The cost of a function call is so great that I get a ~33% increase in 
+        // speed if I paste the contents of the BP shading calculations
+        // in 2 different places instead. Lambdas and method calls are slow for this.
+        const vec3 kd = rec.diffuse(), 
+                   ks = rec.specular();
+        const float s = rec.m->exponent;
+
+        const vec3 h = normalize(lv + ev);
+        const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
+        const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
+
         const vec3 shade = getShadowContrib(srecs, sray, scene, Interval(interval.min, tl)); 
-        return shade * light->intensity * lightingContrib(rec, lv, ev, diffuseAtt);
+        return shade * light->intensity * (diff_cont*diffuseAtt + spec_cont);
     }
     
     const auto sampler = sampleCone(ld, light->getRadius());
@@ -696,7 +711,13 @@ vec3 Camera::lightingFactor(const std::shared_ptr<Light> &light,
         const vec3 contrib = getShadowContrib(srecs, sray, 
             scene, Interval(interval.min, tmax));
         bool lowVari = s_counter.add(contrib, CounterCmps::vec3_cmp);
-        lightingSum += lightingContrib(rec, new_lv, ev, diffuseAtt);
+
+        const vec3 kd = rec.diffuse(), ks = rec.specular();
+        const float s = rec.m->exponent;
+        const vec3 h = normalize(lv + ev);
+        const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
+        const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
+        lightingSum += (diff_cont*diffuseAtt + spec_cont);
 
         if (i < min_i) continue;  
         // use dot product to avoid comparing 3 components (convenience),

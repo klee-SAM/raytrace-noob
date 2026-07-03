@@ -134,9 +134,9 @@ private:
     glm::vec3 getShadowContrib(std::vector<Hit> &srecs, const Ray &sray,
                                const std::unique_ptr<Scene> &scene, 
                                const Interval &t_int) const;
-    glm::vec3 lightingContrib(const Hit &rec, const glm::vec3 &lv, 
-                              const glm::vec3 &eyeVec, 
-                              const glm::vec3 &diffAtt = glm::vec3(1.f)) const;
+    // glm::vec3 lightingContrib(const Hit &rec, const glm::vec3 &lv, 
+    //                           const glm::vec3 &eyeVec, 
+    //                           const glm::vec3 &diffAtt = glm::vec3(1.f)) const;
     glm::vec3 lightingFactor(const std::shared_ptr<Light> &light, 
                              const Hit &rec, const Ray &ray,
                              const std::unique_ptr<Scene> &scene, 
