@@ -97,11 +97,10 @@ private:
     using PRIM = SceneLoader::PRIMITIVE_TYPE;
     PRIM typeOfPrimitiveAt(int offset);
     bool charIsNumeric(int offset);
-    bool tryLoadMaterialComps(
+    std::pair<bool, int> tryLoadMaterialComps(
         std::shared_ptr<Material>& mat, 
         const jsmntok_t *key, 
-        const jsmntok_t *value,
-        int &newOffset);
+        const jsmntok_t *value);
 
     int intFromToken(const jsmntok_t* tok);
     bool boolFromToken(const jsmntok_t* tok);
