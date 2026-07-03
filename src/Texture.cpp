@@ -28,11 +28,12 @@ const std::shared_ptr<Texture> CheckerTexture::white = std::make_shared<ColorTex
 const std::shared_ptr<Texture> CheckerTexture::black = std::make_shared<ColorTexture>(vec3(0.0f));
 
 vec3 CheckerTexture::value(const glm::vec2 &uv, const vec3& p) const {
-    // Use floor to pull values to -INF
-    int xInt = static_cast<int>(std::floor(p.x));
-    int yInt = static_cast<int>(std::floor(p.y));
-    int zInt = static_cast<int>(std::floor(p.z));
+    // use round() for better numerical stability, which is possibly
+    // because of values very close to nearest integer in bad spots
+    float xInt = std::round(p.x);
+    float yInt = std::round(p.y);
+    float zInt = std::round(p.z);
     // Raytracing the next week reference
-    bool isEven = (xInt + yInt + zInt) % 2 == 0;
+    bool isEven = static_cast<int>(xInt + yInt + zInt) % 2 == 0;
     return isEven ? even->value(uv, p) : odd->value(uv, p);
 }
