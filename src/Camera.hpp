@@ -127,18 +127,20 @@ private:
     
     Ray castPrimaryRay(uint idx, uint idy, float offsetx = 0.5f, float offsety = 0.5f);
 
-    glm::vec3 lightingFactor(const Hit &rec, const glm::vec3 &lv, 
-                             const glm::vec3 &eyeVec, 
-                             const glm::vec3 &diffAtt = glm::vec3(1.f));
-
     float occlusionDiffuseFactor(const Hit &rec, const std::unique_ptr<Scene> &scene,
                                  const Interval &interval, glm::vec3 &diffuseAtten, 
                                  float time);
 
     glm::vec3 getShadowContrib(std::vector<Hit> &srecs, const Ray &sray,
-                           const std::unique_ptr<Scene> &scene, 
-                           const Interval &t_int);
-    glm::vec3 shadowFactor(const std::shared_ptr<Light> &light, const Hit &rec, 
-                       const std::unique_ptr<Scene> &scene, const Interval &interval,
-                       float time, bool = true);
+                               const std::unique_ptr<Scene> &scene, 
+                               const Interval &t_int) const;
+    glm::vec3 lightingContrib(const Hit &rec, const glm::vec3 &lv, 
+                              const glm::vec3 &eyeVec, 
+                              const glm::vec3 &diffAtt = glm::vec3(1.f)) const;
+    glm::vec3 lightingFactor(const std::shared_ptr<Light> &light, 
+                             const Hit &rec, const Ray &ray,
+                             const std::unique_ptr<Scene> &scene, 
+                             const Interval &interval, float time, 
+                             const glm::vec3 &diffuseAtt = glm::vec3(1.f),
+                             bool = true) const;
 };

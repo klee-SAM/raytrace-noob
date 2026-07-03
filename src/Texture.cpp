@@ -2,7 +2,7 @@
 #include "util/umath.hpp"
 
 // Default spatial texture
-constexpr vec3 GradientTexture::transform(const vec3 &x) const {
+inline vec3 GradientTexture::transform(const vec3 &x) const {
     return .5f*glm::normalize(x)+.5f;
 };
 

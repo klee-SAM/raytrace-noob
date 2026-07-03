@@ -447,15 +447,14 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     #endif
 
     for (auto& light : scene->getLights()) {
-        const vec3 ld = light->pos - rec.x;
-        const vec3 lv = normalize(ld);
-        // Construct shadow rays for each light, using world coordinates.
+        // const vec3 ld = light->pos - rec.x;
+        // const vec3 lv = normalize(ld);
+        // Construct shadow rays for each light and do Phong shading using world coordinates
         // Boolean parameter to naively cull the number of neglible rays casted for shadows 
-        const vec3 lightVisibility = shadowFactor(light, rec, scene, 
-            interval, ray.time, recursiveDepth < 2);
+        const vec3 clrFromLight = lightingFactor(light, rec, ray, scene, 
+            interval, ray.time, diffuseFac, recursiveDepth < 2);
 
-        float Li = light->intensity;
-        localClr += lightVisibility * Li * lightingFactor(rec, lv, ev, diffuseFac);
+        localClr += clrFromLight;
     }
 
     // ki = 1 - refl*kr - (1-refl)*kt
@@ -467,22 +466,6 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     clr += rec.emissive();
 
     return clr;
-}
-
-// ToDo: maybe experiment with mixing shadow calc
-// and local Blinn-Phong calc again, as suggested by RTC
-// if there is barely any change to performance, keep the change
-vec3 Camera::lightingFactor(const Hit &rec, const vec3 &lv, 
-                            const vec3 &ev, const vec3 &diffAtt)
-{
-    const vec3 kd = rec.diffuse(), 
-               ks = rec.specular();
-    const float s = rec.m->exponent;
-
-    const vec3 h = normalize(lv + ev);
-    const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
-    const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
-    return (diff_cont*diffAtt + spec_cont);
 }
 
 // Uses monte carlo integration
@@ -612,7 +595,7 @@ public:
 constexpr auto aboveZero = [](const vec3 &clr) { return clr.r > 0 || clr.g > 0 || clr.b > 0; };
 vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
                                const std::unique_ptr<Scene> &scene, 
-                               const Interval &t_int) {  
+                               const Interval &t_int) const {  
     if (FULL_SHADOWS) {
         Hit srec;
         const bool behindShape = hit(scene->getShapes(), sray, t_int, srec);
@@ -647,15 +630,36 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
     }        
 };
 
+// ToDo: maybe experiment with mixing shadow calc
+// and local Blinn-Phong calc again, as suggested by RTC
+// if there is barely any change to performance, keep the change
+inline vec3 Camera::lightingContrib(const Hit &rec, const vec3 &lv, 
+                             const vec3 &ev, const vec3 &diffAtt) const
+{
+    const vec3 kd = rec.diffuse(), 
+               ks = rec.specular();
+    const float s = rec.m->exponent;
+
+    const vec3 h = normalize(lv + ev);
+    const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
+    const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
+    return (diff_cont*diffAtt + spec_cont);
+}
+
 // Randomly samples points on area lights depending on their radius.
-vec3 Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec, 
-                           const unique_ptr<Scene> &scene,
-                           const Interval &interval,
-                           float time, bool sampleArea) 
+vec3 Camera::lightingFactor(const std::shared_ptr<Light> &light, 
+                                   const Hit &rec, const Ray &ray,
+                                   const std::unique_ptr<Scene> &scene, 
+                                   const Interval &interval, float time, 
+                                   const glm::vec3 &diffuseAtt,
+                                   bool sampleArea) const
 {
     const vec3 ld = light->pos - rec.x;
     const float tl = length(ld);
     const vec3 lv = ld / tl;
+
+    // The eye vector does not point to the camera when reflecting/refracting
+    const vec3 ev = -ray.dir;
 
     Ray sray;
     vec3 srayCPos = rec.x + (float)interval.min*rec.n;
@@ -668,7 +672,8 @@ vec3 Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec,
     srecs.reserve(16);
 
     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { 
-        return getShadowContrib(srecs, sray, scene, Interval(interval.min, tl)); 
+        const vec3 shade = getShadowContrib(srecs, sray, scene, Interval(interval.min, tl)); 
+        return shade * light->intensity * lightingContrib(rec, lv, ev, diffuseAtt);
     }
     
     const auto sampler = sampleCone(ld, light->getRadius());
@@ -676,7 +681,8 @@ vec3 Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec,
 
     // Use this method instead of has_no_change() since it plays nicer with 
     // shadow implementation (prev. method did not give good results)
-    VarianceCounter<vec3> counter;
+    VarianceCounter<vec3> s_counter;
+    vec3 lightingSum = vec3(0.f);
     const Interval litThreshold(CONSTANTS::EPSILION, 1.f - CONSTANTS::EPSILION);
 
     for (int i = 0; i < light->getSamples(); ++i) {
@@ -689,14 +695,19 @@ vec3 Camera::shadowFactor(const shared_ptr<Light> &light, const Hit &rec,
         
         const vec3 contrib = getShadowContrib(srecs, sray, 
             scene, Interval(interval.min, tmax));
-        bool lowVari = counter.add(contrib, CounterCmps::vec3_cmp);
+        bool lowVari = s_counter.add(contrib, CounterCmps::vec3_cmp);
+        lightingSum += lightingContrib(rec, new_lv, ev, diffuseAtt);
 
         if (i < min_i) continue;  
         // use dot product to avoid comparing 3 components (convenience),
-        const float dotMean = dot(counter.getMean(), counter.getMean());
-        const float currVis = dotMean / (3.f*counter.getSamplesDone());
+        const float dotMean = dot(s_counter.getMean(), s_counter.getMean());
+        const float currVis = dotMean / (3.f*s_counter.getSamplesDone());
         const bool fullOrNoLit = litThreshold.surrounds(currVis);
         if (lowVari || fullOrNoLit) { break; }         
     }
-    return counter.getMean();
+
+    const vec3 lightVisibility = s_counter.getMean();
+    const vec3 lightingFac = lightingSum / s_counter.getSamplesDone();
+
+    return lightVisibility * light->intensity * lightingFac;
 }
