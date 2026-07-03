@@ -688,7 +688,7 @@ int SceneLoader::parseTexture(const jsmntok_t* t_tok, shared_ptr<Texture>& text)
         auto clrText = make_shared<ColorTexture>(tp.color.value());
         text = clrText;
     } else {
-        auto defaultCheckText = make_shared<CheckerTexture>();
+        auto defaultCheckText = make_shared<GradientTexture>();
         text = defaultCheckText;
     }
 

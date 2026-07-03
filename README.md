@@ -39,8 +39,8 @@ Adding more features on a simple raytracer as a learning exercise
 
 #### misc.
 - [ ] scene format documentation (json)
-- [ ] description format for textures/patterns 
-- [ ] Spatial textures
+- [x] description format for textures/patterns 
+- [x] Spatial textures
 - [ ] pmj02 random number generation
 - [ ] partial .mtl support (tiny_obj_loader)
 - [ ] move mesh buffers to another object

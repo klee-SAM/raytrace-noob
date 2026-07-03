@@ -50,7 +50,7 @@ public:
     GradientTexture() {};
     virtual ~GradientTexture() = default;
 
-    // perhaps a function to generate gradient here
+    constexpr glm::vec3 transform(const glm::vec3&) const;
 
     glm::vec3 value(const glm::vec2&, const glm::vec3& p) const override;
 };

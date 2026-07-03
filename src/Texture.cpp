@@ -2,12 +2,12 @@
 #include "util/umath.hpp"
 
 // Default spatial texture
+constexpr vec3 GradientTexture::transform(const vec3 &x) const {
+    return .5f*glm::normalize(x)+.5f;
+};
+
 vec3 GradientTexture::value(const glm::vec2&, const vec3& p) const {
-    return normalize(vec3(
-        0.5f*p.x+0.5f, 
-        0.5f*p.y+0.5f, 
-        0.5f*p.z+0.5f)
-    );   
+    return glm::clamp(vec3(transform(p)), 0.f, 1.f);
 }
 
 
@@ -17,8 +17,6 @@ vec3 ImageTexture::value(const glm::vec2 &uv, const vec3& p) const {
     // Just realized that img->getPixel does most of the work haha
     glm::vec3 pixelColor;
     img->getPixel(uv.s, uv.t, pixelColor);
-    // idea for tinting images: object in json file specifying the 
-    // file, procedural (or flat) color, and alpha value to blend
     return glm::mix(pixelColor, color, alpha);
 }
 
