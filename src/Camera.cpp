@@ -65,7 +65,7 @@ void Camera::applyView(MatrixStack& MS) {
     MS.mult(lookAtMat);
 }
 
-Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) {
+Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) const {
     // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
 
     const float ndc_y = 2*((float)idy + offsety)/((float)height) - 1.0;
@@ -243,7 +243,7 @@ bool hit(ShapesVector shapes, const Ray& ray,
     return intersected_any;
 }
 
-vec3 Camera::getSkyColor(const Ray& ray) 
+vec3 Camera::getSkyColor(const Ray& ray) const 
 {
     float cx, cy, cz; vec2 uv;
     switch(this->sky) {
@@ -319,42 +319,41 @@ float reflectanceFromIncidentRay(const Ray &ray, const Hit &rec) {
 
 // this does not increment `recursions` when it recursively calls
 // check to make sure that the recursion count is incremented when calling this
-vec3 Camera::getReflectionColor(const std::unique_ptr<Scene> &scene,
-                                const Ray &ray, const Hit &hit,
-                                const Interval &interval, 
-                                uint recursions) 
+vec3 Camera::getReflectionColor(const Ray &ray, IntParams args, uint recursions) const
 {
-    vec3 reflClr = getRayColor(scene, reflectRay(ray, hit), interval, recursions);
-    for (uint r = 1; r < hit.m->reflSamples; ++r) {
+    auto &rec = args.rec;
+    auto &scene = args.scene;
+    auto &interval = args.interval;
+
+    vec3 reflClr = getRayColor(scene, reflectRay(ray, rec), interval, recursions);
+    for (uint r = 1; r < args.rec.m->reflSamples; ++r) {
         Ray nearRay = ray;
-        nearRay.setDir(normalize(ray.getDir() + glm::sphericalRand(hit.m->fuzz)));
-        reflClr += getRayColor(scene, reflectRay(nearRay, hit), interval, recursions);
+        nearRay.setDir(normalize(ray.getDir() + glm::sphericalRand(rec.m->fuzz)));
+        reflClr += getRayColor(scene, reflectRay(nearRay, rec), interval, recursions);
     }
     // reflSamples must be at least 1.
-    reflClr /= hit.m->reflSamples;
+    reflClr /= rec.m->reflSamples;
     return reflClr;
 }
 
 // similar to getReflectionColor(), but can return vec3(0.f) b/c TIR
-vec3 Camera::getRefractedColor(const std::unique_ptr<Scene> &scene,
-                               const Ray &ray, const Hit &hit,
-                               const Interval &interval, 
-                               uint recursions, bool back_face) 
+vec3 Camera::getRefractedColor(const Ray &ray, IntParams args,
+                               uint recursions, bool back_face) const
 {
     float n1, n2;
-    if (back_face) { n1 = hit.m->refrIndex; n2 = 1.f;} 
-    else { n1 = 1.f; n2 = hit.m->refrIndex; }
-    const Ray refrRay = refractRay(ray, hit, n1/n2);
+    if (back_face) { n1 = args.rec.m->refrIndex; n2 = 1.f;} 
+    else { n1 = 1.f; n2 = args.rec.m->refrIndex; }
+    const Ray refrRay = refractRay(ray, args.rec, n1/n2);
     vec3 refrClr = vec3(0.f);
     if (vec3(0.f) != ray.getDir()) {
-        refrClr = getRayColor(scene, refrRay, interval, recursions);
+        refrClr = getRayColor(args.scene, refrRay, args.interval, recursions);
     } // otherwise, no refracted clr b/c TIR, modify reflected instead
     return refrClr;
 }
 
 // Whitted-style ray-tracing, but amalmagated
 vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray, 
-                         const Interval& interval, uint recursiveDepth) 
+                         const Interval& interval, uint recursiveDepth) const
 {
     Hit rec;
     vec3 clr = vec3(0.0f);
@@ -391,12 +390,14 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     // this possibility via parameter
     const bool back_face = dot(ray.getDir(), rec.n) > 0.0f; // true if inside
 
+    IntParams intInfo{scene, interval, rec};
+
     // Avoid casting additional glossy reflection rays if inside the object, this
     // avoids massively expensive and unnecessary computation (3x increase)
     // TIR reflections are done in elseif (Fresnel)
     if ((reflective || (transparent && inReflThres)) && !back_face) { 
         // if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
-        reflectClr = getReflectionColor(scene, ray, rec, interval, recursiveDepth+1);
+        reflectClr = getReflectionColor(ray, intInfo, recursiveDepth+1);
     } else if (transparent && !inRefrThres) {
         // if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         // However, do (non-glossy) reflection if TIR inside the object
@@ -418,12 +419,11 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
             // constexpr vec3 OBJECT_ABSORB = vec3(8.0, 2.0, 0.1);
             absorbClr = glm::exp(-rec.absorb() * rec.m->absorbCoeff * rec.t);
         }
-        refractClr = getRefractedColor(scene, ray, rec, interval, 
-                    recursiveDepth+1, back_face);
+        refractClr = getRefractedColor(ray, intInfo, recursiveDepth+1, back_face);
     }
 
     // The eye vector does not point to the camera when reflecting/refracting
-    const vec3 ev = -ray.dir;
+    // const vec3 ev = -ray.dir;
     vec3 diffuseFac = vec3(1.f);
 
     // Another term, ia, could be multiplied with the ambient and determined based on the 
@@ -435,8 +435,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         // the maximum is arbitrary, but it should be small 
         // so that faraway objects are not considered
         const auto occlArea = Interval(interval.min, occludingRadius);
-        const float occlFac = occlusionDiffuseFactor(rec, scene, 
-            occlArea, diffuseFac, ray.time);
+        IntParams occlArgs{scene, occlArea, rec};
+        const float occlFac = occlusionDiffuseFactor(occlArgs, diffuseFac, ray.time);
         localClr *= occlFac;
     }
 
@@ -451,8 +451,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         // const vec3 lv = normalize(ld);
         // Construct shadow rays for each light and do Phong shading using world coordinates
         // Boolean parameter to naively cull the number of neglible rays casted for shadows 
-        const vec3 clrFromLight = lightingFactor(light, rec, ray, scene, 
-            interval, ray.time, diffuseFac, recursiveDepth < 2);
+        const vec3 clrFromLight = lightingFactor(ray, intInfo, light, 
+            diffuseFac, recursiveDepth < 2);
 
         localClr += clrFromLight;
     }
@@ -469,15 +469,17 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 }
 
 // Uses monte carlo integration
-float Camera::occlusionDiffuseFactor(const Hit &rec, const unique_ptr<Scene> &scene,
-                                    const Interval &interval, vec3 &diffuseFac,
-                                    float time)
+float Camera::occlusionDiffuseFactor(IntParams args, vec3 &diffuseFac, float time) const
 {
+    auto &rec = args.rec;
+    auto &scene = args.scene;
+    auto &interval = args.interval;
+
     float lightAbsorption = 0.f;
     vec3 diffuseAbsorption(0.f);
 
     vec3 T, B;
-    assignONBvec3s(rec.n, T, B);
+    assignONBvec3s(args.rec.n, T, B);
     vec3 aorayPos = rec.x + (float)interval.min*rec.n;
 
     // Reuse the ray object, yes?
@@ -594,8 +596,8 @@ public:
 
 constexpr auto aboveZero = [](const vec3 &clr) { return clr.r > 0 || clr.g > 0 || clr.b > 0; };
 vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
-                               const std::unique_ptr<Scene> &scene, 
-                               const Interval &t_int) const {  
+                              const std::unique_ptr<Scene> &scene, 
+                              const Interval &t_int) {  
     if (FULL_SHADOWS) {
         Hit srec;
         const bool behindShape = hit(scene->getShapes(), sray, t_int, srec);
@@ -630,34 +632,16 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
     }        
 };
 
-// ToDo: maybe experiment with mixing shadow calc
-// and local Blinn-Phong calc again, as suggested by RTC
-// if there is barely any change to performance, keep the change
-// inline vec3 Camera::lightingContrib(const Hit &rec, const vec3 &lv, 
-//                              const vec3 &ev, const vec3 &diffAtt) const
-// {
-//     const vec3 kd = rec.diffuse(), 
-//                ks = rec.specular();
-//     const float s = rec.m->exponent;
-
-//     const vec3 h = normalize(lv + ev);
-//     const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
-//     const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
-//     return (diff_cont*diffAtt + spec_cont);
-// }
-
-inline auto lightingContrib = []() {
-
-};
-
 // Randomly samples points on area lights depending on their radius.
-vec3 Camera::lightingFactor(const std::shared_ptr<Light> &light, 
-                                   const Hit &rec, const Ray &ray,
-                                   const std::unique_ptr<Scene> &scene, 
-                                   const Interval &interval, float time, 
-                                   const glm::vec3 &diffuseAtt,
-                                   bool sampleArea) const
+vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
+                            const std::shared_ptr<Light> &light,
+                            const glm::vec3 &diffuseAtt,
+                            bool sampleArea)
 {
+    auto &rec = args.rec;
+    auto &scene = args.scene;
+    auto &interval = args.interval;
+
     const vec3 ld = light->pos - rec.x;
     const float tl = length(ld);
     const vec3 lv = ld / tl;
@@ -669,7 +653,7 @@ vec3 Camera::lightingFactor(const std::shared_ptr<Light> &light,
     vec3 srayCPos = rec.x + (float)interval.min*rec.n;
     sray.setPos(srayCPos);
     sray.setDir(lv);
-    sray.time = time;
+    sray.time = ray.time;
 
     // Hit srec;
     vector<Hit> srecs;
@@ -682,12 +666,12 @@ vec3 Camera::lightingFactor(const std::shared_ptr<Light> &light,
         const vec3 kd = rec.diffuse(), 
                    ks = rec.specular();
         const float s = rec.m->exponent;
-
         const vec3 h = normalize(lv + ev);
         const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
         const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
 
-        const vec3 shade = getShadowContrib(srecs, sray, scene, Interval(interval.min, tl)); 
+        const vec3 shade = getShadowContrib(srecs, sray, scene, Interval(interval.min, tl));
+
         return shade * light->intensity * (diff_cont*diffuseAtt + spec_cont);
     }
     
@@ -712,6 +696,7 @@ vec3 Camera::lightingFactor(const std::shared_ptr<Light> &light,
             scene, Interval(interval.min, tmax));
         bool lowVari = s_counter.add(contrib, CounterCmps::vec3_cmp);
 
+        // duplicate, also present in non-area light case above
         const vec3 kd = rec.diffuse(), ks = rec.specular();
         const float s = rec.m->exponent;
         const vec3 h = normalize(lv + ev);

@@ -110,37 +110,33 @@ private:
     glm::mat4 invP;      // inverse of projection mat
     float sample_scale;
 
+    // Contains common info used for BRDF calculations
+    struct IntParams {
+        const std::unique_ptr<Scene> &scene;
+        const Interval &interval;
+        const Hit &rec;
+    };
+
     glm::vec3 getRayColor(const std::unique_ptr<Scene> &scene, const Ray &ray, 
                           const Interval &interval = Interval(EPSILION, MAX_DIST), 
-                          uint recursiveDepth = 0);
+                          uint recursiveDepth = 0) const;
     
-    glm::vec3 getReflectionColor(const std::unique_ptr<Scene> &scene,
-                                 const Ray &ray, const Hit &rec, 
-                                 const Interval &interval, uint recursions);
+    glm::vec3 getReflectionColor(const Ray &ray, IntParams args, uint recursions) const;
     
-    glm::vec3 getRefractedColor(const std::unique_ptr<Scene> &scene,
-                                const Ray &ray, const Hit &rec,
-                                const Interval &interval, uint recursions,
-                                bool back_face);
+    glm::vec3 getRefractedColor(const Ray &ray, IntParams args, uint recursions, 
+                                bool back_face) const;
 
-    glm::vec3 getSkyColor(const Ray &ray);
+    glm::vec3 getSkyColor(const Ray &ray) const;
     
-    Ray castPrimaryRay(uint idx, uint idy, float offsetx = 0.5f, float offsety = 0.5f);
+    Ray castPrimaryRay(uint idx, uint idy, float offsetx = 0.5f, float offsety = 0.5f) const;
 
-    float occlusionDiffuseFactor(const Hit &rec, const std::unique_ptr<Scene> &scene,
-                                 const Interval &interval, glm::vec3 &diffuseAtten, 
-                                 float time);
+    float occlusionDiffuseFactor(IntParams args, glm::vec3 &diffuseAtten, float time) const;
 
-    glm::vec3 getShadowContrib(std::vector<Hit> &srecs, const Ray &sray,
-                               const std::unique_ptr<Scene> &scene, 
-                               const Interval &t_int) const;
-    // glm::vec3 lightingContrib(const Hit &rec, const glm::vec3 &lv, 
-    //                           const glm::vec3 &eyeVec, 
-    //                           const glm::vec3 &diffAtt = glm::vec3(1.f)) const;
-    glm::vec3 lightingFactor(const std::shared_ptr<Light> &light, 
-                             const Hit &rec, const Ray &ray,
-                             const std::unique_ptr<Scene> &scene, 
-                             const Interval &interval, float time, 
-                             const glm::vec3 &diffuseAtt = glm::vec3(1.f),
-                             bool = true) const;
+    static glm::vec3 getShadowContrib(std::vector<Hit> &srecs, const Ray &sray,
+                                      const std::unique_ptr<Scene> &scene, 
+                                      const Interval &t_int);
+    static glm::vec3 lightingFactor(const Ray &ray, IntParams args, 
+                                    const std::shared_ptr<Light> &light, 
+                                    const glm::vec3 &diffuseAtt = glm::vec3(1.f),
+                                    bool sampleArea = true);
 };
