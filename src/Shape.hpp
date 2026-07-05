@@ -13,13 +13,19 @@ public:
 	virtual void intersect(const Ray&, std::vector<Hit>& hits) = 0;
 };
 
+// compute bounding box by transforming 8 vertices by obj modelmat,
+// then using those vertices to compute new AABB in world coordinates,
+// this is leaf BB approach
+// hierachy: take only the min and max point when compute parent BB.
+// space subdivision haahah
+
 // Axis-Aligned Bounding Boxes
 class BVHNode : public Geometry {
 public:
 	// ...
 private:
 	Interval x, y, z;
-	std::unique_ptr<BVHNode> left, right;
+	std::unique_ptr<Geometry> left, right;
 };
 
 class Shape : public Geometry {

@@ -390,7 +390,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     // this possibility via parameter
     const bool back_face = dot(ray.getDir(), rec.n) > 0.0f; // true if inside
 
-    IntParams intInfo{scene, interval, rec};
+    const IntParams intInfo{scene, interval, rec};
 
     // Avoid casting additional glossy reflection rays if inside the object, this
     // avoids massively expensive and unnecessary computation (3x increase)
@@ -416,7 +416,6 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         // bright specks may appear on meshes w/ backface culling enabled.
         if (back_face) { 
             rec.n = -rec.n;
-            // constexpr vec3 OBJECT_ABSORB = vec3(8.0, 2.0, 0.1);
             absorbClr = glm::exp(-rec.absorb() * rec.m->absorbCoeff * rec.t);
         }
         refractClr = getRefractedColor(ray, intInfo, recursiveDepth+1, back_face);
@@ -435,7 +434,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         // the maximum is arbitrary, but it should be small 
         // so that faraway objects are not considered
         const auto occlArea = Interval(interval.min, occludingRadius);
-        IntParams occlArgs{scene, occlArea, rec};
+        const IntParams occlArgs{scene, occlArea, rec};
         const float occlFac = occlusionDiffuseFactor(occlArgs, diffuseFac, ray.time);
         localClr *= occlFac;
     }
@@ -447,8 +446,6 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     #endif
 
     for (auto& light : scene->getLights()) {
-        // const vec3 ld = light->pos - rec.x;
-        // const vec3 lv = normalize(ld);
         // Construct shadow rays for each light and do Phong shading using world coordinates
         // Boolean parameter to naively cull the number of neglible rays casted for shadows 
         const vec3 clrFromLight = lightingFactor(ray, intInfo, light, 
