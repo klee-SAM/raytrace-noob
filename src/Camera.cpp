@@ -67,7 +67,6 @@ void Camera::applyView(MatrixStack& MS) {
 
 Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) const {
     // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
-
     const float ndc_y = 2*((float)idy + offsety)/((float)height) - 1.0;
     const float ndc_x = 2*((float)idx + offsetx)/((float)width) - 1.0;
 
@@ -146,7 +145,11 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     cameraPos = C[3]; 
     cameraPos.w = 1.0f;
 
-    assert(AAsamples > 0);
+    // Camera faces -z by default
+    const vec3 camDir = vec3(C*vec4(0.f, 0.f, -1.f, 0.f));
+    assignONBvec3s(camDir, dof_u, dof_v);
+
+    if (AAsamples < 1) AAsamples = 1;
     sample_scale = 1.0/AAsamples;
 
     uint totalCasts = height*width;
