@@ -73,12 +73,17 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) con
     glm::vec4 coord(ndc_x, ndc_y, -1.0f, 1.0f); // px coord
     coord = invP*coord; // eye coord
     coord.w = 1.0f;
+
+    // could transform ray pos here w/o needing basis vectors;
+    // could just +- x and y by diskRandGen*apertureRadius 
+
     coord = glm::normalize(C*coord - cameraPos); // n_pw
 
     Ray cray; 
     cray.pos = cameraPos;
     cray.dir = coord;
     const vec2 rndVec = diskRandGen->rand();
+    // Using the uniform distribution was too regular
     cray.time = std::fmod(dot(rndVec, rndVec), 1.f);
 
     return cray;
@@ -146,8 +151,9 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     cameraPos.w = 1.0f;
 
     // Camera faces -z by default
-    const vec3 camDir = vec3(C*vec4(0.f, 0.f, -1.f, 0.f));
-    assignONBvec3s(camDir, dof_u, dof_v);
+    // !!! could be redundant, keep in case
+    // const vec3 camDir = vec3(C*vec4(0.f, 0.f, -1.f, 0.f));
+    // assignONBvec3s(camDir, dof_u, dof_v);
 
     if (AAsamples < 1) AAsamples = 1;
     sample_scale = 1.0/AAsamples;
