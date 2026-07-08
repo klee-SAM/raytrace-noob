@@ -76,6 +76,8 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) con
 
     // could transform ray pos here w/o needing basis vectors;
     // could just +- x and y by diskRandGen*apertureRadius 
+    // coord.x += 2.f*unifRandGen->rand() - 1.f;
+    // coord.y += 2.f*unifRandGen->rand() - 1.f;
 
     coord = glm::normalize(C*coord - cameraPos); // n_pw
 
