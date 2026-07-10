@@ -95,7 +95,8 @@ private:
     double fovy;                // radians; determines how much camera sees
     double znear = 1.0f;        // focal length
     double zfar = 1000.0f;
-    double focalAngle = 0.f;    // variation angle in radians; 0 means no DoF
+    // double focalAngle = 0.f;    // variation angle in radians; 0 means no DoF
+    double apertureRadius = 0.f;   // > 0.f for DoF effect
     uint width, height;
 
     uint AAsamples = 1;                        // must be at least 1
@@ -109,8 +110,8 @@ private:
     glm::vec4 cameraPos; // contains world-space position of camera
     glm::mat4 C;         // Camera Matrix
     glm::mat4 invP;      // inverse of projection mat
-    glm::vec3 dof_u;
-    glm::vec3 dof_v;
+    // glm::vec3 dof_u;
+    // glm::vec3 dof_v;
     float sample_scale;
 
     // Contains common info used for BRDF calculations
