@@ -78,8 +78,10 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) con
     // could just +- x and y by diskRandGen*apertureRadius 
     // coord.x += 2.f*unifRandGen->rand() - 1.f;
     // coord.y += 2.f*unifRandGen->rand() - 1.f;
-    // glm::vec2 offset = diskRandGen->rand() * aperatureRadius;
     // coord *= aperatureRadius;
+    
+    // glm::vec2 offset = diskRandGen->rand() * aperatureRadius;
+    // cray.pos = cameraPos + C*offset;     // ?
 
     coord = glm::normalize(C*coord - cameraPos); // n_pw
 
