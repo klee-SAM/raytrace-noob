@@ -65,31 +65,27 @@ void Camera::applyView(MatrixStack& MS) {
     MS.mult(lookAtMat);
 }
 
+// TODO: change offsetx y args to a single vec2, add param to accept cam origin arg
 Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) const {
     // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
     const float ndc_y = 2*((float)idy + offsety)/((float)height) - 1.0;
     const float ndc_x = 2*((float)idx + offsetx)/((float)width) - 1.0;
 
-    glm::vec4 coord(ndc_x, ndc_y, -1.0f, 1.0f); // px coord
-    coord = invP*coord; // eye coord
-    coord.w = 1.0f;
-
-    // could transform ray pos here w/o needing basis vectors;
-    // could just +- x and y by diskRandGen*apertureRadius 
-    // coord.x += 2.f*unifRandGen->rand() - 1.f;
-    // coord.y += 2.f*unifRandGen->rand() - 1.f;
-    // coord *= aperatureRadius;
+    const glm::vec4 rayClip(ndc_x, ndc_y, -1.0f, 1.0f);
+    glm::vec4 rayEye = invP*rayClip;
+    rayEye.w = 0.0f; // The ray is a direction, so set w to 0 to ignore translations
     
-    // glm::vec2 offset = diskRandGen->rand() * aperatureRadius;
+    const glm::vec4 offset = glm::vec4(diskRandGen->rand(), 0.f, 0.f);
     // cray.pos = cameraPos + C*offset;     // ?
 
-    coord = glm::normalize(C*coord - cameraPos); // n_pw
+    // glm::vec4 rayWldDir = glm::normalize(C*rayEye - cameraPos);
 
     Ray cray; 
-    cray.pos = cameraPos;
-    cray.dir = coord;
-    const vec2 rndVec = diskRandGen->rand();
+    cray.pos = cameraPos + C*(focalRadius*offset);
+    cray.dir = glm::normalize(C*rayEye);
+    
     // Using the uniform distribution was too regular
+    const vec2 rndVec = diskRandGen->rand();
     cray.time = std::fmod(dot(rndVec, rndVec), 1.f);
 
     return cray;
@@ -113,6 +109,9 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
 
         Ray cray = castPrimaryRay(x, y);
         color = getRayColor(scene, cray);
+
+        // TODO: compute focal point here
+        // also TODO: test scene for DoF
         
         // breakpoints have experimentally OK magic numbers
         const uint breakpoint = std::max(AAsamples / 4, 8U);
@@ -155,11 +154,6 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     invP = glm::inverse(P);
     cameraPos = C[3]; 
     cameraPos.w = 1.0f;
-
-    // Camera faces -z by default
-    // !!! could be redundant, keep in case
-    // const vec3 camDir = vec3(C*vec4(0.f, 0.f, -1.f, 0.f));
-    // assignONBvec3s(camDir, dof_u, dof_v);
 
     if (AAsamples < 1) AAsamples = 1;
     sample_scale = 1.0/AAsamples;
