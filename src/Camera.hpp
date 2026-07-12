@@ -96,7 +96,7 @@ private:
     double znear = 1.0f;        // focal length
     double zfar = 1000.0f;
     float focusLength = 5.f;    // dist where everything is in focus
-    float focalRadius = 0.f;    // > 0.f for DoF effect
+    float focalRadius = .5f;    // > 0.f for DoF effect
     uint width, height;
 
     uint AAsamples = 1;                        // must be at least 1
@@ -108,10 +108,10 @@ private:
 
     // variables computed in render()
     glm::vec4 cameraPos; // contains world-space position of camera
-    glm::mat4 C;         // Camera Matrix
+    glm::mat4 C;         // Camera Matrix, inverse of View Matrix
     glm::mat4 invP;      // inverse of projection mat
-    // glm::vec3 dof_u;
-    // glm::vec3 dof_v;
+    glm::vec4 dof_u;     // right cam basis vec
+    glm::vec4 dof_v;     // up cam basis vec
     float sample_scale;
 
     // Contains common info used for BRDF calculations
@@ -122,24 +122,24 @@ private:
     };
 
     Ray castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset = glm::vec2(.5f)) const;
+    Ray castSecondaryRay(const Ray &primaryRay) const;
 
     glm::vec3 getRayColor(const std::unique_ptr<Scene> &scene, const Ray &ray, 
                           const Interval &interval = Interval(EPSILION, MAX_DIST), 
                           uint recursiveDepth = 0) const;
     
-    glm::vec3 getReflectionColor(const Ray &ray, IntParams args, uint recursions) const;
+    glm::vec3 getReflectionColor(const Ray &ray, IntParams, uint recursions) const;
     
-    glm::vec3 getRefractedColor(const Ray &ray, IntParams args, uint recursions, 
-                                bool back_face) const;
+    glm::vec3 getRefractedColor(const Ray&, IntParams, uint recur, bool back_face) const;
 
     glm::vec3 getSkyColor(const Ray &ray) const;
 
-    float occlusionDiffuseFactor(IntParams args, glm::vec3 &diffuseAtten, float time) const;
+    float occlusionDiffuseFactor(IntParams, glm::vec3 &diffuseAtten, float time) const;
 
     static glm::vec3 getShadowContrib(std::vector<Hit> &srecs, const Ray &sray,
                                       const std::unique_ptr<Scene> &scene, 
                                       const Interval &t_int);
-    static glm::vec3 lightingFactor(const Ray &ray, IntParams args, 
+    static glm::vec3 lightingFactor(const Ray &ray, IntParams, 
                                     const std::shared_ptr<Light> &light, 
                                     const glm::vec3 &diffuseAtt = glm::vec3(1.f),
                                     bool sampleArea = true);

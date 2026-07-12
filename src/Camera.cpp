@@ -65,7 +65,8 @@ void Camera::applyView(MatrixStack& MS) {
     MS.mult(lookAtMat);
 }
 
-// TODO: change offsetx y args to a single vec2, add param to accept cam origin arg
+// This does NOT normalize the ray direction, since the length of the 
+// ray direction is needed for depth of field. 
 Ray Camera::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) const {
     // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
     const float ndc_y = 2.f*((float)idy + offset.y)/((float)height) - 1.f;
@@ -74,15 +75,10 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) const {
     const glm::vec4 rayClip(ndc_x, ndc_y, -1.0f, 1.0f);
     glm::vec4 rayEye = invP*rayClip;
     rayEye.w = 0.0f; // The ray is a direction, so set w to 0 to ignore translations
-    
-    const glm::vec4 f_offset = glm::vec4(diskRandGen->rand(), 0.f, 0.f);
-    // cray.pos = cameraPos + C*offset;     // ?
-
-    // glm::vec4 rayWldDir = glm::normalize(C*rayEye - cameraPos);
 
     Ray cray; 
-    cray.pos = cameraPos + C*(focalRadius*f_offset);
-    cray.dir = glm::normalize(C*rayEye);
+    cray.pos = cameraPos;
+    cray.dir = C*rayEye; // needs to be normalized before getRayColor()
     
     // Using the uniform distribution was too regular
     const vec2 rndVec = diskRandGen->rand();
@@ -91,8 +87,18 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) const {
     return cray;
 }
 
-Ray castSecondaryRay(glm::vec4 camOrig, glm::vec2 offset) {
+Ray Camera::castSecondaryRay(const Ray &pray) const {
+    vec4 focalPoint = pray.pos + focusLength*pray.dir;
+    focalPoint.w = 1.f;
 
+    const glm::vec2 samp = focalRadius * diskRandGen->rand();
+    const glm::vec4 wld_offset = (dof_u*samp.x + dof_v*samp.y);
+
+    Ray dray;
+    dray.pos = pray.pos + wld_offset; 
+    dray.pos.w = 1.f;
+    dray.dir = glm::normalize(focalPoint - dray.pos);
+    return dray;
 }
 
 bool has_no_change(const uint i, const uint min_i, const vec3 &culmClr, 
@@ -112,20 +118,21 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         vec3 color = vec3(0.0f);
 
         Ray cray = castPrimaryRay(x, y);
+        cray.dir = glm::normalize(cray.dir);
         color = getRayColor(scene, cray);
-
-        // TODO: compute focal point here
-        // also TODO: test scene for DoF
         
         // breakpoints have experimentally OK magic numbers
         const uint breakpoint = std::max(AAsamples / 4, 8U);
         float r_samplesDone = sample_scale;
         for (uint i = 1; i < AAsamples; ++i) {
-            // Branching isn't great if it doesn't lead to early breaks
             const vec2 offset = 0.5f*diskRandGen->rand(i) + vec2(0.5f);
-            
             cray = castPrimaryRay(x, y, offset);
-            const vec3 rayColor = getRayColor(scene, cray);
+            cray.dir = glm::normalize(cray.dir);
+
+            const bool useSecRay = focalRadius > Camera::EPSILION;
+            Ray dray = useSecRay ? castSecondaryRay(cray) : cray;
+
+            const vec3 rayColor = getRayColor(scene, dray);
             color += rayColor;
             
             // Stop sampling this pixel if the contribution
@@ -153,10 +160,14 @@ void Camera::processRows(const unique_ptr<Scene>& scene, unique_ptr<Image>& imag
 unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const mat4& V) 
 {
     // Precompute as much as possible before loops
-    C = inverse(V);
+    C = glm::inverse(V);
     invP = glm::inverse(P);
     cameraPos = C[3]; 
     cameraPos.w = 1.0f;
+
+    // Camera basis vectors in world space
+    dof_u = C[0]; // right
+    dof_v = C[1]; // up
 
     if (AAsamples < 1) AAsamples = 1;
     sample_scale = 1.0/AAsamples;

@@ -1,7 +1,7 @@
 {
     "camera" : {
         "distance" : 5.0,
-        "antialias" : 1,
+        "antialias" : 16,
         "fov" : 75.0,
         "sky" : "exampleTexture.png"
     },

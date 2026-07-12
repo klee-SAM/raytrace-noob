@@ -100,6 +100,7 @@ Other platforms may have slightly different build instructions.
 ## Other links:
 
 These are the resources I consulted while developing this raytracer.
+See [Texture Mapping](#texture-mapping) for (some) image sources.
 
 ### Multithreading
 - cpp_multithreading: (https://github.com/wasimusu/cpp_multithreading)
@@ -128,6 +129,11 @@ These are the resources I consulted while developing this raytracer.
 ### Motion blur
 - https://stackoverflow.com/questions/46156903/how-to-lerp-between-two-quaternions
 
+### Depth of field
+- https://stackoverflow.com/questions/13532947/references-for-depth-of-field-implementation-in-a-raytracer
+- https://cg.skeelogy.com/depth-of-field-using-raytracing/
+- https://pathtracing.home.blog/depth-of-field/
+
 ### Object Light Attenuation
 - https://blog.demofox.org/2017/01/09/raytracing-reflection-refraction-fresnel-total-internal-reflection-and-beers-law/
 - https://blog.demofox.org/2014/06/22/analytic-fog-density/
@@ -143,7 +149,8 @@ These are the resources I consulted while developing this raytracer.
 
 ### Texture Mapping
 - http://raytracerchallenge.com/bonus/texture-mapping.html (Not secure)
-- https://polyhaven.com/hdris
+- Images 1: https://texturify.com/stock-photo/above-the-city-in-winter-10588.html
+- Images 2: https://polyhaven.com/hdris
 
 ### BVH and GPU Acceleration
 - https://github.com/AdaptiveCpp/AdaptiveCpp
