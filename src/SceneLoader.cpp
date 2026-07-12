@@ -152,6 +152,12 @@ int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::unique_ptr
         } else if (jsonstreq(key, "occlusionRadius")) {
             double occlRadius = doubleFromToken(value);
             cam->setAmbientOccludingRadius(occlRadius);
+        } else if (jsonstreq(key, "focusLength")) {
+            float length = doubleFromToken(value);
+            cam->setFocusLength(length);
+        } else if (jsonstreq(key, "focalRadius")) {
+            float r = doubleFromToken(value);
+            cam->setFocalRadius(r);
         } else if (jsonstreq(key, "fov")) {
             float fov = doubleFromToken(value);
             cam->setFOV(fov);

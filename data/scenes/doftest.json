@@ -1,18 +1,18 @@
 {
     "camera" : {
         "distance" : 5.0,
-        "antialias" : 256,
+        "antialias" : 4,
         "focalRadius" : 0.5,
         "fov" : 75.0,
-        "sky" : "Above the city in winter.jpg"
+        "sky" : "exampleTexture.png"
     },
     "materials" : {
         "blue" : {
             "ambient" : [0.1, 0.1, 0.1],
             "diffuse" : [0.125, 0.125, 1.0],
             "specular" : [1.0, 1.0, 1.0],
-            "exponent" : 200.0,
-            "reflCoeff" : 0.5
+            "exponent" : 150.0,
+            "reflCoeff" : 0.25
         },
         "background" : {
             "ambient" : [0, 0, 0],
@@ -43,6 +43,12 @@
             "shape" : "sphere",
             "position" : [0.0, 0.0, -1.0],
             "material" : "blue"
+        },
+        {
+            "shape" : "plane",
+            "rotation" : [90, 0, 0],
+            "position" : [0, -1, -5],
+            "material" : "background"
         }
     ]
 }

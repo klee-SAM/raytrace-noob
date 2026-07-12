@@ -63,13 +63,15 @@ public:
         } else { camUpVec = glm::normalize(upVec); }
     }
 
-    // Setting samples below 2 disables antialiasing.
+    // Setting samples below 2 disables antialiasing and depth of field.
     void setAntialiasSamples(uint count) { AAsamples = count > 1 ? count : 1; }
     // Ambient occlusion samples are taken for every color ray, including
     // anti-aliasing rays; recommended to reduce AO samples if increasing AA rays
     void setAmbientOcclusionSamples(uint count) { occlusionSamples = count > 0 ? count : 0; }
     void setGlobalAmbientColor(const glm::vec3 &clr) { globalAmbient = clr; }
     void setAmbientOccludingRadius(float r) { occludingRadius = r; }
+    void setFocusLength(float l) { focusLength = l; }
+    void setFocalRadius(float r) { focalRadius = r; }
 
     enum class SkyType {Void, Haze, SphereMap, Ambient};
     void setSky(SkyType s) { sky = s; }
