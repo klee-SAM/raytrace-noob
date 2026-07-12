@@ -95,7 +95,7 @@ private:
     double fovy;                // radians; determines how much camera sees
     double znear = 1.0f;        // focal length
     double zfar = 1000.0f;
-    float focalLength = 5.f;    // dist where everything is in focus
+    float focusLength = 5.f;    // dist where everything is in focus
     float focalRadius = 0.f;    // > 0.f for DoF effect
     uint width, height;
 
@@ -121,6 +121,8 @@ private:
         const Hit &rec;
     };
 
+    Ray castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset = glm::vec2(.5f)) const;
+
     glm::vec3 getRayColor(const std::unique_ptr<Scene> &scene, const Ray &ray, 
                           const Interval &interval = Interval(EPSILION, MAX_DIST), 
                           uint recursiveDepth = 0) const;
@@ -131,8 +133,6 @@ private:
                                 bool back_face) const;
 
     glm::vec3 getSkyColor(const Ray &ray) const;
-    
-    Ray castPrimaryRay(uint idx, uint idy, float offsetx = 0.5f, float offsety = 0.5f) const;
 
     float occlusionDiffuseFactor(IntParams args, glm::vec3 &diffuseAtten, float time) const;
 

@@ -66,22 +66,22 @@ void Camera::applyView(MatrixStack& MS) {
 }
 
 // TODO: change offsetx y args to a single vec2, add param to accept cam origin arg
-Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) const {
+Ray Camera::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) const {
     // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
-    const float ndc_y = 2*((float)idy + offsety)/((float)height) - 1.0;
-    const float ndc_x = 2*((float)idx + offsetx)/((float)width) - 1.0;
+    const float ndc_y = 2.f*((float)idy + offset.y)/((float)height) - 1.f;
+    const float ndc_x = 2.f*((float)idx + offset.x)/((float)width) - 1.f;
 
     const glm::vec4 rayClip(ndc_x, ndc_y, -1.0f, 1.0f);
     glm::vec4 rayEye = invP*rayClip;
     rayEye.w = 0.0f; // The ray is a direction, so set w to 0 to ignore translations
     
-    const glm::vec4 offset = glm::vec4(diskRandGen->rand(), 0.f, 0.f);
+    const glm::vec4 f_offset = glm::vec4(diskRandGen->rand(), 0.f, 0.f);
     // cray.pos = cameraPos + C*offset;     // ?
 
     // glm::vec4 rayWldDir = glm::normalize(C*rayEye - cameraPos);
 
     Ray cray; 
-    cray.pos = cameraPos + C*(focalRadius*offset);
+    cray.pos = cameraPos + C*(focalRadius*f_offset);
     cray.dir = glm::normalize(C*rayEye);
     
     // Using the uniform distribution was too regular
@@ -89,6 +89,10 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, float offsetx, float offsety) con
     cray.time = std::fmod(dot(rndVec, rndVec), 1.f);
 
     return cray;
+}
+
+Ray castSecondaryRay(glm::vec4 camOrig, glm::vec2 offset) {
+
 }
 
 bool has_no_change(const uint i, const uint min_i, const vec3 &culmClr, 
@@ -120,8 +124,7 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
             // Branching isn't great if it doesn't lead to early breaks
             const vec2 offset = 0.5f*diskRandGen->rand(i) + vec2(0.5f);
             
-            const float dx = offset.x, dy = offset.y;
-            cray = castPrimaryRay(x, y, dx, dy);
+            cray = castPrimaryRay(x, y, offset);
             const vec3 rayColor = getRayColor(scene, cray);
             color += rayColor;
             
