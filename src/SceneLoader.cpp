@@ -1,11 +1,18 @@
 #include "SceneLoader.hpp"
 
 #include "util/umath.hpp"
-
 #include "util/optional.hpp"
 
-using namespace std;
-using namespace glm;
+#include <cstring>
+#include <iostream>
+
+using std::string;
+using std::unique_ptr, std::shared_ptr;
+using std::make_shared, std::make_unique;
+using std::cerr;
+
+using std::pair;
+using std::ifstream;
 
 /*
  * TODO: documentation

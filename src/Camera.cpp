@@ -1,5 +1,8 @@
 #include "Camera.hpp"
 
+#include <iostream>
+#include <vector>
+
 #include <glm/exponential.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -12,7 +15,8 @@ using std::vector;
 using std::shared_ptr;
 using std::unique_ptr;
 
-using namespace CONSTANTS;
+using CONSTANTS::INF, CONSTANTS::EPSILION, 
+      CONSTANTS::PI, CONSTANTS::R_PI;
 
 typedef const vector<shared_ptr<Shape>>& ShapesVector;
 

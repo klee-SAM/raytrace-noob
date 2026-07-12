@@ -11,9 +11,14 @@
 #include "Texture.hpp"
 
 #include <chrono>
+#include <iostream>
 
-using namespace std;
-using namespace glm;
+using std::string;
+using std::unique_ptr, std::shared_ptr;
+using std::make_shared, std::make_unique;
+using std::cerr;
+
+using std::vector;
 
 const string RESOURCE_DIR = "../data/";
 
@@ -205,7 +210,7 @@ int main(int argc, char** argv) {
     uint width = 256U, height = 256U;
 
     if (argc < 3) {
-        clog << "Usage: ./prog sceneFile outputFile\n";
+        std::clog << "Usage: ./prog sceneFile outputFile\n";
         return 0;
     } else if (argc >= 3) {
         filename = argv[1];
@@ -213,11 +218,11 @@ int main(int argc, char** argv) {
     }
 
     if (argc >= 4) {
-        width = stoi(argv[3]);
+        width = std::stoi(argv[3]);
         height = width;
     }
     if (argc >= 5) {
-        height = stoi(argv[4]);
+        height = std::stoi(argv[4]);
     } 
 
     // argument handling should be rewritten to be more flexible
@@ -252,7 +257,7 @@ int main(int argc, char** argv) {
     unique_ptr<Image> image = camera->render(target_scene, P.top(), MV.top());
     // Cast if the platform's steady clock doesn't use nanoseconds
     auto interval = duration_cast<nanoseconds>(steady_clock::now() - start);
-    clog << "Seconds used by render(): " << interval.count() / 1e9 << '\n'; 
+    std::clog << "Seconds used by render(): " << interval.count() / 1e9 << '\n'; 
     image->setFilename(outputname);
     image->write();
 

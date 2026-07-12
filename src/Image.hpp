@@ -1,6 +1,9 @@
 #pragma once
 #include "stn.hpp"
 
+#include <string>
+#include <vector>
+
 class Image {
 public:
     // For constructing output images

@@ -4,7 +4,9 @@
 #include "Material.hpp"
 #include "Light.hpp"
 
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 // Should include functions for building acceleration structures
 class Scene {

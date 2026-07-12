@@ -5,6 +5,8 @@
 
 #include "util/umath.hpp"
 
+#include <vector>
+
 class Geometry {
 public:
 	Geometry() {}

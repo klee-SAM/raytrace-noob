@@ -2,6 +2,8 @@
 #include "stn.hpp"
 #include "Material.hpp"
 
+#include <vector>
+
 typedef std::shared_ptr<Material> pMaterial; 
 
 class Ray {

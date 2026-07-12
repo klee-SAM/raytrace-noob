@@ -58,7 +58,7 @@ public:
     // if the magnitude of upVec is 0.
     void setUpVector(const glm::vec3 &upVec) { 
         if (glm::length(upVec) < CONSTANTS::EPSILION) {
-            std::cerr << "Provided up vector has a length near zero\n";
+            // std::cerr << "Provided up vector has a length near zero\n";
             camUpVec = glm::normalize(upVec+vec3(0.f, EPSILION, 0.f)); 
         } else { camUpVec = glm::normalize(upVec); }
     }

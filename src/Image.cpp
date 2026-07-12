@@ -1,5 +1,9 @@
 #include "Image.hpp"
 
+#include <iostream>
+
+#include <glm/vec2.hpp>
+
 #include "util/umath.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION

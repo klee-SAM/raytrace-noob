@@ -1,12 +1,14 @@
 #include "stn.hpp"
 
+#include <iostream>
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "external/tiny_obj_loader.h"
 
 // #define BACKFACE_CULLING
 #include "Shape.hpp"
 
-using namespace CONSTANTS;
+using CONSTANTS::INF, CONSTANTS::EPSILION, CONSTANTS::R_PI;
 
 using std::vector;
 using std::string;
