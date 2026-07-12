@@ -65,8 +65,6 @@ void Camera::applyView(MatrixStack& MS) {
     MS.mult(lookAtMat);
 }
 
-// This does NOT normalize the ray direction, since the length of the 
-// ray direction is needed for depth of field. 
 Ray Camera::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) const {
     // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
     const float ndc_y = 2.f*((float)idy + offset.y)/((float)height) - 1.f;
@@ -78,7 +76,7 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) const {
 
     Ray cray; 
     cray.pos = cameraPos;
-    cray.dir = C*rayEye; // needs to be normalized before getRayColor()
+    cray.dir = glm::normalize(C*rayEye);
     
     // Using the uniform distribution was too regular
     const vec2 rndVec = diskRandGen->rand();
@@ -118,7 +116,6 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         vec3 color = vec3(0.0f);
 
         Ray cray = castPrimaryRay(x, y);
-        cray.dir = glm::normalize(cray.dir);
         color = getRayColor(scene, cray);
         
         // breakpoints have experimentally OK magic numbers
@@ -127,7 +124,6 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         for (uint i = 1; i < AAsamples; ++i) {
             const vec2 offset = 0.5f*diskRandGen->rand(i) + vec2(0.5f);
             cray = castPrimaryRay(x, y, offset);
-            cray.dir = glm::normalize(cray.dir);
 
             const bool useSecRay = focalRadius > Camera::EPSILION;
             Ray dray = useSecRay ? castSecondaryRay(cray) : cray;

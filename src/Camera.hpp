@@ -96,7 +96,7 @@ private:
     double znear = 1.0f;        // focal length
     double zfar = 1000.0f;
     float focusLength = 5.f;    // dist where everything is in focus
-    float focalRadius = .5f;    // > 0.f for DoF effect
+    float focalRadius = 0.f;    // > 0.f for DoF effect
     uint width, height;
 
     uint AAsamples = 1;                        // must be at least 1
