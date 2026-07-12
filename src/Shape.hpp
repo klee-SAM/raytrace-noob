@@ -97,14 +97,14 @@ protected:
  * intersect() returns either 0 or 2 hits representing the
  * front and back hits respectively.
 */
-class Sphere : public Shape {
+class Sphere final : public Shape {
 public:
 	Sphere() {}
 	virtual ~Sphere() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 protected:
-	virtual glm::vec2 computeUV(const glm::vec3&) const override;
-	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
+	glm::vec2 computeUV(const glm::vec3&) const override;
+	glm::vec4 computeNormal(const glm::vec3& x) const override;
 };
 
 /* Represents a plane.
@@ -116,37 +116,37 @@ protected:
  * Normal: modelMat[1] = glm::vec4(r, 0.0f);
  * Position: modelMat[3] = glm::vec4(r, 1.0f);
  */
-class Plane : public Shape {
+class Plane final : public Shape {
 public:
 	Plane() {}
 	virtual ~Plane() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
-	virtual void initialize() override;
+	void initialize() override;
 private:
     glm::vec3 uvec, vvec;
 };
 
-class Box : public Shape {
+class Box final : public Shape {
 public:
 	Box() {}
 	virtual ~Box() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 protected:
-	virtual glm::vec2 computeUV(const glm::vec3&) const override;
-	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
+	glm::vec2 computeUV(const glm::vec3&) const override;
+	glm::vec4 computeNormal(const glm::vec3& x) const override;
 };
 
-class Cylinder : public Shape {
+class Cylinder final : public Shape {
 public:
 	Cylinder() {}
 	virtual ~Cylinder() = default;
 	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
 protected:
-	virtual glm::vec2 computeUV(const glm::vec3&) const override;
-	virtual glm::vec4 computeNormal(const glm::vec3& x) const override;
+	glm::vec2 computeUV(const glm::vec3&) const override;
+	glm::vec4 computeNormal(const glm::vec3& x) const override;
 };
 
-class Mesh : public Shape {
+class Mesh final : public Shape {
 public:
 	Mesh() {};
 	Mesh(const std::string& objName, const std::string& directory) {
@@ -183,7 +183,7 @@ private:
 
 enum class OperationType {None, Intersection, Union, Difference};
 
-class CSG : public Shape {
+class CSG final : public Shape {
 public:
 	OperationType operationType;
 	std::shared_ptr<Shape> left;
