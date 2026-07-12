@@ -4,7 +4,9 @@
         "antialias" : 16,
         "fov" : 75.0,
         "sky" : "exampleTexture.png",
-        "rotation" : [45.0, -3.75, 3.75]
+        "rotation" : [45.0, -3.75, 3.75],
+        "focalRadius" : 0.125,
+        "focusLength" : 3.5
     },
     "materials" : {
         "red" : {

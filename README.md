@@ -24,7 +24,7 @@ Adding more features on a simple raytracer as a learning exercise
 #### camera effects
 - [x] Antialiasing
 - [x] Motion blur
-- [ ] Depth of field
+- [x] Depth of field
 
 #### optimizations
 - [X] Multithreading
@@ -38,6 +38,9 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] Monte Carlo path tracing
 
 #### misc.
+- [ ] get rid of stn.hpp, use proper #include practices
+    - use forward declarations
+    - include headers only where they are actually used
 - [ ] scene format documentation (json)
 - [x] description format for textures/patterns 
 - [x] Spatial textures
@@ -163,6 +166,9 @@ See [Texture Mapping](#texture-mapping) for (some) image sources.
 - https://jcgt.org/published/0008/01/04/paper.pdf
 - https://abau.io/blog/sample_patterns/
 - https://stackoverflow.com/questions/5147378/
+
+### Enabling SIMD for GLM
+- https://gamedev.stackexchange.com/questions/132549/how-to-use-glm-simd-using-glm-version-0-9-8-2 
 
 ### Other Interesting Links
 - https://stackoverflow.com/questions/11227809

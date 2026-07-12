@@ -85,7 +85,8 @@ mat4 Shape::modelMatLerp(const float time) const {
 	mat4 model = this->modelMat;
 	const vec3 li_scales = vec4(lerp(time, scales, m_scale), 1.f);
 	// Cancel out the old scales and replace with lerped scaling
-	const vec3 sv = vec3(li_scales.x/scales.x, li_scales.y/scales.y, li_scales.z/scales.z);
+	// const vec3 sv = vec3(li_scales.x/scales.x, li_scales.y/scales.y, li_scales.z/scales.z);
+	const vec3 sv = li_scales / scales;
 	model = glm::scale(model, sv);
 	// Translation.
 	model[3] = vec4(lerp(time, translations, m_translation), 1.f);
@@ -200,8 +201,8 @@ vec2 Box::computeUV(const glm::vec3& p) const {
 	float u, v;
 	// flip on p.z for un-mirroring 
 	if (abs(p.x) == maxc) 	   u = -p.z, v = p.y;
-	else if (abs(p.y) == maxc) u = p.x, v = p.z;
-	else 				  	   u = p.x, v = p.y;
+	else if (abs(p.y) == maxc) u =  p.x, v = p.z;
+	else 				  	   u =  p.x, v = p.y;
 	return vec2(0.5f*u-0.5f, 0.5f*v-0.5f);
 };
 

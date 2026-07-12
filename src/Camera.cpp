@@ -1,5 +1,8 @@
 #include "Camera.hpp"
 
+#include <glm/exponential.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "util/prand.hpp"
 #include "util/counter.hpp"
 
@@ -90,11 +93,11 @@ Ray Camera::castSecondaryRay(const Ray &pray) const {
     focalPoint.w = 1.f;
 
     const glm::vec2 samp = focalRadius * diskRandGen->rand();
-    const glm::vec4 wld_offset = (dof_u*samp.x + dof_v*samp.y);
+    const glm::vec4 wld_offset = vec4(dof_u*samp.x + dof_v*samp.y);
 
     Ray dray;
     dray.pos = pray.pos + wld_offset; 
-    dray.pos.w = 1.f;
+    dray.pos.w = 1.f; // to correct for wld_offset having a w =/= 1
     dray.dir = glm::normalize(focalPoint - dray.pos);
     return dray;
 }
@@ -264,16 +267,14 @@ bool hit(ShapesVector shapes, const Ray& ray,
 
 vec3 Camera::getSkyColor(const Ray& ray) const 
 {
-    float cx, cy, cz; vec2 uv;
+    vec2 uv;
     switch(this->sky) {
     case (Camera::SkyType::Haze):
-        cx = .5*(ray.dir.x)+.5;
-        cy = .5*(ray.dir.y)+.5;
-        cz = .5*(ray.dir.z)+.5;
-        return vec3(cx, cz, cy);
+        return .5f*ray.getDir() + vec3(.5f);
     case (Camera::SkyType::SphereMap):
-        uv.s = 0.5f + std::atan2(ray.dir.z, ray.dir.x)*R_PI*0.5f;
-        uv.t = 0.5f + std::asin(ray.dir.y)*R_PI;
+        uv.s = std::atan2(ray.dir.z, ray.dir.x)*0.5f;
+        uv.t = std::asin(ray.dir.y);
+        uv = uv*R_PI + vec2(.5f);
         return skyTexture->value(uv);
     case (Camera::SkyType::Ambient): 
         return this->globalAmbient;

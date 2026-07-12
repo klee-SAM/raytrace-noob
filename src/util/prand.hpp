@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/gtc/random.hpp>
+
 #include "../stn.hpp"
 #include "umath.hpp"
 
