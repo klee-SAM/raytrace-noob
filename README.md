@@ -8,7 +8,7 @@ Adding more features on a simple raytracer as a learning exercise
 #### shapes/objects
 - [x] Infinite cylinders
 - [x] Boxes
-- [ ] Tori
+- [x] Tori
 - [x] CSG
 
 #### light interactions
@@ -149,6 +149,11 @@ See [Texture Mapping](#texture-mapping) for (some) image sources.
 - The Ray Tracer Challenge Chapter 16: CSG
 - https://groups.csail.mit.edu/graphics/classes/6.838/F01/lectures/SmoothSurfaces/0the_s040.html
 - https://github.com/jtsiomb/csgray
+
+### Tori
+- http://cosinekitty.com/raytrace/chapter13_torus.html (Unsecure)
+- https://www.shadertoy.com/view/3XdyRj
+- https://iquilezles.org/articles/intersectors/
 
 ### Texture Mapping
 - http://raytracerchallenge.com/bonus/texture-mapping.html (Not secure)
