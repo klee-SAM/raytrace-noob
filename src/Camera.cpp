@@ -22,13 +22,8 @@ typedef const vector<shared_ptr<Shape>>& ShapesVector;
 
 // Arbitrary size, but computing these numbers
 // beforehand saves actual seconds
-// initializing the vectors on the heap instead of
-// stack is better when low or no antialiasing done 
-// (1.3 sec w/o unique and 1.0 sec w/ unique)
-std::unique_ptr<prand::uniformRand> unifRandGen = 
-    std::make_unique<prand::uniformRand>(RAND_GEN_SIZE);
-std::unique_ptr<prand::diskRand> diskRandGen = 
-    std::make_unique<prand::diskRand>(RAND_GEN_SIZE);
+static prand::uniformRand unifRandGen;
+static prand::diskRand diskRandGen;
 
 constexpr float SAMP_DIFF_EPSILION = 2.f/255.f;
 
@@ -86,7 +81,7 @@ Ray Camera::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) const {
     cray.dir = glm::normalize(C*rayEye);
     
     // Using the uniform distribution was too regular
-    const vec2 rndVec = diskRandGen->rand();
+    const vec2 rndVec = diskRandGen.rand();
     cray.time = std::fmod(dot(rndVec, rndVec), 1.f);
 
     return cray;
@@ -96,7 +91,7 @@ Ray Camera::castSecondaryRay(const Ray &pray) const {
     vec4 focalPoint = pray.pos + focusLength*pray.dir;
     focalPoint.w = 1.f;
 
-    const glm::vec2 samp = focalRadius * diskRandGen->rand();
+    const glm::vec2 samp = focalRadius * diskRandGen.rand();
     const glm::vec4 wld_offset = vec4(dof_u*samp.x + dof_v*samp.y);
 
     Ray dray;
@@ -129,7 +124,7 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         const uint breakpoint = std::max(AAsamples / 4, 8U);
         float r_samplesDone = sample_scale;
         for (uint i = 1; i < AAsamples; ++i) {
-            const vec2 offset = 0.5f*diskRandGen->rand(i) + vec2(0.5f);
+            const vec2 offset = 0.5f*diskRandGen.rand(i) + vec2(0.5f);
             cray = castPrimaryRay(x, y, offset);
 
             const bool useSecRay = focalRadius > Camera::EPSILION;
@@ -511,8 +506,8 @@ float Camera::occlusionDiffuseFactor(IntParams args, vec3 &diffuseFac, float tim
 
     float currSamplesDone = static_cast<float>(occlusionSamples); 
     for (uint i = 0; i < occlusionSamples; ++i) {
-        const float u1 = unifRandGen->rand();
-        const float u2 = unifRandGen->rand();
+        const float u1 = unifRandGen.rand();
+        const float u2 = unifRandGen.rand();
         vec3 rDir = cosineSampleHemisphere(u1, u2);
         // Transform the sampled vector from tangent to world space
         rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);        
@@ -594,8 +589,8 @@ public:
     inline glm::vec3 operator()() const
     {
         // Faster to generate less random variables
-        const float r1 = unifRandGen->rand();
-        const float r2 = unifRandGen->rand();
+        const float r1 = unifRandGen.rand();
+        const float r2 = unifRandGen.rand();
 
         const float cos_theta = 1.f + (cos_theta_max - 1.f) * r1;
         const float sin_theta_2 = 1.f - cos_theta * cos_theta;

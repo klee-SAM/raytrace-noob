@@ -5,10 +5,10 @@
 #include "../stn.hpp"
 #include "umath.hpp"
 
-// Could be adjusted to balance memory use and randomness
-constexpr size_t RAND_GEN_SIZE = 50'000U; 
+// Could be adjusted to balance memory use and "randomness"
+constexpr size_t RAND_GEN_SIZE = 4'096U; 
 
-// Pseudo-random generation using lookup tables. 
+// Pseudo-random generation using lookup tables. Must be static or heap-allocated.
 namespace prand 
 {
     template <typename T>
@@ -17,15 +17,14 @@ namespace prand
     protected:
         // Because of multithreading, this is very random order
         std::atomic<size_t> i;
-        std::vector<T> dataPoints;
+        T dataPoints[RAND_GEN_SIZE];
         virtual T generateRand() = 0;
 
     public:
         genRand() : i(0U) {}
-        genRand(size_t size) : genRand() { dataPoints.reserve(size); }
-        inline T rand() { i++; return dataPoints.at(i*(i+2673457) % dataPoints.size()); }
+        inline T rand() { i++; return dataPoints[i*(i+2673457) % RAND_GEN_SIZE]; }
         // Slightly faster than not providing an index
-        inline T rand(size_t j) { return dataPoints.at(j % dataPoints.size()); }
+        inline T rand(size_t j) { return dataPoints[j % RAND_GEN_SIZE]; }
     };
 
     class uniformRand : public genRand<float> 
@@ -36,9 +35,9 @@ namespace prand
             return static_cast<float>(std::rand()) * r_RAND_MAX;
         }
     public:
-        uniformRand(size_t N) {
-            for (size_t i = 0; i < N; ++i) {
-                dataPoints.push_back(generateRand());
+        uniformRand() {
+            for (size_t i = 0; i < RAND_GEN_SIZE; ++i) {
+                dataPoints[i] = generateRand();
             }
         }
     };
@@ -50,9 +49,9 @@ namespace prand
             return glm::diskRand(1.f);
         }
     public:
-        diskRand(size_t N) {
-            for (size_t i = 0; i < N; ++i) {
-                dataPoints.push_back(generateRand());
+        diskRand() {
+            for (size_t i = 0; i < RAND_GEN_SIZE; ++i) {
+                dataPoints[i] = generateRand();
             }
         }
     };
