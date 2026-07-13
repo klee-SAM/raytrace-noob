@@ -58,7 +58,7 @@ private:
         std::shared_ptr<Shape>& parentShape);
     int parseTexture(const jsmntok_t* obj_tok, std::shared_ptr<Texture>& text);
 
-    enum class SHAPE_TYPE {none, cylinder, sphere, box, plane, mesh, csg};
+    enum class SHAPE_TYPE {none, cylinder, sphere, box, plane, mesh, csg, torus};
 
     class ShapeProperties {
     public:

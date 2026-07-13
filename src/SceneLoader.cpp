@@ -484,6 +484,8 @@ std::shared_ptr<Shape> SceneLoader::createShape(SHAPE_TYPE type)
         return make_shared<Cylinder>();
     case SHAPE_TYPE::csg:
         return make_shared<CSG>();
+    case SHAPE_TYPE::torus:
+        return make_shared<Torus>();
     default:
         std::cerr << "createShape: unrecognized shape type\n";
         return nullptr;
@@ -777,7 +779,9 @@ SceneLoader::SHAPE_TYPE SceneLoader::shapeTypeFromToken(const jsmntok_t* tok)
     } else if (type == "cylinder") {
         return SHAPE_TYPE::cylinder;
     } else if (type == "csg") {
-        return SHAPE_TYPE::csg;    
+        return SHAPE_TYPE::csg;  
+    } else if (type == "torus") {
+        return SHAPE_TYPE::torus;
     } else {
         std::cerr << "shapeTypeFromToken: unrecognized shape type:"
                   << type << '\n';

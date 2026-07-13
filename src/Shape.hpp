@@ -146,6 +146,19 @@ protected:
 	glm::vec4 computeNormal(const glm::vec3& x) const override;
 };
 
+class Torus final : public Shape {
+	public:
+	Torus() {}
+	virtual ~Torus() = default;
+	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+	void initialize() override;
+protected:
+	glm::vec2 computeUV(const glm::vec3&) const override;
+	glm::vec4 computeNormal(const glm::vec3& x) const override;
+private:
+	glm::vec2 tor = glm::vec2(.75f, .25f); // major radius, minor radius
+};
+
 class Mesh final : public Shape {
 public:
 	Mesh() {};
