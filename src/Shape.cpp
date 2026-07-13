@@ -30,28 +30,6 @@ void Shape::setNextModelTransforms(const glm::vec3& trns,
 	moving = true;
 }
 
-/*
-Hit Shape::toWorldSpaceHit(const vec3& x, const vec3& vx, float t) const 
-{
-	vec3 wld_x = vec3(modelMat*vec4(x, 1.0f));
-	// Use the inverse transpose to ensure that the normals
-	// face the correct direction for nonuniform scales.
-	vec3 wld_n = normalize(vec3(transpose(inv_modelMat)*computeNormal(x)));
-	float wld_t = t/length(vx);
-
-	Hit h; 
-	h.x = wld_x; 
-	h.n = wld_n; 
-	h.t = wld_t;
-	h.m = material;
-	vec2 uv = computeUV(x);
-	h.u = uv.x;
-	h.v = uv.y;
-
-	return h;
-}
-*/
-
 Hit Shape::toWorldSpaceHit(const vec3 &x, const vec3 &vx, 
 						   const mat4 &model,
 						   const mat4 &inv_model,
@@ -99,9 +77,7 @@ mat4 Shape::modelMatLerp(const float time) const {
 
 // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
 vec2 Sphere::computeUV(const vec3& p) const {
-    float u = 0.5f + std::atan2(p.z, p.x)*R_PI*0.5f;
-    float v = 0.5f + std::asin(p.y)*R_PI;
-    return vec2(u, v);
+    return sphereMap(p);
 }
 
 vec4 Sphere::computeNormal(const glm::vec3& x) const { 
@@ -248,8 +224,8 @@ vec4 Cylinder::computeNormal(const vec3& x0) const {
 }
 
 vec2 Cylinder::computeUV(const vec3& p) const {
-	float u = 0.5f + std::atan2(p.z, p.x)*R_PI*0.5f;
-	float v = p.y;
+	const float u = 0.5f + f_atan2(p.z, p.x)*R_PI*0.5f;
+	const float &v = p.y;
 	return vec2(u, v);
 } 
 

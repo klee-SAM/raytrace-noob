@@ -54,10 +54,9 @@ public:
 	
 protected:
 	// Initialized after calling setModelMatrix(),
-    // used as precomputed matrices
+    // used as precomputed matrix. Avoid caching other matrices, 
+	// as that leads to slower times (cache misses?)
 	glm::mat4 modelMat;
-	// glm::mat4 inv_modelMat;
-	// glm::mat4 invT_modelMat;
 
 	// For moving objects; contains the transforms for an
 	// object at the end of the time interval, which

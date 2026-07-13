@@ -276,9 +276,7 @@ vec3 Camera::getSkyColor(const Ray& ray) const
     case (Camera::SkyType::Haze):
         return .5f*ray.getDir() + vec3(.5f);
     case (Camera::SkyType::SphereMap):
-        uv.s = std::atan2(ray.dir.z, ray.dir.x)*0.5f;
-        uv.t = std::asin(ray.dir.y);
-        uv = uv*R_PI + vec2(.5f);
+        uv = sphereMap(ray.getDir());
         return skyTexture->value(uv);
     case (Camera::SkyType::Ambient): 
         return this->globalAmbient;

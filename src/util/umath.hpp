@@ -88,3 +88,32 @@ inline glm::vec3 cosineSampleHemisphere(float u1, float u2)
     // Modification: assume u1 can never go above 1.0f
     return glm::vec3(x, y, sqrt(1.0f - u1));
 }
+
+// https://stackoverflow.com/questions/42537957/fast-accurate-atan-arctan-approximation-algorithm
+static constexpr float atan_jw(float x) {
+  return 8 * x / (3 + std::sqrt(25 + 80.0f / 3.0f * x * x));
+}
+
+// https://mazzo.li/posts/vectorized-atan2.html (auto 4)
+constexpr float f_atan2(float y, float x) {
+    using namespace CONSTANTS;
+    const bool swap = std::fabs(x) < std::fabs(y);
+    const float atan_inp = (swap ? x : y) / (swap ? y : x);
+    float res = atan_jw(atan_inp);
+    res = swap ? sgn(atan_inp)*.5f*PI - res : res;
+    if (x < 0.f) res += sgn(y)*PI; // adjust res based on input quadrant
+    return res;
+}
+
+// Uses an identity of atan
+constexpr float f_asin(float x) {
+    return atan_jw(x / std::sqrt(1.f - x*x));
+}
+
+// https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
+constexpr glm::vec2 sphereMap(const glm::vec3 &p) {
+    using namespace CONSTANTS;
+    const float u = 0.5f + f_atan2(p.z, p.x)*R_PI*0.5f;
+    const float v = 0.5f + f_asin(p.y)*R_PI;
+    return vec2(u, v);
+}
