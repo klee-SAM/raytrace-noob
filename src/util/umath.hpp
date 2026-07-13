@@ -5,8 +5,6 @@
 
 #include <limits>
 
-typedef glm::vec2 vec2;
-
 // Utility math functions and classes
 
 namespace CONSTANTS {
@@ -15,7 +13,7 @@ namespace CONSTANTS {
     static const float R_SQRT3 = 1.f / std::sqrt(3.f);
 
     constexpr float INF = std::numeric_limits<float>::infinity();
-    constexpr float EPSILION = glm::epsilon<float>();
+    constexpr float EPSILION = std::numeric_limits<float>::epsilon();
 }
 
 class ModelMatConstr {

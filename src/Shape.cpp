@@ -112,8 +112,8 @@ void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
 	mat4 modelMat = this->getModelMatrix(ray.time);
 	mat4 inv_modelMat = inverse(modelMat);
 
-	vec3 pk = vec3(inv_modelMat*ray.pos);
-	vec3 vx = vec3(inv_modelMat*ray.dir);
+	vec3 pk = inv_modelMat*ray.pos;
+	vec3 vx = inv_modelMat*ray.dir;
 	vec3 vk = normalize(vx);
 	float a, b, c;
 	float d, den;
@@ -158,10 +158,10 @@ void Plane::initialize() {
 
 // The rotation of the plane is used as the normal
 void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
-	vec3 n = vec3(modelMat[1]);
 	// Compute the distance from the ray origin using:
-	float num = dot(n, vec3(modelMat[3])-ray.getPos());
-	float den = dot(n, ray.getDir());
+	vec4 &n = modelMat[1];
+	float num = dot(n, modelMat[3]-ray.pos);
+	float den = dot(n, ray.dir);
 	float t = num / den; 
 
 	// and the position of intersection by

@@ -41,6 +41,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] get rid of stn.hpp, use proper #include practices
     - use forward declarations
     - include headers only where they are actually used
+- [ ] support for blurred rotations
 - [ ] scene format documentation (json)
 - [x] description format for textures/patterns 
 - [x] Spatial textures
