@@ -621,7 +621,8 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
     for (const Hit& srec : srecs) {
         const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
         const bool isEmiss = srec.m && aboveZero(srec.emissive());
-        const float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
+        float trnsMult = (isTrns || !isEmiss)*srec.m->transparency;
+        if (isEmiss) trnsMult = 1.f;
         const float cosI = dot(sray.getDir(), srec.n);
 
         constexpr float alpha = 0.5f; // concentration parameter for "dulled" shadows

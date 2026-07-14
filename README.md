@@ -88,6 +88,7 @@ Other platforms may have slightly different build instructions.
 1. Create a new `build` folder inside the project folder (which contains CMakeLists.txt)
 2. Do `cmake ..` inside the build folder to create the Makefile for debug mode.
     - Do `cmake -DCMAKE_BUILD_TYPE=Release` for release mode instead.
+    - Do `cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo` if using a tool like Callgrind.
 3. Call `make` to build.
 
 ## Other libraries used
