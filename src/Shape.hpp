@@ -58,6 +58,8 @@ protected:
 	// as that leads to slower times (cache misses?)
 	glm::mat4 modelMat;
 
+	std::shared_ptr<Material> material;
+	
 	// For moving objects; contains the transforms for an
 	// object at the end of the time interval, which
 	// is used by lerp() to easily compose a new matrix
@@ -68,8 +70,6 @@ protected:
 	// determines if new matrices need to be constructed
 	// for this object
 	bool moving = false;
-
-	std::shared_ptr<Material> material;
 
 	virtual glm::vec2 computeUV(const glm::vec3& point) const { 
 		return glm::vec2(0.0f); 

@@ -35,17 +35,17 @@ Hit Shape::toWorldSpaceHit(const vec3 &x, const vec3 &vx,
 						   const mat4 &inv_model,
 						   float t) const 
 {
-	vec3 wld_x = vec3(model*vec4(x, 1.0f));
+	const vec3 wld_x = vec3(model*vec4(x, 1.0f));
 	// Use the inverse transpose to ensure that the normals
 	// face the correct direction for nonuniform scales.
-	vec3 wld_n = normalize(vec3(transpose(inv_model)*computeNormal(x)));
-	float wld_t = t/length(vx);
+	const vec3 wld_n = normalize(vec3(transpose(inv_model)*computeNormal(x)));
+	const float wld_t = t/length(vx);
 
 	Hit h; 
 	h.x = wld_x; 
 	h.n = wld_n; 
 	h.t = wld_t;
-	h.m = material.get(); // 2x speedup by passing raw ptrs instead of shared
+	h.m = material.get();
 	h.uv = computeUV(x);
 
 	return h;

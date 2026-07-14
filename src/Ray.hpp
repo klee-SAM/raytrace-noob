@@ -10,7 +10,7 @@ class Ray {
 public:
     vec4 pos;
     vec4 dir;
-    vec4 clr; // Stores the color from a previous computation
+    // vec4 clr; // Stores the color from a previous computation
     float time;
 
     // Ensures ray invariants
@@ -39,9 +39,9 @@ class Hit {
 public:
     vec3 x;      // hit location
     vec3 n;      // hit normal
-    float t;     // dist from origin to hit
     vec2 uv;     // texture uv coord
     pMaterial m; // material of hit surface
+    float t;     // dist from origin to hit
 
     // Define getters for lighting components here instead of 
     // in the material class to avoid needing extra parameters
@@ -56,4 +56,9 @@ public:
         constexpr auto cmp = [](const Hit& a, const Hit& b) { return a.t < b.t; };
         std::sort(hits.begin(), hits.end(), cmp); 
     }
+};
+
+class HitArray {
+public:
+
 };

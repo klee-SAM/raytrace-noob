@@ -7,7 +7,7 @@
 class Image {
 public:
     // For constructing output images
-    Image(uint w, uint h) : width(w), height(h), comp(3), data(w*h*comp, 0) {}
+    Image(uint w, uint h) : data(w*h*comp, 0), width(w), height(h), comp(3) {}
     // For constructing texture images. 
     Image(const std::string& file) : filename(file) { loadFile(); }
     ~Image() { data.clear(); }
@@ -39,8 +39,8 @@ public:
     
 private:
     std::string filename;
-    uint width, height, comp;
     std::vector<u_char> data;
+    uint width, height, comp;
 
     size_t get_index(uint x, uint y) const;
 };
