@@ -45,7 +45,7 @@ Hit Shape::toWorldSpaceHit(const vec3 &x, const vec3 &vx,
 	h.x = wld_x; 
 	h.n = wld_n; 
 	h.t = wld_t;
-	h.m = material;
+	h.m = material.get(); // 2x speedup by passing raw ptrs instead of shared
 	h.uv = computeUV(x);
 
 	return h;
@@ -152,7 +152,7 @@ void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
 	// normal of the hit surface, which is just the plane for this task.
     Hit hit; 
     hit.x = x; hit.n = n; hit.t = t; 
-    hit.m = material;
+    hit.m = material.get();
     hit.uv.s = u; hit.uv.t = v;
 	hits.push_back(hit);
 }
@@ -717,7 +717,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 		Hit h; 
 		h.x = wld_x; h.n = wld_n; h.t = t; 
 		h.uv.s = tex_u; h.uv.t = tex_v;
-		h.m = this->material;
+		h.m = this->material.get();
 		hits.push_back(h);
 	}
 }	

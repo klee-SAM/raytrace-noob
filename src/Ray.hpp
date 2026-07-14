@@ -4,7 +4,7 @@
 
 #include <vector>
 
-typedef std::shared_ptr<Material> pMaterial; 
+typedef Material* pMaterial; 
 
 class Ray {
 public:

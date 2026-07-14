@@ -21,7 +21,7 @@ using CONSTANTS::INF, CONSTANTS::EPSILION,
 typedef const vector<shared_ptr<Shape>>& ShapesVector;
 
 // Arbitrary size, but computing these numbers
-// beforehand saves actual seconds
+// beforehand saves actual seconds. better than heap, but not by much
 static prand::uniformRand unifRandGen;
 static prand::diskRand diskRandGen;
 
@@ -124,7 +124,7 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         const uint breakpoint = std::max(AAsamples / 4, 8U);
         float r_samplesDone = sample_scale;
         for (uint i = 1; i < AAsamples; ++i) {
-            const vec2 offset = 0.5f*diskRandGen.rand(i) + vec2(0.5f);
+            const vec2 offset = 0.5f*diskRandGen.rand(i) + 0.5f;
             cray = castPrimaryRay(x, y, offset);
 
             const bool useSecRay = focalRadius > Camera::EPSILION;
@@ -269,7 +269,7 @@ vec3 Camera::getSkyColor(const Ray& ray) const
     vec2 uv;
     switch(this->sky) {
     case (Camera::SkyType::Haze):
-        return .5f*ray.getDir() + vec3(.5f);
+        return .5f*ray.getDir() + .5f;
     case (Camera::SkyType::SphereMap):
         uv = sphereMap(ray.getDir());
         return skyTexture->value(uv);
@@ -390,7 +390,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 
     vec3 reflectClr = vec3(0.0f);
     vec3 refractClr = vec3(0.0f);
-    vec3 absorbClr = vec3(1.0f); // Reduce nothing by default
+    vec3 absorbClr = vec3(1.0f); // Reduce nothing by default; this is max value
 
     // If the material is not refractive, keep any reflections
     float reflectance = reflectanceFromIncidentRay(ray, rec);
@@ -413,10 +413,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     // avoids massively expensive and unnecessary computation (3x increase)
     // TIR reflections are done in elseif (Fresnel)
     if ((reflective || (transparent && inReflThres)) && !back_face) { 
-        // if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         reflectClr = getReflectionColor(ray, intInfo, recursiveDepth+1);
     } else if (transparent && !inRefrThres) {
-        // if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         // However, do (non-glossy) reflection if TIR inside the object
         Ray reflRay = reflectRay(ray, rec);
         reflectClr = getRayColor(scene, reflRay, interval, recursiveDepth+1);
@@ -424,12 +422,11 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 
     // Objects must be transparent in order to refract light.
     if (transparent && inRefrThres) {
-        // if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
         // flip the normal for refraction, if inside
         // this must be done since *every* following calculation needs to
         // compute the color as if the normal of the surface faced towards
         // the incident ray; otherwise, strange glints are caused by an
-        // invisible surface. If it not nested in this if statement,
+        // invisible surface. If back_face check not nested in this if statement,
         // bright specks may appear on meshes w/ backface culling enabled.
         if (back_face) { 
             rec.n = -rec.n;
@@ -438,17 +435,14 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
         refractClr = getRefractedColor(ray, intInfo, recursiveDepth+1, back_face);
     }
 
-    // The eye vector does not point to the camera when reflecting/refracting
-    // const vec3 ev = -ray.dir;
-    vec3 diffuseFac = vec3(1.f);
-
     // Another term, ia, could be multiplied with the ambient and determined based on the 
     // distribution and number of lights throughout the scene automatically.
     // Not that important though.
     vec3 localClr = rec.ambient() + globalAmbient;
+    vec3 diffuseFac = vec3(1.f); // for color-blending
     const bool occlusionEnabled = occlusionSamples > 0 && occludingRadius > MINIMUM_COEFF;
     if (occlusionEnabled && recursiveDepth < 2) {
-        // the maximum is arbitrary, but it should be small 
+        // the maximum is arbitrarily user-defined, but it should be small 
         // so that faraway objects are not considered
         const auto occlArea = Interval(interval.min, occludingRadius);
         const IntParams occlArgs{scene, occlArea, rec};
@@ -482,7 +476,7 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     return clr;
 }
 
-// Uses monte carlo integration
+// Uses monte carlo integration, and is far from physically based
 float Camera::occlusionDiffuseFactor(IntParams args, vec3 &diffuseFac, float time) const
 {
     auto &rec = args.rec;
@@ -617,33 +611,33 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
         const bool behindShape = hit(scene->getShapes(), sray, t_int, srec);
         const bool isEmiss = srec.m && aboveZero(srec.emissive());
         return vec3(static_cast<float>(!behindShape || isEmiss));
-    } else {
-        // 1.0f is fully lit by default, which is when point has unobstructed path to light
-        vec3 s_transparency(1.f); // if behind, return value from 0.0f to 1.0f
-        float t_prev = 0.f;       // running difference of curr and last
+    }
 
-        hit(scene->getShapes(), sray, t_int, srecs);
-        for (const Hit& srec : srecs) {
-            const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
-            const bool isEmiss = srec.m && aboveZero(srec.emissive());
-            const float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
-            const float cosI = dot(sray.getDir(), srec.n);
+    // 1.0f is fully lit by default, which is when point has unobstructed path to light
+    vec3 s_transparency(1.f); // if behind, return value from 0.0f to 1.0f
+    float t_prev = 0.f;       // running difference of curr and last
 
-            constexpr float alpha = 0.5f; // concentration parameter for "dulled" shadows
-            const float bf = static_cast<float>(cosI > 0.0f);
-            const float t_diff = srec.t - t_prev; // doesn't account for objects inside objects
-            const vec3 absorb_cont = glm::exp(alpha * bf * -srec.absorb() * t_diff);
+    hit(scene->getShapes(), sray, t_int, srecs);
+    for (const Hit& srec : srecs) {
+        const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
+        const bool isEmiss = srec.m && aboveZero(srec.emissive());
+        const float trnsMult = (isTrns || !isEmiss)*srec.m->transparency + isEmiss;
+        const float cosI = dot(sray.getDir(), srec.n);
 
-            const vec3 diff_cont = srec.diffuse()*std::max(0.0f, cosI);
-            // weird behavior with spheres perhaps (the transparency being
-            // very low but not zero, and the diffuse being strong)
-            // could fix by trnsMult * sum, but darker shadows and weaker color
-            s_transparency *= vec3(trnsMult*absorb_cont) + (1.f - trnsMult)*isTrns*diff_cont;
-            t_prev = srec.t;
-        }
-        srecs.clear();
-        return s_transparency;
-    }        
+        constexpr float alpha = 0.5f; // concentration parameter for "dulled" shadows
+        const bool bf = cosI > 0.0f;
+        const float t_diff = srec.t - t_prev; // doesn't account for objects inside objects
+        const vec3 absorb_cont = glm::exp(alpha * bf * -srec.absorb() * t_diff);
+
+        const vec3 diff_cont = srec.diffuse()*std::max(0.0f, cosI);
+        // weird behavior with spheres perhaps (the transparency being
+        // very low but not zero, and the diffuse being strong)
+        // could fix by trnsMult * sum, but darker shadows and weaker color
+        s_transparency *= vec3(trnsMult*absorb_cont) + (1.f - trnsMult)*isTrns*diff_cont;
+        t_prev = srec.t;
+    }
+    srecs.clear();
+    return s_transparency;      
 };
 
 // Randomly samples points on area lights depending on their radius.

@@ -3,8 +3,8 @@
 
 class Light {
 public:
-    const int MAX_SAMPLES = 256;
-    const int DEFAULT_SAMPLES = 32;
+    static constexpr int MAX_SAMPLES = 256;
+    static constexpr int DEFAULT_SAMPLES = 32;
 
     glm::vec3 pos;
     float intensity;

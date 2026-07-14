@@ -3,18 +3,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 # Name of the project
 PROJECT(P)
 
-# Override with `cmake -DSOL=ON ..`
-OPTION(SOL "Solution" OFF)
-
-IF(${SOL})
-	FILE(GLOB_RECURSE SOURCES "src0/*.cpp")
-	FILE(GLOB_RECURSE HEADERS "src0/*.hpp")
-	FILE(GLOB_RECURSE HEADERS "src0/*.h")
-ELSE()
-	FILE(GLOB_RECURSE SOURCES "src/*.cpp")
-	FILE(GLOB_RECURSE HEADERS "src/*.hpp")
-	FILE(GLOB_RECURSE HEADERS "src/*.h")
-ENDIF()
+FILE(GLOB_RECURSE SOURCES "src/*.cpp")
+FILE(GLOB_RECURSE HEADERS "src/*.hpp")
+FILE(GLOB_RECURSE HEADERS "src/*.h")
 
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -48,6 +39,9 @@ IF(WIN32)
 	# -pedantic is not supported.
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4996")
 	SET_PROPERTY(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME})
+ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	# -ffast-math can be used, but it may introduce more than just precision issues
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -march=native")
 ELSE()
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
 ENDIF()
