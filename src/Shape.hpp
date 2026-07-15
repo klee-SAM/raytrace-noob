@@ -64,7 +64,7 @@ protected:
 	// object at the end of the time interval, which
 	// is used by lerp() to easily compose a new matrix
 	glm::vec3 m_translation;
-	// glm::vec3 m_rotation;
+	glm::vec3 m_rotation; // could be quaterion instead?
 	glm::vec3 m_scale;
 
 	// determines if new matrices need to be constructed

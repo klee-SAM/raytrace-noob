@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <glm/gtc/quaternion.hpp>
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "external/tiny_obj_loader.h"
 
@@ -55,23 +57,30 @@ constexpr vec3 lerp(float t, vec3 a, vec3 b) { return a + t*(b-a); }
 // Use to "move" the object before doing any intersection tests.
 // TODO: have bounding box of object encompass whole range of motion
 mat4 Shape::modelMatLerp(const float time) const {
+	using glm::quat;
+
 	const vec3 translations = vec3(this->modelMat[3]);
 	const vec3 scales = vec3(length(this->modelMat[0]),
 					   		 length(this->modelMat[1]),
 					   		 length(this->modelMat[2]));
-	// vec3 rotations = vec3(this->modelMat[0] / scales.x,
-	// 					  this->modelMat[1] / scales.y,
-	// 					  this->modelMat[2] / scales.z);
-	mat4 model = this->modelMat;
+	quat rotations = quat(mat3(this->modelMat[0] / scales.x,
+						       this->modelMat[1] / scales.y,
+						       this->modelMat[2] / scales.z));
+	mat4 model = mat4(1.f);
 	const vec3 li_scales = vec4(lerp(time, scales, m_scale), 1.f);
 	// Cancel out the old scales and replace with lerped scaling
 	// const vec3 sv = vec3(li_scales.x/scales.x, li_scales.y/scales.y, li_scales.z/scales.z);
-	const vec3 sv = li_scales / scales;
-	model = glm::scale(model, sv);
+	model = glm::scale(model, li_scales / scales);
 	// Translation.
 	model[3] = vec4(lerp(time, translations, m_translation), 1.f);
 
 	// Support for interpolating the rotation tba (requires quaternions)
+	vec3 fEuler = m_rotation;
+	// from yaw, pitch, roll to pitch, yaw, roll
+	std::swap(fEuler.y, fEuler.z);
+	quat sr = quat(fEuler);
+	model *= glm::mat4_cast(glm::mix(rotations, sr, time));
+
 	return model;
 }
 

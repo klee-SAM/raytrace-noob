@@ -43,6 +43,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] get rid of stn.hpp, use proper #include practices
     - use forward declarations
     - include headers only where they are actually used
+- [ ] replace and test has_no_change(...) with variance counter
 - [ ] support for blurred rotations
 - [ ] split the camera class into a camera "struct" and Raytracer.hpp
 - [ ] light samples should be global, not per light
