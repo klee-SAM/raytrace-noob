@@ -7,7 +7,7 @@
 class Image {
 public:
     // For constructing output images
-    Image(uint w, uint h) : data(w*h*comp, 0), width(w), height(h), comp(3) {}
+    Image(uint w, uint h) noexcept : width(w), height(h), comp(3), data(w*h*comp, 0) {}
     // For constructing texture images. 
     Image(const std::string& file) : filename(file) { loadFile(); }
     ~Image() { data.clear(); }
@@ -38,9 +38,11 @@ public:
     void write();
     
 private:
+    // So it turns out that this specific ordering of these member variables are 
+    // needed so that the cost of constructing 
     std::string filename;
-    std::vector<u_char> data;
     uint width, height, comp;
+    std::vector<u_char> data;
 
     size_t get_index(uint x, uint y) const;
 };
