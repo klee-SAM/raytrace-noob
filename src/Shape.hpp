@@ -12,7 +12,7 @@ public:
 	Geometry() {}
 	virtual ~Geometry() = default;
 	virtual void initialize() {}
-	virtual void intersect(const Ray&, std::vector<Hit>& hits) = 0;
+	virtual void intersect(const Ray&, HitArray& hits) = 0;
 };
 
 // compute bounding box by transforming 8 vertices by obj modelmat,
@@ -50,7 +50,7 @@ public:
 	glm::mat4 getModelMatrix(float tm) const;
 	void setMaterial(const std::shared_ptr<Material>& mat) { material = mat; }
 
-	void intersect(const Ray& ray, std::vector<Hit>& hits) {}
+	void intersect(const Ray& ray, HitArray& hits) {}
 	
 protected:
 	// Initialized after calling setModelMatrix(),
@@ -100,7 +100,7 @@ class Sphere final : public Shape {
 public:
 	Sphere() {}
 	virtual ~Sphere() = default;
-	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+	void intersect(const Ray& ray, HitArray& hits) override;
 protected:
 	glm::vec2 computeUV(const glm::vec3&) const override;
 	glm::vec4 computeNormal(const glm::vec3& x) const override;
@@ -119,7 +119,7 @@ class Plane final : public Shape {
 public:
 	Plane() {}
 	virtual ~Plane() = default;
-	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+	void intersect(const Ray& ray, HitArray& hits) override;
 	void initialize() override;
 private:
     glm::vec3 uvec, vvec;
@@ -129,7 +129,7 @@ class Box final : public Shape {
 public:
 	Box() {}
 	virtual ~Box() = default;
-	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+	void intersect(const Ray& ray, HitArray& hits) override;
 protected:
 	glm::vec2 computeUV(const glm::vec3&) const override;
 	glm::vec4 computeNormal(const glm::vec3& x) const override;
@@ -139,7 +139,7 @@ class Cylinder final : public Shape {
 public:
 	Cylinder() {}
 	virtual ~Cylinder() = default;
-	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+	void intersect(const Ray& ray, HitArray& hits) override;
 protected:
 	glm::vec2 computeUV(const glm::vec3&) const override;
 	glm::vec4 computeNormal(const glm::vec3& x) const override;
@@ -149,7 +149,7 @@ class Torus final : public Shape {
 	public:
 	Torus() {}
 	virtual ~Torus() = default;
-	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+	void intersect(const Ray& ray, HitArray& hits) override;
 	void initialize() override;
 protected:
 	glm::vec2 computeUV(const glm::vec3&) const override;
@@ -170,7 +170,7 @@ public:
 				  const std::string &directoryPath, 
 				  bool = false);
 	void fitToUnitBox();
-	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+	void intersect(const Ray& ray, HitArray& hits) override;
 private:
 	// Set to true when intersect() is called for the first time on the mesh.
 	void initialize() override;
@@ -205,10 +205,10 @@ public:
 	CSG(OperationType o, std::shared_ptr<Shape> l, std::shared_ptr<Shape> r) 
 	: left{l}, right{r} { operationType = o; }
 	virtual ~CSG() = default;
-	void intersect(const Ray& ray, std::vector<Hit>& hits) override;
+	void intersect(const Ray& ray, HitArray& hits) override;
 private:
 	void filter_intersections(
 		const std::vector<Interval>& l_intervals,
 		const std::vector<Interval>& r_intervals,
-		std::vector<Hit>& hits);
+		HitArray& hits);
 };

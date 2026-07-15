@@ -32,7 +32,7 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
 
 // Returns a sorted list of intersections in the interval.
 bool hit(ShapesVector shapes, const Ray& ray, 
-         const Interval& interval, vector<Hit>& allHits);
+         const Interval& interval, HitArray& allHits);
 
 // True if currClr*(i+1) equals culmClr within sampBreak threshold; should be called
 // after currClr is added to culmClr.
@@ -223,12 +223,11 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
     float minDist = interval.max;
     bool intersected_any = false;
 
-    vector<Hit> temp_hits; // maintain a list of hits for csg
-    temp_hits.reserve(16); // magic number
+    // temp_hits.reserve(16); // magic number
 
     for (const shared_ptr<Shape>& shape : shapes) {
+        HitArray temp_hits; // maintain a list of hits for csg
         shape->intersect(ray, temp_hits);
-        
         for (Hit& hit : temp_hits) {
             if (!interval.contains(hit.t)) continue;
             intersected_any = true;
@@ -238,7 +237,7 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
                 closestHit = hit;
             }
         }
-        temp_hits.clear();
+        // temp_hits.clear();
     }
     return intersected_any;
 }
@@ -246,21 +245,22 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
 // Like the above, except this is used
 // for cases where all sorted hits for a ray are needed
 bool hit(ShapesVector shapes, const Ray& ray, 
-         const Interval& interval, vector<Hit>& allHits) 
+         const Interval& interval, HitArray& allHits) 
 {
     bool intersected_any = false;
-    vector<Hit> temp_hits;
-    temp_hits.reserve(16);
+    // temp_hits.reserve(16);
     for (const shared_ptr<Shape>& shape : shapes) {
+        HitArray temp_hits;
         shape->intersect(ray, temp_hits);
         for (Hit& hit : temp_hits) {
             if (!interval.contains(hit.t)) continue;
             intersected_any = true;
             allHits.push_back(hit);
         }
-        temp_hits.clear();
+        // temp_hits.clear();
     }
-    Hit::sortHits(allHits);
+    // Hit::sortHits(allHits);
+    allHits.sort();
     return intersected_any;
 }
 
@@ -603,7 +603,7 @@ public:
 };
 
 constexpr auto aboveZero = [](const vec3 &clr) { return clr.r > 0 || clr.g > 0 || clr.b > 0; };
-vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
+vec3 Camera::getShadowContrib(HitArray &srecs, const Ray &sray,
                               const std::unique_ptr<Scene> &scene, 
                               const Interval &t_int) {  
     if (FULL_SHADOWS) {
@@ -637,7 +637,7 @@ vec3 Camera::getShadowContrib(vector<Hit> &srecs, const Ray &sray,
         s_transparency *= vec3(trnsMult*absorb_cont) + (1.f - trnsMult)*isTrns*diff_cont;
         t_prev = srec.t;
     }
-    srecs.clear();
+    // srecs.clear();
     return s_transparency;      
 };
 
@@ -665,8 +665,8 @@ vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
     sray.time = ray.time;
 
     // Hit srec;
-    vector<Hit> srecs;
-    srecs.reserve(16);
+    HitArray srecs;
+    // srecs.reserve(16);
 
     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { 
         // The cost of a function call is so great that I get a ~33% increase in 

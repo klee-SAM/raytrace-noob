@@ -84,7 +84,7 @@ vec4 Sphere::computeNormal(const glm::vec3& x) const {
 	return vec4(x, 0.0f); 
 };
 
-void Sphere::intersect(const Ray& ray, vector<Hit>& hits) {
+void Sphere::intersect(const Ray& ray, HitArray& hits) {
 	mat4 modelMat = this->getModelMatrix(ray.time);
 	mat4 inv_modelMat = inverse(modelMat);
 
@@ -133,7 +133,7 @@ void Plane::initialize() {
 }
 
 // The rotation of the plane is used as the normal
-void Plane::intersect(const Ray& ray, vector<Hit>& hits) {
+void Plane::intersect(const Ray& ray, HitArray& hits) {
 	// Compute the distance from the ray origin using:
 	vec4 &n = modelMat[1];
 	float num = dot(n, modelMat[3]-ray.pos);
@@ -185,7 +185,7 @@ vec2 Box::computeUV(const glm::vec3& p) const {
 };
 
 // Axis-aligned bounding box intersection
-void Box::intersect(const Ray& ray, vector<Hit>& hits) {
+void Box::intersect(const Ray& ray, HitArray& hits) {
 	mat4 modelMat = this->getModelMatrix(ray.time);
 	mat4 inv_modelMat = inverse(modelMat);
 	// Transform the ray back to model space first;
@@ -229,7 +229,7 @@ vec2 Cylinder::computeUV(const vec3& p) const {
 	return vec2(u, v);
 } 
 
-void Cylinder::intersect(const Ray& ray, vector<Hit>& hits) 
+void Cylinder::intersect(const Ray& ray, HitArray& hits) 
 {
 	mat4 modelMat = this->getModelMatrix(ray.time);
 	mat4 inv_modelMat = inverse(modelMat);
@@ -279,7 +279,7 @@ vec2 Torus::computeUV(const vec3& pos) const {
 					 glm::atan(pos.z,glm::length(vec2(pos))-tor.y));
 }
 
-void Torus::intersect(const Ray& ray, vector<Hit>& hits) {
+void Torus::intersect(const Ray& ray, HitArray& hits) {
 	mat4 modelMat = this->getModelMatrix(ray.time);
 	mat4 inv_modelMat = inverse(modelMat);
 
@@ -624,7 +624,7 @@ bool Mesh::intersect_triangle(const vec3& orig, const vec3& dir,
 // #define SHOW_BOUNDING_SPHERE
 
 // Some floating-point error possible, or the normals are not normal
-void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
+void Mesh::intersect(const Ray& ray, HitArray& hits) {
 	// TODO: rework bounding shape function so that it's
 	// compatible with motion blur, allowing me to let this be
 	// affected by motion blur properties
@@ -724,7 +724,7 @@ void Mesh::intersect(const Ray& ray, vector<Hit>& hits) {
 
 
 
-void pushIntervals(vector<Interval>& intervals, const vector<Hit>& hits) {
+void pushIntervals(vector<Interval>& intervals, const HitArray& hits) {
 	if (hits.empty()) {
 		intervals.push_back(Interval::empty());
 		return;
@@ -745,7 +745,7 @@ void pushIntervals(vector<Interval>& intervals, const vector<Hit>& hits) {
 	}
 }
 
-void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
+void CSG::intersect(const Ray& ray, HitArray& hits) {
 	mat4 modelMat = getModelMatrix(ray.time);
 	mat4 inv_modelMat = inverse(modelMat);
 
@@ -754,12 +754,15 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 	mray.dir = inv_modelMat * ray.dir;
 	mray.time = ray.time;
 
-	vector<Hit> rightHits;
+	HitArray rightHits;
 	this->left->intersect(mray, hits);
 	this->right->intersect(mray, rightHits);
 
 	vector<Interval> l_intervals;
 	vector<Interval> r_intervals; 
+
+	l_intervals.reserve(hits.max_size());
+	r_intervals.reserve(rightHits.max_size());
 	
 	pushIntervals(l_intervals, hits);
 	pushIntervals(r_intervals, rightHits);
@@ -771,7 +774,8 @@ void CSG::intersect(const Ray& ray, std::vector<Hit>& hits) {
 		// so just leave this alone
 		hits.push_back(std::move(it));
 	}
-	Hit::sortHits(hits);
+	// Hit::sortHits(hits);
+	hits.sort();
 
 	filter_intersections(l_intervals, r_intervals, hits);
 
@@ -816,12 +820,12 @@ bool insideIntervalAfter(
 void CSG::filter_intersections(
 	const vector<Interval>& l_intervals,
 	const vector<Interval>& r_intervals, 
-	std::vector<Hit>& hits)
+	HitArray& hits)
 {	
 	bool inl = false, inr = false; 
 	// unoptimal way to make difference show right shape's faces; hacky
 	float s = this->operationType == OperationType::Difference ? 1.0f : -1.0f;
-	vector<Hit> new_hits;
+	HitArray new_hits;
 	for (auto& hit : hits) {
 		inl = insideIntervalAfter(l_intervals, hit.t, s);
 		inr = insideIntervalAfter(r_intervals, hit.t, s);
@@ -831,5 +835,5 @@ void CSG::filter_intersections(
 			new_hits.push_back(hit);
 		}
 	}
-	hits = std::move(new_hits);
+	hits = new_hits;
 }
