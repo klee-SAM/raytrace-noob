@@ -14,9 +14,10 @@ public:
     static constexpr float EPSILION = 5E-3f; // having a low epsilion value does not bode well with meshes
     static constexpr float MAX_DIST = std::numeric_limits<float>::max();
     static constexpr uint MAX_RECURSIONS = 7;
-
     static constexpr float MINIMUM_COEFF = 0.005f;
-    static constexpr bool FULL_SHADOWS = false;
+
+    bool FULL_SHADOWS = false;
+    bool SHOW_NORMALS = false;
 
     Camera() : translation(0.f), rotation(0.f),
                position(0.f), lookAtPos(0.f), camUpVec{0.f, 1.f, 0.f},
@@ -138,11 +139,11 @@ private:
 
     float occlusionDiffuseFactor(IntParams, glm::vec3 &diffuseAtten, float time) const;
 
-    static glm::vec3 getShadowContrib(const Ray &sray,
+    glm::vec3 getShadowContrib(const Ray &sray,
                                       const std::unique_ptr<Scene> &scene, 
-                                      const Interval &t_int);
-    static glm::vec3 lightingFactor(const Ray &ray, IntParams, 
+                                      const Interval &t_int) const;
+    glm::vec3 lightingFactor(const Ray &ray, IntParams, 
                                     const std::shared_ptr<Light> &light, 
                                     const glm::vec3 &diffuseAtt = glm::vec3(1.f),
-                                    bool sampleArea = true);
+                                    bool sampleArea = true) const;
 };

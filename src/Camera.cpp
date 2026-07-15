@@ -374,13 +374,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
     // infinite recursion of raytracing (which leads to segfaults)
     if (recursiveDepth >= Camera::MAX_RECURSIONS) return clr;
 
-    #ifdef SHOW_NORMALS
-    clr = rec.n;
-    clr.r = .5f*clr.r+.5f;
-    clr.g = .5f*clr.g+.5f;
-    clr.b = .5f*clr.b+.5f;
-    return clr;
-    #endif
+    // (possible) command-line option
+    if (SHOW_NORMALS) return .5f*rec.n + .5f;
 
     vec3 reflectClr = vec3(0.0f);
     vec3 refractClr = vec3(0.0f);
@@ -452,9 +447,9 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 
     for (auto& light : scene->getLights()) {
         // Construct shadow rays for each light and do Phong shading using world coordinates
-        // Boolean parameter to naively cull the number of neglible rays casted for shadows 
-        const vec3 clrFromLight = lightingFactor(ray, intInfo, light, 
-            diffuseFac, recursiveDepth < 2);
+        // Boolean parameter to naively cull the number of neglible rays casted for shadows
+        const bool recurse = recursiveDepth < 2 && !back_face; 
+        const vec3 clrFromLight = lightingFactor(ray, intInfo, light, diffuseFac, recurse);
 
         localClr += clrFromLight;
     }
@@ -596,14 +591,15 @@ public:
     // constexpr float getrPDF() const { return r_pdf; }
 };
 
-constexpr auto aboveZero = [](const vec3 &clr) { return glm::any(glm::greaterThan(clr, vec3(0.f))); };
+constexpr auto aboveZero = [](const vec3 &clr) { return clr.x > 0.f || clr.y > 0.f || clr.z > 0.f; };
 vec3 Camera::getShadowContrib(const Ray &sray,
                               const std::unique_ptr<Scene> &scene, 
-                              const Interval &t_int) {  
+                              const Interval &t_int) const 
+{  
     if (FULL_SHADOWS) {
         Hit srec;
         const bool behindShape = hit(scene->getShapes(), sray, t_int, srec);
-        const bool isEmiss = srec.m && aboveZero(srec.emissive());
+        const bool isEmiss = aboveZero(srec.emissive());
         return vec3(static_cast<float>(!behindShape || isEmiss));
     }
 
@@ -615,7 +611,7 @@ vec3 Camera::getShadowContrib(const Ray &sray,
     hit(scene->getShapes(), sray, t_int, srecs);
     for (const Hit& srec : srecs) {
         const bool isTrns = srec.m && srec.m->transparency > Camera::MINIMUM_COEFF;
-        const bool isEmiss = srec.m && aboveZero(srec.emissive());
+        const bool isEmiss = aboveZero(srec.emissive());
         float trnsMult = (isTrns || !isEmiss)*srec.m->transparency;
         if (isEmiss) trnsMult = 1.f;
         const float cosI = dot(sray.getDir(), srec.n);
@@ -640,7 +636,7 @@ vec3 Camera::getShadowContrib(const Ray &sray,
 vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
                             const std::shared_ptr<Light> &light,
                             const glm::vec3 &diffuseAtt,
-                            bool sampleArea)
+                            bool sampleArea) const
 {
     auto &rec = args.rec;
     auto &scene = args.scene;
