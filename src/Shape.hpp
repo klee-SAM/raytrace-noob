@@ -146,7 +146,7 @@ protected:
 };
 
 class Torus final : public Shape {
-	public:
+public:
 	Torus() {}
 	virtual ~Torus() = default;
 	void intersect(const Ray& ray, HitArray& hits) override;

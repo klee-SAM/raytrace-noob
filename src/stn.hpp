@@ -8,6 +8,11 @@
 #include <memory>
 #include <utility>
 
+#if defined(__AVX2__)
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_FORCE_SIMD_AVX2
+#endif
+
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
