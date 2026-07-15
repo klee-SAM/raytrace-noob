@@ -59,6 +59,14 @@ public:
 };
 
 class HitArray {
+private:
+    // HIT_ARR_SIZE
+    static constexpr size_t N = 128;
 public:
+    Hit arr[N];
+    size_t index = 0;
 
+    constexpr Hit& at(size_t i) { return arr[i % N]; }
+    constexpr Hit& operator[](size_t i) {return arr[i]; }
+    
 };
