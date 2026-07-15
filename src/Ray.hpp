@@ -73,8 +73,7 @@ public:
     constexpr size_t max_size() const noexcept { return N; }
     constexpr size_t size() const noexcept { return indEnd; }
     constexpr bool empty() const noexcept {return indEnd == 0; }
-    
-    constexpr void clear() { indEnd = 0; }
+    constexpr void clear() noexcept { indEnd = 0; }
 
     // Does nothing if the array is already full.
     constexpr void push_back(const Hit& a) { 

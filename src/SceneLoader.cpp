@@ -1,7 +1,8 @@
 #include "SceneLoader.hpp"
 
 #include "util/umath.hpp"
-#include "util/optional.hpp"
+// #include "util/optional.hpp"
+#include <optional>
 
 #include <cstring>
 #include <iostream>
@@ -619,12 +620,12 @@ pair<bool, int> SceneLoader::tryLoadMaterialComps(
 */
 
 struct TextureProperties {
-    optional<string> filename;
-    optional<vec3> color;
-    optional<float> alpha;
+    std::optional<string> filename;
+    std::optional<vec3> color;
+    std::optional<float> alpha;
 
-    optional<shared_ptr<Texture>> even;
-    optional<shared_ptr<Texture>> odd;
+    std::optional<shared_ptr<Texture>> even;
+    std::optional<shared_ptr<Texture>> odd;
 
     constexpr bool isImageTexture() { return filename.has_value(); };
     constexpr bool isCheckerTexture() { return even.has_value() || odd.has_value(); };

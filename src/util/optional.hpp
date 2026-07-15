@@ -6,6 +6,9 @@
 // std::optional to C++14. Defaults constructs
 // class T anyways, but sets is_init to false
 // only when default constructed
+
+// this is very useless
+
 template <class T>
 class optional {
 public:
