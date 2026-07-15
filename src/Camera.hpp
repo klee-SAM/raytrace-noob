@@ -138,7 +138,7 @@ private:
 
     float occlusionDiffuseFactor(IntParams, glm::vec3 &diffuseAtten, float time) const;
 
-    static glm::vec3 getShadowContrib(HitArray &srecs, const Ray &sray,
+    static glm::vec3 getShadowContrib(const Ray &sray,
                                       const std::unique_ptr<Scene> &scene, 
                                       const Interval &t_int);
     static glm::vec3 lightingFactor(const Ray &ray, IntParams, 

@@ -223,8 +223,6 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
     float minDist = interval.max;
     bool intersected_any = false;
 
-    // temp_hits.reserve(16); // magic number
-
     for (const shared_ptr<Shape>& shape : shapes) {
         HitArray temp_hits; // maintain a list of hits for csg
         shape->intersect(ray, temp_hits);
@@ -237,7 +235,6 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
                 closestHit = hit;
             }
         }
-        // temp_hits.clear();
     }
     return intersected_any;
 }
@@ -248,7 +245,6 @@ bool hit(ShapesVector shapes, const Ray& ray,
          const Interval& interval, HitArray& allHits) 
 {
     bool intersected_any = false;
-    // temp_hits.reserve(16);
     for (const shared_ptr<Shape>& shape : shapes) {
         HitArray temp_hits;
         shape->intersect(ray, temp_hits);
@@ -257,9 +253,7 @@ bool hit(ShapesVector shapes, const Ray& ray,
             intersected_any = true;
             allHits.push_back(hit);
         }
-        // temp_hits.clear();
     }
-    // Hit::sortHits(allHits);
     allHits.sort();
     return intersected_any;
 }
@@ -602,8 +596,8 @@ public:
     // constexpr float getrPDF() const { return r_pdf; }
 };
 
-constexpr auto aboveZero = [](const vec3 &clr) { return clr.r > 0 || clr.g > 0 || clr.b > 0; };
-vec3 Camera::getShadowContrib(HitArray &srecs, const Ray &sray,
+constexpr auto aboveZero = [](const vec3 &clr) { return glm::any(glm::greaterThan(clr, vec3(0.f))); };
+vec3 Camera::getShadowContrib(const Ray &sray,
                               const std::unique_ptr<Scene> &scene, 
                               const Interval &t_int) {  
     if (FULL_SHADOWS) {
@@ -613,6 +607,7 @@ vec3 Camera::getShadowContrib(HitArray &srecs, const Ray &sray,
         return vec3(static_cast<float>(!behindShape || isEmiss));
     }
 
+    HitArray srecs;
     // 1.0f is fully lit by default, which is when point has unobstructed path to light
     vec3 s_transparency(1.f); // if behind, return value from 0.0f to 1.0f
     float t_prev = 0.f;       // running difference of curr and last
@@ -664,9 +659,7 @@ vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
     sray.setDir(lv);
     sray.time = ray.time;
 
-    // Hit srec;
-    HitArray srecs;
-    // srecs.reserve(16);
+
 
     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { 
         // The cost of a function call is so great that I get a ~33% increase in 
@@ -679,7 +672,7 @@ vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
         const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
         const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
 
-        const vec3 shade = getShadowContrib(srecs, sray, scene, Interval(interval.min, tl));
+        const vec3 shade = getShadowContrib(sray, scene, Interval(interval.min, tl));
 
         return shade * light->intensity * (diff_cont*diffuseAtt + spec_cont);
     }
@@ -701,8 +694,7 @@ vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
         const vec3 new_lv = new_ld / tmax;
         sray.setDir(new_lv);
         
-        const vec3 contrib = getShadowContrib(srecs, sray, 
-            scene, Interval(interval.min, tmax));
+        const vec3 contrib = getShadowContrib(sray, scene, Interval(interval.min, tmax));
         bool lowVari = s_counter.add(contrib, CounterCmps::vec3_cmp);
 
         // duplicate, also present in non-area light case above

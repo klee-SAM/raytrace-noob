@@ -53,17 +53,17 @@ public:
     inline vec3 emissive() const { return m != nullptr ? m->emissive->value(uv, x) : glm::vec3(0.f); }
     inline vec3 absorb() const { return m != nullptr ? m->absorb->value(uv, x) : glm::vec3(0.f); }
 
-    static inline void sortHits(std::vector<Hit>& hits) { 
-        static const auto cmp = [](const Hit& a, const Hit& b) { return a.t < b.t; };
-        std::sort(hits.begin(), hits.end(), cmp); 
-    }
+    // static inline void sortHits(std::vector<Hit>& hits) { 
+    //     static const auto cmp = [](const Hit& a, const Hit& b) { return a.t < b.t; };
+    //     std::sort(hits.begin(), hits.end(), cmp); 
+    // }
 };
 
 class HitArray {
 private:
-    static constexpr size_t N = 16UL; // hardcoded capacity
-    std::array<Hit, N> arr;          // "raw" data
-    size_t indEnd = 0UL;               // size; index to last non-default hit
+    static constexpr size_t N = 32UL; // hardcoded capacity
+    std::array<Hit, N> arr;           // "raw" data
+    size_t indEnd = 0UL;              // size; index to last non-default hit
 public:
     constexpr const Hit& at(size_t i) const noexcept { return arr[i % N]; }
     constexpr const Hit& operator[](size_t i) const { return arr[i]; }

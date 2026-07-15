@@ -13,8 +13,6 @@
 #include <chrono>
 #include <iostream>
 
-// #include <array>
-
 using std::string;
 using std::unique_ptr, std::shared_ptr;
 using std::make_shared, std::make_unique;
@@ -27,40 +25,6 @@ const string RESOURCE_DIR = "../data/";
 int main(int argc, char** argv) {
     string filename, outputname;
     uint width = 256U, height = 256U;
-
-    // {
-    // using namespace std::chrono;
-    // auto start = steady_clock::now();
-
-    // float sumT = 0.f;
-
-    // for (int i = 0; i < 100'000; ++i) {
-    //     // HitArray hs;
-    //     // vector<Hit> hs;
-    //     std::array<Hit, 32> hs;
-    //     // hs.reserve(32);
-
-    //     float sum = 0.f;
-    //     for(size_t i = 0; i < 32; ++i) {
-    //         Hit h;
-    //         h.t = std::rand() * (1.f / RAND_MAX);
-    //         hs.at(i) = h;
-    //         // hs.push_back(h);
-    //     }
-    //     // hs.sort();
-    //     // Hit::sortHits(hs);
-    //     constexpr auto cmp = [](const Hit& a, const Hit& b) { return a.t < b.t; };
-    //     std::sort(hs.begin(), hs.end(), cmp); 
-
-    //     std::for_each(hs.begin(), hs.end(), [&sum](Hit& h){ sum += h.t; });
-    //     sumT += sum;
-    // }
-
-    // auto interval = duration_cast<nanoseconds>(steady_clock::now() - start);
-    // std::clog << "Seconds used : " << sumT << " : " << interval.count() / 1e9 << '\n'; 
-
-    // return 0;
-    // }
 
     if (argc < 3) {
         std::clog << "Usage: ./prog sceneFile outputFile\n";
