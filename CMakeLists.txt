@@ -41,6 +41,7 @@ IF(WIN32)
 	SET_PROPERTY(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME})
 ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	# -ffast-math can be used, but it may introduce more than just precision issues
+	# -march=native can be used for potentially more speed, but it can make the binary less portable
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -march=native")
 ELSE()
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")

@@ -35,13 +35,17 @@ Adding more features on a simple raytracer as a learning exercise
 #### special
 - [ ] SDF and sphere tracing
     - create a fractal
+    - SphereTracer.hpp
 - [ ] Monte Carlo path tracing
+    - Pathtracer.hpp
 
 #### misc.
 - [ ] get rid of stn.hpp, use proper #include practices
     - use forward declarations
     - include headers only where they are actually used
 - [ ] support for blurred rotations
+- [ ] split the camera class into a camera "struct" and Raytracer.hpp
+- [ ] light samples should be global, not per light
 - [ ] scene format documentation (json)
 - [x] description format for textures/patterns 
 - [x] Spatial textures
