@@ -38,11 +38,11 @@ public:
 
 class Hit {
 public:
-    vec3 x;      // hit location
-    vec3 n;      // hit normal
-    vec2 uv;     // texture uv coord
-    pMaterial m; // material of hit surface
-    float t;     // dist from origin to hit
+    vec3 x;                 // hit location
+    vec3 n;                 // hit normal
+    vec2 uv;                // texture uv coord
+    pMaterial m = nullptr;  // material of hit surface
+    float t;                // dist from origin to hit
 
     // Define getters for lighting components here instead of 
     // in the material class to avoid needing extra parameters
@@ -59,6 +59,7 @@ public:
     // }
 };
 
+// i have been induced with micro-optimization madness
 class HitArray {
 private:
     static constexpr size_t N = 32UL; // hardcoded capacity
@@ -82,7 +83,7 @@ public:
     }
 
     inline void sort() {
-        constexpr auto cmp = [](const Hit& a, const Hit& b) { return a.t < b.t; };
+        static constexpr auto cmp = [](const Hit& a, const Hit& b) { return a.t < b.t; };
         std::sort(begin(), end(), cmp); 
     }
 };
