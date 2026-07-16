@@ -75,6 +75,7 @@ private:
 
         // mesh
         std::string mesh_filename;
+        std::shared_ptr<MeshBuffer> mesh_buf;
 
         // csg
         OperationType operationType;
@@ -91,6 +92,8 @@ private:
     };
 
     std::shared_ptr<Shape> createShape(SHAPE_TYPE type);
+    void loadMeshBuffer(const std::string& mesh_filename, 
+                        std::unique_ptr<Scene>& scene);
 
     bool jsonstreq(const jsmntok_t* tok, const std::string& str);
 

@@ -401,6 +401,10 @@ int SceneLoader::parseShape(
         } 
         else if (jsonstreq(key, "file")) {
             prop.mesh_filename = stringFromToken(value);
+            loadMeshBuffer(prop.mesh_filename, scene);
+            auto loadedMeshBuf = scene->getMeshBuf(prop.mesh_filename);
+            if (loadedMeshBuf != nullptr) prop.mesh_buf = loadedMeshBuf;
+
         } else if (jsonstreq(key, "left")) {
             // Parsing nested shapes requires accounting for 
             // nested tokens within nested tokens
@@ -493,6 +497,29 @@ std::shared_ptr<Shape> SceneLoader::createShape(SHAPE_TYPE type)
     }
 }
 
+void SceneLoader::loadMeshBuffer(const std::string& mesh_filename, 
+                                 std::unique_ptr<Scene>& scene)
+{
+    std::shared_ptr<MeshBuffer> mesh;
+    // in modelDir, subfolder of srcDir?
+    if (ifstream(modelDir+mesh_filename).good()) 
+    {
+        mesh = make_shared<MeshBuffer>(mesh_filename, modelDir);
+    }
+    // in srcDir?
+    else if (ifstream(srcDir+mesh_filename).good()) 
+    {
+        mesh = make_shared<MeshBuffer>(mesh_filename, srcDir);
+    } 
+    else 
+    {
+        std::cerr << "loadMeshBuffer: " << mesh_filename << " not found in "
+                  << sceneDir << " or " << modelDir << '\n';
+        mesh = make_shared<MeshBuffer>();
+    }
+    scene->writeMeshBuf(mesh_filename, mesh);
+}
+
 void SceneLoader::ShapeProperties::applyProperties(shared_ptr<Shape>& shape)
 {
     ModelMatConstr modelMat;
@@ -515,15 +542,12 @@ void SceneLoader::ShapeProperties::applyProperties(shared_ptr<Shape>& shape)
     // safer
     switch(this->type) {
     case SHAPE_TYPE::mesh:
-        // in modelDir, subfolder of srcDir?
-        if (ifstream(loader.modelDir+mesh_filename).good()) 
-            shape = make_shared<Mesh>(mesh_filename, loader.modelDir);
-        // in srcDir?
-        else if (ifstream(loader.srcDir+mesh_filename).good()) 
-            shape = make_shared<Mesh>(mesh_filename, loader.srcDir);
-
-        else std::cerr << "applyProperties: " << mesh_filename << " not found in "
-                       << loader.sceneDir << " or " << loader.modelDir << '\n';
+        if (!mesh_buf) { 
+            std::cerr << "applyProperties: Failed to assign " << mesh_filename
+                      << " to mesh instance\n";
+        } else {
+            shape = make_shared<Mesh>(mesh_buf);
+        }
         break;
     case SHAPE_TYPE::csg:
         if (left == nullptr || right == nullptr) {

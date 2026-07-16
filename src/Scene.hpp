@@ -3,6 +3,7 @@
 #include "Shape.hpp"
 #include "Material.hpp"
 #include "Light.hpp"
+#include "MeshBuffer.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -38,10 +39,23 @@ public:
         auto placed = materials.try_emplace(name, std::make_shared<Material>());
         return placed.first->second; // return the material from the key-value pair
     }
+
+    // add a new mesh if its name doesnt exist in map 
+    void writeMeshBuf(const std::string& name, std::shared_ptr<MeshBuffer> mesh) {
+        meshes.emplace(name, mesh); 
+    }
+
+    // may return an empty ptr if mesh not found
+    std::shared_ptr<MeshBuffer> getMeshBuf(const std::string& name) {
+        auto b = meshes.find(name);
+        if (b != meshes.end()) return b->second;
+        else return std::shared_ptr<MeshBuffer>(nullptr);
+    }
     
 private:
     std::vector<std::shared_ptr<Shape>> shapes;
     std::vector<std::shared_ptr<Light>> lights;
+    std::unordered_map<std::string, std::shared_ptr<MeshBuffer>> meshes;
     std::unordered_map<std::string, std::shared_ptr<Material>> materials;
 };
 

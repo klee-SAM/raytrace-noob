@@ -4,9 +4,6 @@
 
 #include <glm/gtc/quaternion.hpp>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "external/tiny_obj_loader.h"
-
 // #define BACKFACE_CULLING
 #include "Shape.hpp"
 
@@ -269,6 +266,8 @@ void Cylinder::intersect(const Ray& ray, HitArray& hits)
 	hits.push_back(h1);
 }
 
+
+
 void Torus::initialize() {
 	// Refit the major and minor radii so that the torus
 	// fits inside a unit sphere
@@ -391,195 +390,11 @@ void Torus::intersect(const Ray& ray, HitArray& hits) {
 }
 
 
-
-// custom functions for "speed," this is ~50% faster 
-
-constexpr vec3 CROSS(const float *v1, const float *v2) {
-	return vec3(v1[1]*v2[2]-v1[2]*v2[1],
-				v1[2]*v2[0]-v1[0]*v2[2],
-				v1[0]*v2[1]-v1[1]*v2[0]);
-}
-
-constexpr float DOT(const float *v1, const float *v2) {
-	return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
-}
-
-constexpr vec3 SUB(const float *v1, const float *v2) {
-	return vec3(v1[0]-v2[0], 
-				v1[1]-v2[1], 
-				v1[2]-v2[2]);
-}
-
-void Mesh::loadMesh(const string& meshName, const string& directoryPath, bool printVerticesCount) 
-{
-    // Load geometry
-	tinyobj::attrib_t attrib;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> obj_mats;
-	std::string errMsg;
-
-	std::string meshPath = directoryPath;
-
-	if (directoryPath.back() != '/') 
-		meshPath += '/' + meshName; 
-	else meshPath += meshName; 
-
-	// boolean parameter enables triangulation of faces with 4+ vertices
-	bool success = tinyobj::LoadObj(&attrib, &shapes, &obj_mats, &errMsg, 
-		meshPath.c_str(), directoryPath.c_str(), true);
-
-	if (!errMsg.empty()) std::cerr << errMsg << '\n';
-	if (!success) return; 
-
-	for (auto& shape : shapes) {
-		size_t index_offset = 0;
-		// Loop over faces. 
-		for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); ++f) {
-			u_char fv = shape.mesh.num_face_vertices.at(f);
-			// Loop over vertices in face.
-			// Because of triangulation, fv is always 3.
-			for (u_char v = 0; v < fv; ++v) {
-				tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
-
-				posBuf.push_back(attrib.vertices[3*idx.vertex_index+0]);
-				posBuf.push_back(attrib.vertices[3*idx.vertex_index+1]);
-				posBuf.push_back(attrib.vertices[3*idx.vertex_index+2]);
-
-				if (!attrib.normals.empty()) {
-					norBuf.push_back(attrib.normals[3*idx.normal_index+0]);
-					norBuf.push_back(attrib.normals[3*idx.normal_index+1]);
-					norBuf.push_back(attrib.normals[3*idx.normal_index+2]);
-				}
-
-				if (!attrib.texcoords.empty()) {
-					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+0]);
-					texBuf.push_back(attrib.texcoords[2*idx.texcoord_index+1]);
-				}
-			}
-
-			// Only guaranteed to work if triangulate is enabled.
-			// Do flat shading by default
-			if (attrib.normals.empty() && fv == 3) {
-				assert(posBuf.size() >= 9);
-				size_t lastIndex = posBuf.size()-1;
-				float *vt0 = &posBuf.at(lastIndex - 9); 
-				float *vt1 = &posBuf.at(lastIndex - 6); 
-				float *vt2 = &posBuf.at(lastIndex - 3);
-				vec3 edge1 = SUB(vt1, vt0);
-				vec3 edge2 = SUB(vt2, vt0);
-				vec3 norm = glm::cross(edge1, edge2);
-				// Fairly wasteful, but oh well
-				norBuf.push_back(norm.x);
-				norBuf.push_back(norm.y);
-				norBuf.push_back(norm.z);
-			}
-
-			index_offset += fv;
-			// shape.mesh.material_ids[f];
-		}
-	}
-
-	setBoundingRadius();
-
-	if (posBuf.size() % 9 != 0) {
-		// Otherwise, a segfault may occur from invalid
-		// memory access (2:57 AM brain thinking).
-		cerr << "posBuf.size() == " << posBuf.size() 
-			 << "; not a multiple of 9\n";
-		return;
-	} 
-	if (texBuf.size() % 6 != 0) {
-		cerr << "texBuf.size() == " << texBuf.size()
-			 << "; not a multiple of 6\n";
-		return;
-	}
-
-    if (printVerticesCount)
-	    clog << "Number of vertices: " << posBuf.size()/3 << '\n';
-}
-
-void Mesh::setBoundingRadius() 
-{
-	struct {
-		Interval x;
-		Interval y;
-		Interval z;
-	} bounds;
-
-	if (posBuf.size() < 3) {
-		this->boundingRadius = 0.0f;
-		cerr << "Expected posBuf.size() > 3, got " << posBuf.size() << '\n';
-		return;
-	}
-
-	// initialize
-	bounds.x.min = INF; bounds.x.max = -INF;
-	bounds.y.min = INF; bounds.y.max = -INF;
-	bounds.z.min = INF; bounds.z.max = -INF;
-
-	// Find the minimum and maximum of each component.
-	for (size_t i = 0; i < posBuf.size(); i += 3) {
-		float &x = posBuf.at(i+0);
-		float &y = posBuf.at(i+1);
-		float &z = posBuf.at(i+2);
-
-		bounds.x.min = std::min(x, (float)bounds.x.min);
-		bounds.y.min = std::min(y, (float)bounds.y.min);	
-		bounds.z.min = std::min(z, (float)bounds.z.min);
-		// what was I even thinking?
-		bounds.x.max = std::max(x, (float)bounds.x.max);
-		bounds.y.max = std::max(y, (float)bounds.y.max);	
-		bounds.z.max = std::max(z, (float)bounds.z.max);
-	}
-
-	float minPos = std::min(std::min(bounds.x.min, bounds.y.min), bounds.z.min);
-	float maxPos = std::max(std::max(bounds.x.max, bounds.y.max), bounds.z.max);
-
-	// center the sphere wrt mesh's vertices
-	float cx = (bounds.x.max + bounds.x.min)/2;
-	float cy = (bounds.y.max + bounds.y.min)/2;
-	float cz = (bounds.z.max + bounds.z.min)/2;
-	this->meshCenter = vec3(cx, cy, cz);
-
-	this->boundingRadius = (maxPos - minPos)/2;
-}
-
-void Mesh::fitToUnitBox()
-{
-	// Scale the vertex positions so that they fit within [-1, +1] in all three dimensions.
-	glm::vec3 vmin(posBuf[0], posBuf[1], posBuf[2]);
-	glm::vec3 vmax(posBuf[0], posBuf[1], posBuf[2]);
-	for(size_t i = 0; i < posBuf.size(); i += 3) {
-		glm::vec3 v(posBuf[i], posBuf[i+1], posBuf[i+2]);
-		// I can't believe this is my (kSAM's) code
-		vmin.x = std::min(vmin.x, v.x);
-		vmin.y = std::min(vmin.y, v.y);
-		vmin.z = std::min(vmin.z, v.z);
-		vmax.x = std::max(vmax.x, v.x);
-		vmax.y = std::max(vmax.y, v.y);
-		vmax.z = std::max(vmax.z, v.z);
-	}
-	glm::vec3 center = 0.5f*(vmin + vmax);
-	glm::vec3 diff = vmax - vmin;
-	float diffmax = diff.x;
-	diffmax = std::max(diffmax, diff.y);
-	diffmax = std::max(diffmax, diff.z);
-	float scale = 1.0f / diffmax;
-	for(int i = 0; i < (int)posBuf.size(); i += 3) {
-		posBuf[i+0] = (posBuf[i+0] - center.x) * scale;
-		posBuf[i+1] = (posBuf[i+1] - center.y) * scale;
-		posBuf[i+2] = (posBuf[i+2] - center.z) * scale;
-	}
-
-	// Readjust the bounding radius to account for changes in posBuf
-	setBoundingRadius();
-}
-
-// construct new matrix just for the uniform sphere test
-void Mesh::initialize() 
-{
-	sphereMat = glm::scale(modelMat, vec3(this->boundingRadius));
-	inv_sphereMat = inverse(sphereMat);
+void Mesh::initialize() {
+	// The MeshBuffer's bounding matrix is defined to go from unit space
+	// to model space, so create a matrix that goes from
+	// world -> model -> bounding
+	this->inv_boundMat = meshDat->getInvBoundMat()*inverse(modelMat);
 }
 
 // This assumes that the position buffer size is a 
@@ -590,12 +405,15 @@ bool Mesh::intersect_triangle(const vec3& orig, const vec3& dir,
 							  const size_t &i, /* posBufOffset */ 
 							  float &t, float &u, float &v) 
 {
+	using namespace fastVecOp; // sin
+
 	vec3 edge1, edge2, pvec, qvec, tvec;
 	float det, inv_det;
 
-	float *vt0 = &posBuf.at(0+i); 
-	float *vt1 = &posBuf.at(3+i); 
-	float *vt2 = &posBuf.at(6+i);
+	const auto& posBuf = meshDat->getPosBuf();
+	const float *vt0 = &posBuf.at(0+i); 
+	const float *vt1 = &posBuf.at(3+i); 
+	const float *vt2 = &posBuf.at(6+i);
 
 	edge1 = SUB(vt1, vt0);
 	edge2 = SUB(vt2, vt0);
@@ -632,6 +450,11 @@ bool Mesh::intersect_triangle(const vec3& orig, const vec3& dir,
 // Comment this out to show the actual model
 // #define SHOW_BOUNDING_SPHERE
 
+#ifdef SHOW_BOUNDING_SPHERE
+static std::shared_ptr<Material> debugBV = std::make_shared<Material>(
+	glm::vec3(.5f), glm::vec3(1.f, 0.f, 1.f), glm::vec3(0.f), 0.f);
+#endif
+
 // Some floating-point error possible, or the normals are not normal
 void Mesh::intersect(const Ray& ray, HitArray& hits) {
 	// TODO: rework bounding shape function so that it's
@@ -645,8 +468,8 @@ void Mesh::intersect(const Ray& ray, HitArray& hits) {
 	// bounding sphere test
 	vec3 pk, vx, vk;
 	// here, use inv_sphereMat to accurately represent the bounding sphere
-	pk = vec3(inv_sphereMat*(vec4(ray.getPos() - meshCenter, 1.0f)));
-	vx = vec3(inv_sphereMat*(ray.dir));
+	pk = vec3(inv_boundMat * ray.pos);
+	vx = vec3(inv_boundMat * ray.dir);
 	vk = normalize(vx);
 	
 	float a, b, c;
@@ -664,6 +487,8 @@ void Mesh::intersect(const Ray& ray, HitArray& hits) {
 	float t0 = (-b - glm::sqrt(d))*den; 
 	float t1 = (-b + glm::sqrt(d))*den;
 
+	const mat4 sphereMat = inverse(inv_boundMat);
+
 	vec3 x0 = pk + t0*vk;
 	vec3 wld_x0 = vec3(sphereMat*vec4(x0, 1.0f));
 	// sphereMat used instead of inv_T, since size is uniform
@@ -673,7 +498,8 @@ void Mesh::intersect(const Ray& ray, HitArray& hits) {
 	h0.x = wld_x0;
 	h0.n = wld_n0;
 	h0.t = wld_t0;
-	h0.m = material;
+	h0.uv = vec2(0.f);
+	h0.m = debugBV.get();
 	hits.push_back(h0);
 
 	vec3 x1 = pk + t1*vk;
@@ -681,10 +507,11 @@ void Mesh::intersect(const Ray& ray, HitArray& hits) {
 	vec3 wld_n1 = normalize(vec3(sphereMat*vec4(x1, 0.0f)));
 	float wld_t1 = t1/length(vx);
 	Hit h1;
-	h0.x = wld_x1;
-	h0.n = wld_n1;
-	h0.t = wld_t1;
-	h0.m = material;
+	h1.x = wld_x1;
+	h1.n = wld_n1;
+	h1.t = wld_t1;
+	h1.uv = vec2(0.f);
+	h1.m = debugBV.get();
 	hits.push_back(h1);
 	return;
 	#endif
@@ -695,7 +522,7 @@ void Mesh::intersect(const Ray& ray, HitArray& hits) {
 	float t, u, v;
 
 	mat4 invT_modelMat = transpose(inv_modelMat);
-	for (size_t i = 0, j = 0; i < posBuf.size(); i += 9, j += 6) {
+	for (size_t i = 0, j = 0; i < meshDat->getPosSize(); i += 9, j += 6) {
 		if (!intersect_triangle(l_rorig, r_vk, i, t, u, v)) continue;
 		float w = 1.0f - v - u;
 		// Because of branch prediction, I have chosen not to check for t here;
@@ -707,7 +534,8 @@ void Mesh::intersect(const Ray& ray, HitArray& hits) {
 
 		// loadmesh ensures a vertex only has 1 normal associated with it,
 		// if there are any attribute normals
-		if (i < norBuf.size()) {
+		if (i < meshDat->getNorSize()) {
+			const auto& norBuf = meshDat->getNorBuf();
 			float nx = w*norBuf.at(0+i) + u*norBuf.at(3+i) + v*norBuf.at(6+i);
 			float ny = w*norBuf.at(1+i) + u*norBuf.at(4+i) + v*norBuf.at(7+i);
 			float nz = w*norBuf.at(2+i) + u*norBuf.at(5+i) + v*norBuf.at(8+i);
@@ -718,7 +546,8 @@ void Mesh::intersect(const Ray& ray, HitArray& hits) {
 		}
 
 		// Only two texture components per vertex, if there are any
-		if (j < texBuf.size()) {
+		if (j < meshDat->getTexSize()) {
+			const auto& texBuf = meshDat->getTexBuf();
 			tex_u = w*texBuf.at(0+j) + u*texBuf.at(2+j) + v*texBuf.at(4+j);
 			tex_v = w*texBuf.at(1+j) + u*texBuf.at(3+j) + v*texBuf.at(5+j);
 		}

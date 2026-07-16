@@ -39,10 +39,13 @@ public:
                  {};
                  
     Material(glm::vec3 amb, glm::vec3 dif, glm::vec3 spe, float exp)
-    : ambient{std::make_shared<ColorTexture>(amb)}, 
-      diffuse{std::make_shared<ColorTexture>(dif)}, 
-      specular{std::make_shared<ColorTexture>(spe)}, 
-      exponent(exp) {}
+    : Material() 
+    {
+      ambient = std::make_shared<ColorTexture>(amb);
+      diffuse = std::make_shared<ColorTexture>(dif);
+      specular = std::make_shared<ColorTexture>(spe);
+      exponent = exp;
+    }
 
     virtual ~Material() = default;
 

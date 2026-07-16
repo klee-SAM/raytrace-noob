@@ -2,6 +2,7 @@
 #include "stn.hpp"
 #include "Material.hpp"
 #include "Ray.hpp"
+#include "MeshBuffer.hpp"
 
 #include "util/umath.hpp"
 
@@ -160,32 +161,15 @@ private:
 
 class Mesh final : public Shape {
 public:
-	Mesh() {};
-	Mesh(const std::string& objName, const std::string& directory) {
-		loadMesh(objName, directory);
-	}
+	Mesh() noexcept {};
+	Mesh(const std::shared_ptr<MeshBuffer>& mesh) noexcept { meshDat = mesh; }
 	virtual ~Mesh() = default;
-	// Assume that the .obj file and .mtl files are in the same directory.
-	void loadMesh(const std::string &meshName, 
-				  const std::string &directoryPath, 
-				  bool = false);
-	void fitToUnitBox();
 	void intersect(const Ray& ray, HitArray& hits) override;
 private:
-	// Set to true when intersect() is called for the first time on the mesh.
+	std::shared_ptr<MeshBuffer> meshDat;
+	glm::mat4 inv_boundMat;
+	
 	void initialize() override;
-
-	// These buffers are only populated when a mesh is loaded.
-	std::vector<float> posBuf;
-	std::vector<float> norBuf;
-	std::vector<float> texBuf;
-
-	float boundingRadius; 
-	glm::vec3 meshCenter; 	  // Defined in model/local space.
-	glm::mat4 inv_sphereMat;  // matrix used for bounding sphere tests 
-	glm::mat4 sphereMat; 	  // only useful for debugging
-
-	void setBoundingRadius();
 	bool intersect_triangle(const glm::vec3& o, const glm::vec3& d, 
 							const size_t &off, float &t, float &u, 
 							float &v);
