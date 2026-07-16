@@ -151,14 +151,17 @@ void MeshBuffer::setBoundingRadius()
 	float cz = (bounds.z.max + bounds.z.min) * 0.5;
 	this->meshCenter = vec4(cx, cy, cz, 1.f);
 
-	float minVal = std::min(std::min(bounds.x.min, bounds.y.min), bounds.z.min);
-	float maxVal = std::max(std::max(bounds.x.max, bounds.y.max), bounds.z.max);
+	vec3 minCoord = vec3(bounds.x.min, bounds.y.min, bounds.z.min);
+	vec3 maxCoord = vec3(bounds.x.max, bounds.y.max, bounds.z.max);
 
 	// vec3 lengths = vec3(bounds.x.max - bounds.x.min,
 						// bounds.y.max - bounds.y.min,
 						// bounds.z.max - bounds.z.min);
 
-	this->boundingRadius = (maxVal - minVal) * 0.5;
+	this->boundingRadius = glm::max(
+		glm::distance(minCoord, vec3(this->meshCenter)),
+		glm::distance(maxCoord, vec3(this->meshCenter))
+	);
 
 	// construct new matrix just for the uniform sphere test
 	this->boundMat = glm::translate(glm::mat4(1.f), vec3(this->meshCenter));

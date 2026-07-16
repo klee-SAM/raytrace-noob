@@ -40,12 +40,12 @@ Adding more features on a simple raytracer as a learning exercise
     - Pathtracer.hpp
 
 #### misc.
-- [ ] get rid of stn.hpp, use proper #include practices
+- [ ] get rid of stn.hpp, use proper #include practices <>
     - use forward declarations
     - include headers only where they are actually used
 - [ ] replace and test has_no_change(...) with variance counter
 - [ ] support for blurred rotations
-- [ ] split the camera class into a camera "struct" and Raytracer.hpp
+- [ ] split the camera class into a camera "struct" and Raytracer.hpp <>
 - [ ] light samples should be global, not per light
 - [ ] scene format documentation (json)
 - [x] description format for textures/patterns 
@@ -53,7 +53,7 @@ Adding more features on a simple raytracer as a learning exercise
 - [x] phong reflection for area lights
 - [ ] pmj02 random number generation
 - [ ] partial .mtl support (tiny_obj_loader)
-- [ ] move mesh buffers to another object
+- [ ] move mesh buffers to another object <>
     - allows for sharing of mesh data between objects
 - [x] organize src files into folders
 - [ ] mesh motion blur support, whenever BVH is done
