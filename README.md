@@ -1,5 +1,7 @@
 # raytrace-noob
-Adding more features on a simple raytracer as a learning exercise
+Simple raytracer developed primarily as a learning exercise. 
+Uses C++17 and some libraries, along with aid from various other
+resources on raytracing.
 
 ## todo:
 
@@ -39,28 +41,26 @@ Adding more features on a simple raytracer as a learning exercise
 - [ ] Monte Carlo path tracing
     - Pathtracer.hpp
 
-#### misc.
-- [ ] get rid of stn.hpp, use proper #include practices <>
-    - use forward declarations
-    - include headers only where they are actually used
+#### chores
 - [ ] replace and test has_no_change(...) with variance counter
 - [ ] support for blurred rotations
-- [ ] split the camera class into a camera "struct" and Raytracer.hpp <>
 - [ ] light samples should be global, not per light
-- [ ] scene format documentation (json)
-- [x] description format for textures/patterns 
-- [x] Spatial textures
-- [x] phong reflection for area lights
 - [ ] pmj02 random number generation
+
+- [ ] scene format documentation (json)
+- [ ] support .mtl conventions for scene files
 - [ ] partial .mtl support (tiny_obj_loader)
-- [ ] move mesh buffers to another object <>
-    - allows for sharing of mesh data between objects
-- [x] organize src files into folders
+- [x] move mesh buffers to another object
 - [ ] mesh motion blur support, whenever BVH is done
 - [ ] Rewrite sceneloader to change scene after read all
     - requires intermediate data structure for holding
-- [ ] support .mtl conventions for scene files
-- [x] reimplement refraction with better practices
+
+- [ ] get rid of stn.hpp, use proper #include practices <>
+    - use forward declarations
+    - include headers only where they are actually used
+- [ ] organize src files into folders <>
+    - [ ] need to split Shapes.cpp file, and 
+    - [ ] split the camera class into a camera "struct" and Raytracer.hpp <>
 
 ### things to consider
 - creating a custom math library instead of using GLM
