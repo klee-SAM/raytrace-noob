@@ -20,9 +20,6 @@ public:
     uint reflSamples; // 1 ray is smooth reflection, 2+ for sampling rough reflections 
     float fuzz;       // reflection roughness; 0.0 indicates no roughness or gloss
 
-    std::shared_ptr<Texture> texture;
-    // float textureOpacity; // may or may not be implemented
-
     Material() : ambient{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
                  diffuse{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
                  specular{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
