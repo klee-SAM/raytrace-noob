@@ -81,19 +81,19 @@ resources on raytracing.
     - produce a sequence of png images w/ suffixed numbers
 
 
-## Dependencies
+## Required Dependencies
 - GLM (OpenGL Mathematics): https://github.com/g-truc/glm
 - CMake: (https://cmake.org/download/)
 
 ## Building
 This requires that you set the environment variable `GLM_INCLUDE_DIR` to a copy of the GLM library on your system. 
 
-Other platforms may have slightly different build instructions.
+Instructions primarily for Linux. Other platforms may have slightly different build instructions.
 
 1. Create a new `build` folder inside the project folder (which contains CMakeLists.txt)
 2. Do `cmake ..` inside the build folder to create the Makefile for debug mode.
-    - Do `cmake -DCMAKE_BUILD_TYPE=Release` for release mode instead.
-    - Do `cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo` if using a tool like Callgrind.
+    - Do `cmake -DCMAKE_BUILD_TYPE=Release ..` for release mode instead.
+    - Do `cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..` if using a tool like Callgrind.
 3. Call `make` to build.
 
 ## Other libraries used
@@ -179,10 +179,8 @@ See [Texture Mapping](#texture-mapping) for (some) image sources.
 - https://abau.io/blog/sample_patterns/
 - https://stackoverflow.com/questions/5147378/
 
-### Enabling SIMD for GLM
-- https://gamedev.stackexchange.com/questions/132549/how-to-use-glm-simd-using-glm-version-0-9-8-2 
-
 ### Other Interesting Links
 - https://stackoverflow.com/questions/11227809
 - https://www.cs.umd.edu/users/mount/Indep/Alisa_Chen/caustics.html
 - https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md
+- https://gamedev.stackexchange.com/questions/132549/how-to-use-glm-simd-using-glm-version-0-9-8-2 
