@@ -6,6 +6,8 @@
 
 #include <cstring>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 using std::string;
 using std::unique_ptr, std::shared_ptr;
@@ -14,6 +16,12 @@ using std::cerr;
 
 using std::pair;
 using std::ifstream;
+
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+using glm::mat3;
+using glm::mat4;
 
 /*
  * TODO: documentation
@@ -36,6 +44,8 @@ void SceneLoader::loadSceneFile(std::unique_ptr<Camera>& cam, std::unique_ptr<Sc
     sceneDir = srcDir+"scenes/";
     textureDir = srcDir+"textures/";
     modelDir = srcDir+"models/";
+
+    std::ifstream file;
 
     file.open(location);
     if (!file.is_open()) file.open(sceneDir+location);

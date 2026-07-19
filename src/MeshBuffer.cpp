@@ -6,6 +6,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "external/tiny_obj_loader.h"
 
+using glm::vec3;
+using glm::vec4;
 
 MeshBuffer::MeshBuffer(const std::string& objName, const std::string& directory)  
 {

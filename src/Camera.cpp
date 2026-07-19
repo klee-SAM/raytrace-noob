@@ -15,6 +15,12 @@ using std::vector;
 using std::shared_ptr;
 using std::unique_ptr;
 
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+using glm::mat3;
+using glm::mat4;
+
 using CONSTANTS::INF, CONSTANTS::EPSILION, 
       CONSTANTS::PI, CONSTANTS::R_PI;
 

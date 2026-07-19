@@ -1,8 +1,10 @@
 #pragma once
+#ifndef SCENELOADER_H
+#define SCENELOADER_H
+
 #include "stn.hpp"
 
-#include <fstream>
-#include <sstream>
+#include <iosfwd>
 #include <string>
 
 #include "Camera.hpp"
@@ -34,7 +36,6 @@ public:
 
 private:
     std::string location;
-    std::ifstream file;
     std::string srcDir;
 
     std::string sceneDir;
@@ -113,3 +114,5 @@ private:
     std::string stringFromToken(const jsmntok_t* tok);
     SHAPE_TYPE shapeTypeFromToken(const jsmntok_t* tok);
 };
+
+#endif

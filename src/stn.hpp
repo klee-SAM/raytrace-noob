@@ -1,4 +1,6 @@
 #pragma once
+#ifndef STN_H
+#define STN_H
 
 #define _USE_MATH_DEFINES
 #include <algorithm>
@@ -19,8 +21,4 @@
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
 
-typedef glm::vec2 vec2;
-typedef glm::vec3 vec3;
-typedef glm::vec4 vec4;
-typedef glm::mat3 mat3;
-typedef glm::mat4 mat4;
+#endif

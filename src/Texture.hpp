@@ -1,6 +1,8 @@
 #pragma once
-#include "stn.hpp"
+#ifndef TEXTURE_H
+#define TEXTURE_H
 
+#include "stn.hpp"
 #include "Image.hpp"
 
 // what is this
@@ -98,3 +100,5 @@ private:
     std::shared_ptr<Texture> even;
     std::shared_ptr<Texture> odd;
 };
+
+#endif

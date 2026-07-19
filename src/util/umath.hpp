@@ -1,4 +1,7 @@
 #pragma once
+#ifndef UTIL_UMATH_H
+#define UTIL_UMATH_H
+
 #include "../stn.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -132,3 +135,5 @@ constexpr glm::quat f_toQuat(const glm::mat4 &m) {
     Q.z = std::copysignf( Q.z, m[0][1] - m[1][0] );
     return Q;
 }
+
+#endif

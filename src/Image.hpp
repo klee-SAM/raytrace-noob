@@ -1,4 +1,7 @@
 #pragma once
+#ifndef IMAGE_H
+#define IMAGE_H
+
 #include "stn.hpp"
 
 #include <string>
@@ -48,3 +51,5 @@ private:
 };
 
 const std::shared_ptr<Image> blankImage = std::make_shared<Image>(1U, 1U);
+
+#endif

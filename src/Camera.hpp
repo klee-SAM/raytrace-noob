@@ -1,4 +1,7 @@
 #pragma once
+#ifndef CAMERA_H
+#define CAMERA_H
+
 #include "stn.hpp"
 
 #include "Texture.hpp"
@@ -60,7 +63,7 @@ public:
     void setUpVector(const glm::vec3 &upVec) { 
         if (glm::length(upVec) < CONSTANTS::EPSILION) {
             // std::cerr << "Provided up vector has a length near zero\n";
-            camUpVec = glm::normalize(upVec+vec3(0.f, EPSILION, 0.f)); 
+            camUpVec = glm::normalize(upVec+glm::vec3(0.f, EPSILION, 0.f)); 
         } else { camUpVec = glm::normalize(upVec); }
     }
 
@@ -147,3 +150,5 @@ private:
                                     const glm::vec3 &diffuseAtt = glm::vec3(1.f),
                                     bool sampleArea = true) const;
 };
+
+#endif

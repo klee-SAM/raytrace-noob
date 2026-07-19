@@ -1,6 +1,12 @@
 #include "Texture.hpp"
 #include "util/umath.hpp"
 
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+using glm::mat3;
+using glm::mat4;
+
 // Default spatial texture
 inline vec3 GradientTexture::transform(const vec3 &x) const {
     return .5f*glm::normalize(x)+.5f;

@@ -1,5 +1,11 @@
 #include "../Shape.hpp"
 
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+using glm::mat3;
+using glm::mat4;
+
 // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
 vec2 Sphere::computeUV(const vec3& p) const {
     return sphereMap(p);

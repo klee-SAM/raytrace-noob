@@ -1,4 +1,7 @@
 #pragma once
+#ifndef LIGHT_H
+#define LIGHT_H
+
 #include "stn.hpp"
 
 class Light {
@@ -26,3 +29,5 @@ private:
     float radius;
     int samples = 1;
 };
+
+#endif

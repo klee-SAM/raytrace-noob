@@ -1,4 +1,6 @@
 #pragma once
+#ifndef ROWQUEUE_H
+#define ROWQUEUE_H
 
 #include <queue>
 
@@ -38,3 +40,5 @@ public:
 
     inline bool empty() const { return rqueue.empty(); }
 };
+
+#endif

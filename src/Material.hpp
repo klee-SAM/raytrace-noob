@@ -1,4 +1,7 @@
 #pragma once
+#ifndef MATERIAL_H
+#define MATERIAL_H
+
 #include "stn.hpp"
 #include "Texture.hpp"
 
@@ -20,29 +23,37 @@ public:
     uint reflSamples; // 1 ray is smooth reflection, 2+ for sampling rough reflections 
     float fuzz;       // reflection roughness; 0.0 indicates no roughness or gloss
 
-    Material() : ambient{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
-                 diffuse{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
-                 specular{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
-                 emissive{std::make_shared<ColorTexture>(glm::vec3(0.0f))},
-                 absorb{std::make_shared<ColorTexture>(glm::vec3(0.0f))},
-                 exponent{1.0f}, 
-                 reflCoeff{0.0f}, 
-                 refrIndex{1.0f}, 
-                 transparency{0.0f},
-                 fresnelCoeff{0.0f},
-                 absorbCoeff{1.0f},
-                 reflSamples{1U},
-                 fuzz{0.05f}
-                 {};
+    Material() 
+    : ambient{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
+      diffuse{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
+      specular{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
+      emissive{std::make_shared<ColorTexture>(glm::vec3(0.0f))},
+      absorb{std::make_shared<ColorTexture>(glm::vec3(0.0f))},
+      exponent{1.0f}, 
+      reflCoeff{0.0f}, 
+      refrIndex{1.0f}, 
+      transparency{0.0f},
+      fresnelCoeff{0.0f},
+      absorbCoeff{1.0f},
+      reflSamples{1U},
+      fuzz{0.05f}
+      {}
                  
     Material(glm::vec3 amb, glm::vec3 dif, glm::vec3 spe, float exp)
-    : Material() 
-    {
-      ambient = std::make_shared<ColorTexture>(amb);
-      diffuse = std::make_shared<ColorTexture>(dif);
-      specular = std::make_shared<ColorTexture>(spe);
-      exponent = exp;
-    }
+    : ambient{std::make_shared<ColorTexture>(amb)}, 
+      diffuse{std::make_shared<ColorTexture>(dif)}, 
+      specular{std::make_shared<ColorTexture>(spe)}, 
+      emissive{std::make_shared<ColorTexture>(glm::vec3(0.0f))},
+      absorb{std::make_shared<ColorTexture>(glm::vec3(0.0f))},
+      exponent{exp}, 
+      reflCoeff{0.0f}, 
+      refrIndex{1.0f}, 
+      transparency{0.0f},
+      fresnelCoeff{0.0f},
+      absorbCoeff{1.0f},
+      reflSamples{1U},
+      fuzz{0.05f} 
+      {}
 
     virtual ~Material() = default;
 
@@ -51,3 +62,5 @@ public:
 };
 
 static const std::shared_ptr<Material> defaultMaterial = std::make_shared<Material>();
+
+#endif

@@ -5,6 +5,12 @@
 
 using CONSTANTS::EPSILION;
 
+using glm::vec2;
+using glm::vec3;
+using glm::vec4;
+using glm::mat3;
+using glm::mat4;
+
 void Mesh::initialize() {
 	// The MeshBuffer's bounding matrix is defined to go from unit space
 	// to model space, so create a matrix that goes from

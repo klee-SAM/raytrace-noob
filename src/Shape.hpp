@@ -1,4 +1,7 @@
 #pragma once
+#ifndef SHAPE_H
+#define SHAPE_H
+
 #include "stn.hpp"
 #include "Material.hpp"
 #include "Ray.hpp"
@@ -183,3 +186,5 @@ private:
 		const std::vector<Interval>& r_intervals,
 		HitArray& hits);
 };
+
+#endif

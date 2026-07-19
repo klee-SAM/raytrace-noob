@@ -1,4 +1,7 @@
 #pragma once
+#ifndef SCENE_H
+#define SCENE_H
+
 #include "stn.hpp"
 #include "Shape.hpp"
 #include "Material.hpp"
@@ -117,3 +120,5 @@ private:
 ]
 }
 */
+
+#endif
