@@ -43,7 +43,7 @@ resources on raytracing.
 
 #### chores
 - [ ] replace and test has_no_change(...) with variance counter
-- [ ] support for blurred rotations
+- [x] support for blurred rotations
 - [ ] light samples should be global, not per light
 - [ ] pmj02 random number generation
 
@@ -61,6 +61,8 @@ resources on raytracing.
 - [ ] organize src files into folders <>
     - [ ] need to split Shapes.cpp file, and 
     - [ ] split the camera class into a camera "struct" and Raytracer.hpp <>
+
+- [ ] run all the sources through the Wayback Machine
 
 ### things to consider
 - creating a custom math library instead of using GLM
@@ -138,6 +140,7 @@ See [Texture Mapping](#texture-mapping) for (some) image sources.
 
 ### Motion blur
 - https://stackoverflow.com/questions/46156903/how-to-lerp-between-two-quaternions
+- https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/christian.htm
 
 ### Depth of field
 - https://stackoverflow.com/questions/13532947/references-for-depth-of-field-implementation-in-a-raytracer
