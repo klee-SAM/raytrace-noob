@@ -2,6 +2,7 @@
 #include "../stn.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include <limits>
 
@@ -25,11 +26,11 @@ public:
     glm::mat4 getMatrix() {
         glm::mat4 modMat(1.0f); 
         modMat[3] = glm::vec4(position, 1.0f);
-        modMat *= glm::rotate(glm::mat4(1.0f), rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-        modMat *= glm::rotate(glm::mat4(1.0f), rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        modMat *= glm::rotate(glm::mat4(1.0f), rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+        modMat = glm::rotate(modMat, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+        modMat = glm::rotate(modMat, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+        modMat = glm::rotate(modMat, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
         
-        modMat *= glm::scale(glm::mat4(1.0f), scale);
+        modMat = glm::scale(modMat, scale);
         return modMat;
     }
     void clear() {
@@ -115,5 +116,19 @@ constexpr glm::vec2 sphereMap(const glm::vec3 &p) {
     using namespace CONSTANTS;
     const float u = 0.5f + f_atan2(p.z, p.x)*R_PI*0.5f;
     const float v = 0.5f + f_asin(p.y)*R_PI;
-    return vec2(u, v);
+    return glm::vec2(u, v);
+}
+
+// https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/christian.htm
+// Thank you Christian from the euclideanspace.com forums. My speed is (almost) back!
+constexpr glm::quat f_toQuat(const glm::mat4 &m) {
+    glm::quat Q(1.f, 0.f, 0.f, 0.f);
+    Q.w = std::sqrt( std::max( 0.f, 1 + m[0][0] + m[1][1] + m[2][2] ) ) * .5f;
+    Q.x = std::sqrt( std::max( 0.f, 1 + m[0][0] - m[1][1] - m[2][2] ) ) * .5f;
+    Q.y = std::sqrt( std::max( 0.f, 1 - m[0][0] + m[1][1] - m[2][2] ) ) * .5f;
+    Q.z = std::sqrt( std::max( 0.f, 1 - m[0][0] - m[1][1] + m[2][2] ) ) * .5f;
+    Q.x = std::copysignf( Q.x, m[1][2] - m[2][1] );
+    Q.y = std::copysignf( Q.y, m[2][0] - m[0][2] );
+    Q.z = std::copysignf( Q.z, m[0][1] - m[1][0] );
+    return Q;
 }

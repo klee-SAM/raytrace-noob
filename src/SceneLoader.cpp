@@ -389,13 +389,13 @@ int SceneLoader::parseShape(
             prop.nscl = float3FromToken(value);
             prop.moveScl = true;
         } 
-        // else if (jsonstreq(key, "nextRotation")) {
-        //     // prop.rot = float3FromToken(value);
-        //     // prop.rot.x = glm::radians(prop.rot.x);
-        //     // prop.rot.y = glm::radians(prop.rot.y);
-        //     // prop.rot.z = glm::radians(prop.rot.z);
-        
-        // } 
+        else if (jsonstreq(key, "nextRotation")) {
+            prop.nrot = float3FromToken(value);
+            prop.nrot.x = glm::radians(prop.nrot.x);
+            prop.nrot.y = glm::radians(prop.nrot.y);
+            prop.nrot.z = glm::radians(prop.nrot.z);
+            prop.moveRot = true;
+        } 
         else if (jsonstreq(key, "material")) {
             prop.smat = scene->getMaterial(stringFromToken(value));
         } 

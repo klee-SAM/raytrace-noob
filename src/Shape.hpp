@@ -6,6 +6,8 @@
 
 #include "util/umath.hpp"
 
+#include <glm/gtc/quaternion.hpp>
+
 #include <vector>
 
 class Geometry {
@@ -14,21 +16,6 @@ public:
 	virtual ~Geometry() = default;
 	virtual void initialize() {}
 	virtual void intersect(const Ray&, HitArray& hits) = 0;
-};
-
-// compute bounding box by transforming 8 vertices by obj modelmat,
-// then using those vertices to compute new AABB in world coordinates,
-// this is leaf BB approach
-// hierachy: take only the min and max point when compute parent BB.
-// space subdivision haahah
-
-// Axis-Aligned Bounding Boxes
-class BVHNode : public Geometry {
-public:
-	// ...
-private:
-	Interval x, y, z;
-	std::unique_ptr<Geometry> left, right;
 };
 
 class Shape : public Geometry {
@@ -64,8 +51,8 @@ protected:
 	// For moving objects; contains the transforms for an
 	// object at the end of the time interval, which
 	// is used by lerp() to easily compose a new matrix
+	glm::quat m_rotation;
 	glm::vec3 m_translation;
-	glm::vec3 m_rotation; // could be quaterion instead?
 	glm::vec3 m_scale;
 
 	// determines if new matrices need to be constructed
@@ -181,9 +168,9 @@ enum class OperationType {None, Intersection, Union, Difference};
 
 class CSG final : public Shape {
 public:
-	OperationType operationType;
 	std::shared_ptr<Shape> left;
 	std::shared_ptr<Shape> right;
+	OperationType operationType;
 
 	CSG() {};
 	CSG(OperationType o, std::shared_ptr<Shape> l, std::shared_ptr<Shape> r) 
