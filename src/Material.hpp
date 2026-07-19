@@ -7,6 +7,9 @@
 
 class Material {
 public:
+    // Shared ptr is just as efficient as raw pointers
+    // for this case, since new Material objects are
+    // not being allocated per raycast, only at init
     std::shared_ptr<Texture> ambient;
     std::shared_ptr<Texture> diffuse;
     std::shared_ptr<Texture> specular;
