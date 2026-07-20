@@ -5,11 +5,14 @@
 #include "stn.hpp"
 
 #include "Texture.hpp"
-#include "Scene.hpp"
 #include "Ray.hpp"
 
 #include "util/MatrixStack.hpp"
 #include "util/RowQueue.hpp"
+#include "util/umath.hpp"
+
+class Scene;
+class Light;
 
 class Camera {
 public:

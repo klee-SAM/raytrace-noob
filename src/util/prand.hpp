@@ -3,7 +3,6 @@
 #include <glm/gtc/random.hpp>
 
 #include "../stn.hpp"
-#include "umath.hpp"
 
 // Could be adjusted to balance memory use and "randomness"
 constexpr size_t RAND_GEN_SIZE = 4'096U; 

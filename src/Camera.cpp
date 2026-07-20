@@ -1,5 +1,8 @@
 #include "Camera.hpp"
 
+#include "Scene.hpp"
+#include "Light.hpp"
+
 #include <iostream>
 #include <vector>
 

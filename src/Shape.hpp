@@ -11,8 +11,6 @@
 
 #include <glm/gtc/quaternion.hpp>
 
-#include <vector>
-
 class Geometry {
 public:
 	Geometry() {}

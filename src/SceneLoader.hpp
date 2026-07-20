@@ -3,6 +3,7 @@
 #define SCENELOADER_H
 
 #include "stn.hpp"
+#include "Shape.hpp"
 
 #include <iosfwd>
 #include <string>

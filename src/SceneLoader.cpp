@@ -1,5 +1,7 @@
 #include "SceneLoader.hpp"
 
+#include "Scene.hpp"
+
 #include "util/umath.hpp"
 // #include "util/optional.hpp"
 #include <optional>

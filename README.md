@@ -55,11 +55,12 @@ resources on raytracing.
 - [ ] Rewrite sceneloader to change scene after read all
     - requires intermediate data structure for holding
 
-- [ ] get rid of stn.hpp, use proper #include practices <>
-    - use forward declarations
-    - include headers only where they are actually used
+- [x] get rid of stn.hpp, use proper #include practices
+    - ~~use forward declarations~~
+    - ~~include headers only where they are actually used~~
+    - this is incredibility bothersome and unfun
 - [ ] organize src files into folders <>
-    - [ ] need to split Shapes.cpp file, and 
+    - [x] need to split Shapes.cpp file, and 
     - [ ] split the camera class into a camera "struct" and Raytracer.hpp <>
 
 - [ ] run all the sources through the Wayback Machine
