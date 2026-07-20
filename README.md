@@ -46,6 +46,8 @@ resources on raytracing.
 - [x] support for blurred rotations
 - [ ] light samples should be global, not per light
 - [ ] pmj02 random number generation
+- [ ] better adaptive depth control 
+    - carry over the reflective coefficients
 
 - [ ] scene format documentation (json)
 - [ ] support .mtl conventions for scene files
