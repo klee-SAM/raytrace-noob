@@ -190,3 +190,4 @@ See [Texture Mapping](#texture-mapping) for (some) image sources.
 - https://www.cs.umd.edu/users/mount/Indep/Alisa_Chen/caustics.html
 - https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md
 - https://gamedev.stackexchange.com/questions/132549/how-to-use-glm-simd-using-glm-version-0-9-8-2 
+- https://computergraphics.stackexchange.com/questions/4031/programmatically-generating-vertex-normals
