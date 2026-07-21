@@ -16,6 +16,7 @@ namespace CONSTANTS {
     constexpr float R_PI = 1.0f / PI;
     static const float R_SQRT3 = 1.f / std::sqrt(3.f);
 
+    constexpr float MAX = std::numeric_limits<float>::max();
     constexpr float INF = std::numeric_limits<float>::infinity();
     constexpr float EPSILION = std::numeric_limits<float>::epsilon();
 }

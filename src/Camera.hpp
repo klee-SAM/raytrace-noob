@@ -113,7 +113,7 @@ private:
     float occludingRadius = 0.25f;             // radius of occluding hemisphere
     glm::vec3 globalAmbient = glm::vec3(0.0f); // ambient color added to all objects.
     SkyType sky = SkyType::Ambient;
-    std::unique_ptr<ImageTexture> skyTexture;
+    std::unique_ptr<ImageTexture> skyTexture;  // used only if the skytype is SphereMap
 
     // variables computed in render()
     glm::vec4 cameraPos; // contains world-space position of camera
