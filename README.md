@@ -42,7 +42,7 @@ resources on raytracing.
     - Pathtracer.hpp
 
 #### chores
-- [ ] replace and test has_no_change(...) with variance counter
+- [x] replace and test has_no_change(...) with variance counter
 - [x] support for blurred rotations
 - [ ] light samples should be global, not per light
 - [ ] pmj02 random number generation

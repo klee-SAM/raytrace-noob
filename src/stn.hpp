@@ -21,4 +21,7 @@
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
 
+// Just in case uint isn't defined on some platforms
+typedef unsigned int uint;
+
 #endif
