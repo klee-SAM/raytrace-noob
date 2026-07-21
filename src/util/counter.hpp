@@ -3,7 +3,7 @@
 
 namespace CounterCmps {
     // I like when VSCode freaks out on templates, lol
-    static constexpr bool vec3_cmp = [](const glm::vec3& a, const glm::vec3& b) {
+    static constexpr auto vec3_cmp = [](const glm::vec3& a, const glm::vec3& b) {
         return a.x < b.x && a.y < b.y && a.z < b.z;
     };
 };

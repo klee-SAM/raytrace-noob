@@ -44,9 +44,6 @@ public:
     Ray castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset = glm::vec2(.5f)) const;
     Ray castSecondaryRay(const Ray &primaryRay) const;
 
-    // what was deleted here should be in camera, actually
-    // (following raytracing in one weekend example)
-
     // the sky should belong in Scene.hpp,
     // camera settings should become public
     // make variables computed in render() as
@@ -54,6 +51,16 @@ public:
     // am not going to bother defining a whole
     // set of getters and setters for them
 
+
+
+    // !!!!!!!!!!!!!!!!!!!
+    // WAIT UNTIL A BASIC WORKING SPHERE TRACER IMPLEMENTATION
+    // IS DONE (and basic path tracer too) BEFORE actually
+    // committing to restructuring
+    // don't know what is actually shared and what is 
+    // specific to analytic rays
+    // !!!!!!!!!!!!!!!!!
+    
 protected:
     RowQueue r_queue;
 
@@ -63,7 +70,6 @@ protected:
     glm::mat4 invP;      // inverse of projection mat
     glm::vec4 dof_u;     // right cam basis vec
     glm::vec4 dof_v;     // up cam basis vec
-    float sample_scale;
 
     // Contains common info used for BRDF calculations
     struct IntParams {

@@ -27,7 +27,7 @@ public:
     float fuzz;       // reflection roughness; 0.0 indicates no roughness or gloss
 
     Material() 
-    : ambient{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
+    : ambient{std::make_shared<ColorTexture>(glm::vec3(0.1f))}, 
       diffuse{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
       specular{std::make_shared<ColorTexture>(glm::vec3(0.0f))}, 
       emissive{std::make_shared<ColorTexture>(glm::vec3(0.0f))},

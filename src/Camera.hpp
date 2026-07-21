@@ -16,7 +16,7 @@ class Light;
 
 class Camera {
 public:
-    typedef double degree_t;
+    using degree_t = double;
 
     // I could make these modifible via json files
     static constexpr float EPSILION = 5E-3f; // having a low epsilion value does not bode well with meshes
@@ -119,10 +119,11 @@ private:
     float focalRadius = 0.f;    // > 0.f for DoF effect
     uint width, height;
 
-    uint AAsamples = 1;                        // must be at least 1
+    uint AAsamples = 1;                        // antialiasing; must be at least 1
     uint occlusionSamples = 0;                 // actual count is divided by AA samples
     float occludingRadius = 0.25f;             // radius of occluding hemisphere
-    glm::vec3 globalAmbient = glm::vec3(0.0f); // ambient color added to all objects.
+    uint lightSamples = 1;                     // samples to take on "area" lights
+    glm::vec3 globalAmbient = glm::vec3(1.0f); // ambient color multiplied to all objects.
     SkyType sky = SkyType::Ambient;
     std::unique_ptr<ImageTexture> skyTexture;  // used only if the skytype is SphereMap
 

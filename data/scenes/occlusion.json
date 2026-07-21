@@ -5,31 +5,31 @@
         "antialias" : 16,
         "fov" : 60.0,
         "sky" : "haze",
-        "ambientColor" : [0.15, 0.15, 0.15],
+        "ambientColor" : [1, 0.75, 0.75],
         "ambientSamples" : 16,
         "occlusionRadius" : 0.25
     },
     "materials" : {
         "red" : {
-            "ambient" : [0.0, 0.0, 0.0],
+            "ambient" : [0.15, 0.15, 0.15],
             "diffuse" : [1.0, 0.0, 0.0],
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0
         },
         "green" : {
-            "ambient" : [0.0, 0.0, 0.0],
+            "ambient" : [0.15, 0.15, 0.15],
             "diffuse" : [0.0, 1.0, 0.0],
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0
         },
         "blue" : {
-            "ambient" : [0.0, 0.0, 0.0],
+            "ambient" : [0.15, 0.15, 0.15],
             "diffuse" : "earthmap.png",
             "specular" : "specular_clouds.jpg",
             "exponent" : 100.0
         },
         "white" : {
-            "ambient" : [0.05, 0.05, 0.05],
+            "ambient" : [0.20, 0.20, 0.20],
             "diffuse" : [0.9, 0.9, 0.7],
             "specular" : [0.0, 0.0, 0.0],
             "exponent" : 1.0
