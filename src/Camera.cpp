@@ -131,7 +131,10 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         
         // breakpoints have experimentally OK magic numbers
         const uint breakpoint = std::max(AAsamples / 4, 8U);
-        float r_samplesDone = sample_scale;
+
+        VarianceCounter<vec3> s_counter;
+        s_counter.add(color, CounterCmps::vec3_cmp);
+        
         for (uint i = 1; i < AAsamples; ++i) {
             const vec2 offset = 0.5f*diskRandGen.rand(i) + 0.5f;
             cray = castPrimaryRay(x, y, offset);
@@ -140,15 +143,14 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
             Ray dray = useSecRay ? castSecondaryRay(cray) : cray;
 
             const vec3 rayColor = getRayColor(scene, dray);
-            color += rayColor;
+            bool lowVari = s_counter.add(rayColor, CounterCmps::vec3_cmp);
             
             // Stop sampling this pixel if the contribution
             // of the new sample is < epsilion values for all comps
-            bool cond = has_no_change(i, breakpoint, color, rayColor);
-            if (cond) { r_samplesDone = 1.f / static_cast<float>(i + 1); break; }
+            if (lowVari && i > breakpoint) break;
         }
 
-        color *= r_samplesDone;
+        color = s_counter.getMean();
         
         image->setPixel(x, y, color);
     }
@@ -177,7 +179,6 @@ unique_ptr<Image> Camera::render(unique_ptr<Scene>& scene, const mat4& P, const 
     dof_v = C[1]; // up
 
     if (AAsamples < 1) AAsamples = 1;
-    sample_scale = 1.0/AAsamples;
 
     uint totalCasts = height*width;
 

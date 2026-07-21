@@ -21,6 +21,7 @@ namespace CONSTANTS {
     constexpr float EPSILION = std::numeric_limits<float>::epsilon();
 }
 
+// TODO: move this to another file
 class ModelMatConstr {
 public:
     void setScale(const glm::vec3& s) { scale = s; }

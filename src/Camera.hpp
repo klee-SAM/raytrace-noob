@@ -16,6 +16,8 @@ class Light;
 
 class Camera {
 public:
+    typedef double degree_t;
+
     // I could make these modifible via json files
     static constexpr float EPSILION = 5E-3f; // having a low epsilion value does not bode well with meshes
     static constexpr float MAX_DIST = std::numeric_limits<float>::max();
@@ -25,22 +27,31 @@ public:
     bool FULL_SHADOWS = false;
     bool SHOW_NORMALS = false;
 
-    Camera() : translation(0.f), rotation(0.f),
-               position(0.f), lookAtPos(0.f), camUpVec{0.f, 1.f, 0.f},
-               aspectRatio(1.0), fovy(glm::radians(45.0)), 
-               width(1), height(1) { }
-    Camera(uint w, uint h) : Camera() {
-        this->width = w; this->height = h;
-        this->aspectRatio = (double)width/(double)height;
-    }
-    // fov is in degrees
-    Camera(uint w, uint h, double fov) : Camera(w, h) {
-        this->fovy = glm::radians(fov);
-        this->aspectRatio = (double)width/(double)height;
-    }
-    Camera(uint totalPixels, double aspect) : Camera() {
-        assert(aspect > 0.0);
+    Camera() 
+    : translation(0.f), rotation(0.f),
+      position(0.f), lookAtPos(0.f), camUpVec{0.f, 1.f, 0.f},
+      aspectRatio(1.0), fovy(glm::radians(45.0)), 
+      width(1), height(1) { }
 
+    Camera(uint w, uint h) 
+    : translation(0.f), rotation(0.f),
+      position(0.f), lookAtPos(0.f), 
+      camUpVec{0.f, 1.f, 0.f},
+      aspectRatio((double)w / (double)h), 
+      fovy(glm::radians(45.0)), 
+      width(w), height(h) { }
+
+    // fov is in degrees
+    Camera(uint w, uint h, degree_t fov)
+    : translation(0.f), rotation(0.f),
+      position(0.f), lookAtPos(0.f), 
+      camUpVec{0.f, 1.f, 0.f},
+      aspectRatio((double)w / (double)h), 
+      fovy(glm::radians(fov)), 
+      width(w), height(h) { }
+
+    Camera(uint totalPixels, double aspect) : Camera() {
+        if (aspect > 0.0) aspect = 1.0;
         this->aspectRatio = aspect;
         this->width = std::sqrt(totalPixels*aspect);
         this->height = std::sqrt(totalPixels*(1.0/aspect));
@@ -52,7 +63,7 @@ public:
     void applyView(MatrixStack&);
 
     void setAspect(double a) { aspectRatio = a; }
-    void setFOV(double FOVdeg) { fovy = glm::radians(FOVdeg); }
+    void setFOV(degree_t FOVdeg) { fovy = glm::radians(FOVdeg); }
 
     // Provided for compatibility; don't use these
     void setInitDistance(double dist) { translation.z = -std::abs(dist); }
@@ -121,7 +132,6 @@ private:
     glm::mat4 invP;      // inverse of projection mat
     glm::vec4 dof_u;     // right cam basis vec
     glm::vec4 dof_v;     // up cam basis vec
-    float sample_scale;
 
     // Contains common info used for BRDF calculations
     struct IntParams {
