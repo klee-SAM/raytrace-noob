@@ -38,7 +38,7 @@ public:
     // Overwrites any existing buffer if loading is successful.
     void loadMesh(const std::string &meshName, 
                   const std::string &directoryPath, 
-                  bool printVerticesCount = false);
+                  bool printVerticesCount = true);
                   
     // All vertices get readjusted to fit in a unit box.
     void fitToUnitBox();

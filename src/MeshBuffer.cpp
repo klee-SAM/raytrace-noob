@@ -70,22 +70,44 @@ void MeshBuffer::loadMesh(const std::string& meshName,
 				}
 			}
 
-			// Only guaranteed to work if triangulate is enabled.
+			// Only guaranteed to work if triangulate is enabled,
+			// and if vertices are duplicated (not shared)
 			// Do flat shading by default
-			if (attrib.normals.empty() && fv == 3) {
-				assert(posBuf.size() >= 9);
-				size_t lastIndex = posBuf.size()-1;
-				float *vt0 = &posBuf.at(lastIndex - 9); 
-				float *vt1 = &posBuf.at(lastIndex - 6); 
-				float *vt2 = &posBuf.at(lastIndex - 3);
+			if (attrib.normals.empty() && fv >= 3) {
+				// at least 9 vertices must be added per face
+				size_t end = posBuf.size();
+				assert(end >= 9 + fv*f);
+				float *vt0 = &posBuf.at(end - 9); 
+				float *vt1 = &posBuf.at(end - 6); 
+				float *vt2 = &posBuf.at(end - 3);
 				vec3 edge1 = SUB(vt1, vt0);
 				vec3 edge2 = SUB(vt2, vt0);
 				vec3 norm = CROSS(&edge1.x, &edge2.x);
-				// Fairly wasteful, but oh well
-				norBuf.push_back(norm.x);
-				norBuf.push_back(norm.y);
-				norBuf.push_back(norm.z);
+				norm = glm::normalize(norm);
+				// Make sure that the size of the 
+				for (int i = 0; i < fv; ++i) {
+					// Fairly wasteful, but oh well
+					norBuf.push_back(norm.x);
+					norBuf.push_back(norm.y);
+					norBuf.push_back(norm.z);
+				}
+			} else {
+				// Push some bogus instead
+				for (int i = 0; i < fv; ++i) {
+					vec3 norm = vec3(0.577);
+					norBuf.push_back(norm.x);
+					norBuf.push_back(norm.y);
+					norBuf.push_back(norm.z);
+				}
 			}
+
+			// Smooth shading would require passing through all
+			// the faces to get the vertices that are shared, incrementing
+			// the normal based on the cross product from the triangle,
+			// then doing a second pass to normalize the normals.
+			// Maybe in the future.
+
+			assert(norBuf.size() == posBuf.size());
 
 			index_offset += fv;
 			// shape.mesh.material_ids[f];

@@ -152,7 +152,7 @@ void Mesh::intersect(const Ray& ray, HitArray& hits) {
 
 		// loadmesh ensures a vertex only has 1 normal associated with it,
 		// if there are any attribute normals
-		if (i < meshDat->getNorSize()) {
+		if (8+i < meshDat->getNorSize()) {
 			const auto& norBuf = meshDat->getNorBuf();
 			float nx = w*norBuf.at(0+i) + u*norBuf.at(3+i) + v*norBuf.at(6+i);
 			float ny = w*norBuf.at(1+i) + u*norBuf.at(4+i) + v*norBuf.at(7+i);
@@ -164,7 +164,7 @@ void Mesh::intersect(const Ray& ray, HitArray& hits) {
 		}
 
 		// Only two texture components per vertex, if there are any
-		if (j < meshDat->getTexSize()) {
+		if (5+j < meshDat->getTexSize()) {
 			const auto& texBuf = meshDat->getTexBuf();
 			tex_u = w*texBuf.at(0+j) + u*texBuf.at(2+j) + v*texBuf.at(4+j);
 			tex_v = w*texBuf.at(1+j) + u*texBuf.at(3+j) + v*texBuf.at(5+j);
