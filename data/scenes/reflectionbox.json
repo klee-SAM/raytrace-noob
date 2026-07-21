@@ -5,7 +5,8 @@
         "antialias" : 1,
         "fov" : 45,
         "ambientSamples" : 16,
-        "occlusionRadius" : 0.25
+        "occlusionRadius" : 0.25,
+        "lightSamples" : 16
     },
     "materials" : {
         "red" : {

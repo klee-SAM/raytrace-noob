@@ -35,7 +35,7 @@ resources on raytracing.
 - [ ] GPU acceleration (triangles)
 
 #### special
-- [ ] SDF and sphere tracing
+- [ ] SDF and sphere tracing <!!!>
     - create a fractal
     - SphereTracer.hpp
 - [ ] Monte Carlo path tracing
@@ -44,10 +44,11 @@ resources on raytracing.
 #### chores
 - [x] replace and test has_no_change(...) with variance counter
 - [x] support for blurred rotations
-- [ ] light samples should be global, not per light
+- [x] light samples should be global, not per light
 - [ ] pmj02 random number generation
 - [ ] better adaptive depth control 
     - carry over the reflective coefficients
+    - terminate reflection/refraction via threshold
 
 - [ ] scene format documentation (json)
 - [ ] support .mtl conventions for scene files

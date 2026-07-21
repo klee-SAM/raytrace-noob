@@ -685,14 +685,15 @@ vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
     
     const auto sampler = sampleCone(ld, light->getRadius());
     const uint min_i = std::max(lightSamples / 4, 8U);
+    const uint max_i = light->getSamples() <= 1 ? lightSamples : light->getSamples();
 
     // Use this method instead of has_no_change() since it plays nicer with 
     // shadow implementation (prev. method did not give good results)
     VarianceCounter<vec3> s_counter;
     vec3 lightingSum = vec3(0.f);
-    const Interval litThreshold(CONSTANTS::EPSILION, 1.f - CONSTANTS::EPSILION);
+    constexpr Interval litThreshold(CONSTANTS::EPSILION, 1.f - CONSTANTS::EPSILION);
 
-    for (uint i = 0; i < lightSamples; ++i) {
+    for (uint i = 0; i < max_i; ++i) {
         // A large enough light radius increases noise of the entire image 
         const vec3 sampLightPos = light->pos + sampler()*light->getRadius();
         const vec3 new_ld = sampLightPos - rec.x;
