@@ -215,6 +215,10 @@ int SceneLoader::parseCameraProperties(const jsmntok_t* obj_tok, std::unique_ptr
         } else if (jsonstreq(key, "up")) {
             vec3 up = float3FromToken(value);
             cam->setUpVector(up);
+        } else if (jsonstreq(key, "lightSamples")) {
+            int samples = intFromToken(value);
+            samples = samples < 1 ? 1 : samples;
+            cam->setLightSamples((uint)samples);
         }
 
         // if the value-token is not a primitive,
@@ -248,7 +252,9 @@ int SceneLoader::parseLights(const jsmntok_t* arr_tok, std::unique_ptr<Scene>& s
             } else if (jsonstreq(key, "radius") && value->type == JSMN_PRIMITIVE) {
                 light->setRadius(doubleFromToken(value));
             } else if (jsonstreq(key, "samples") && value->type == JSMN_PRIMITIVE) {
-                light->setSamples(intFromToken(value));
+                // light->setSamples(intFromToken(value));
+                std::clog << "\"samples\" property on lights is deprecated; \
+                             \nuse the camera's lightSamples property instead\n";
             } else {
                 std::cerr << "invalid property when parsing lights: " << key << '\n';
             }

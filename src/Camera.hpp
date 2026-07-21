@@ -17,12 +17,16 @@ class Light;
 class Camera {
 public:
     using degree_t = double;
+    using sample_t = unsigned int;
 
     // I could make these modifible via json files
     static constexpr float EPSILION = 5E-3f; // having a low epsilion value does not bode well with meshes
     static constexpr float MAX_DIST = std::numeric_limits<float>::max();
-    static constexpr uint MAX_RECURSIONS = 7;
+    static constexpr sample_t MAX_RECURSIONS = 7U;
     static constexpr float MINIMUM_COEFF = 0.005f;
+
+    static constexpr sample_t MAX_LIGHT_SAMPLES = 256U;
+    static constexpr sample_t DEFAULT_LIGHT_SAMPLES = 32U;
 
     bool FULL_SHADOWS = false;
     bool SHOW_NORMALS = false;
@@ -82,18 +86,25 @@ public:
     }
 
     // Setting samples below 2 disables antialiasing and depth of field.
-    void setAntialiasSamples(uint count) { AAsamples = count > 1 ? count : 1; }
+    void setAntialiasSamples(sample_t count) { AAsamples = count > 1 ? count : 1; }
     // Ambient occlusion samples are taken for every color ray, including
     // anti-aliasing rays; recommended to reduce AO samples if increasing AA rays
-    void setAmbientOcclusionSamples(uint count) { occlusionSamples = count > 0 ? count : 0; }
+    void setAmbientOcclusionSamples(sample_t count) { occlusionSamples = count > 0 ? count : 0; }
     void setGlobalAmbientColor(const glm::vec3 &clr) { globalAmbient = clr; }
     void setAmbientOccludingRadius(float r) { occludingRadius = r; }
+
+    void setLightSamples(sample_t count) { 
+      lightSamples = std::clamp(count, 1U, MAX_LIGHT_SAMPLES); 
+    }
+
     void setFocusLength(float l) { focusLength = l; }
     void setFocalRadius(float r) { focalRadius = r; }
 
     enum class SkyType {Void, Haze, SphereMap, Ambient};
     void setSky(SkyType s) { sky = s; }
-    void setSkyTexture(std::unique_ptr<ImageTexture>&& texture) { skyTexture = std::move(texture); }
+    void setSkyTexture(std::unique_ptr<ImageTexture>&& texture) { 
+      skyTexture = std::move(texture); 
+    }
 
     std::unique_ptr<Image> render(std::unique_ptr<Scene>&, const glm::mat4&, const glm::mat4&);
     void setRow(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image, uint y);
@@ -119,12 +130,12 @@ private:
     float focalRadius = 0.f;    // > 0.f for DoF effect
     uint width, height;
 
-    uint AAsamples = 1;                        // antialiasing; must be at least 1
-    uint occlusionSamples = 0;                 // actual count is divided by AA samples
+    sample_t AAsamples = 1U;                   // antialiasing; must be at least 1
+    sample_t occlusionSamples = 0U;            // actual count is divided by AA samples
     float occludingRadius = 0.25f;             // radius of occluding hemisphere
-    uint lightSamples = 1;                     // samples to take on "area" lights
+    sample_t lightSamples = 1U;                // samples to take on "area" lights
     glm::vec3 globalAmbient = glm::vec3(1.0f); // ambient color multiplied to all objects.
-    SkyType sky = SkyType::Ambient;
+    SkyType sky = SkyType::Void;
     std::unique_ptr<ImageTexture> skyTexture;  // used only if the skytype is SphereMap
 
     // variables computed in render()

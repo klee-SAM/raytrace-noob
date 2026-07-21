@@ -53,12 +53,12 @@ class Interval {
 public:
     float min, max;
 
-    Interval() : min(CONSTANTS::INF), max(-CONSTANTS::INF) {} // empty
-    Interval(float min, float max) : min(min), max(max) {}
+    constexpr Interval() : min(CONSTANTS::INF), max(-CONSTANTS::INF) {} // empty
+    constexpr Interval(float min, float max) : min(min), max(max) {}
 
-    float size() const { return max - min; }
-    bool contains(float x) const { return (min <= x) && (x <= max); }
-    bool surrounds(float x) const { return (x < min) && (max < x);}
+    constexpr float size() const { return max - min; }
+    constexpr bool contains(float x) const { return (min <= x) && (x <= max); }
+    constexpr bool surrounds(float x) const { return (x < min) && (max < x);}
 
     static inline Interval empty() { return Interval(CONSTANTS::INF, -CONSTANTS::INF); }
     static inline Interval world() { return Interval(-CONSTANTS::INF, CONSTANTS::INF); }
