@@ -65,77 +65,88 @@ public:
     static inline Interval signif() { return Interval(CONSTANTS::EPSILION, 1.f - CONSTANTS::EPSILION); }
 };
 
-// Returns the number without the integer part (-2.6 -> -0.6)
-constexpr float decimal(float x) { return x - static_cast<int>(x); }
-// Like decimal, but returns a positive number instead
-constexpr float fract(float x) { return x - std::floor(x); }
-// https://stackoverflow.com/questions/1903954/: -1, 0, or 1
-constexpr int sgn(float val) { return (0.0f < val) - (val < 0.0f); }
-constexpr bool is_pow2(int n) { return n == 0 || (n & (n - 1)) == 0; }
+namespace umath {
 
-// orthonormal basis (TBN matrix)
-inline void assignONBvec3s(const glm::vec3& n, glm::vec3& b1, glm::vec3& b2) 
-{   // thank you Duff et al
-    const float sign = copysignf(1.0f, n.z); // sign should be 1 even when n.z == 0
-    const float a = -1.0f / (sign + n.z);
-    const float b = n.x * n.y * a;
-    b1 = glm::vec3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x);
-    b2 = glm::vec3(b, sign + n.y * n.y * a, -n.y);
-}
+    // Returns the number without the integer part (-2.6 -> -0.6)
+    constexpr float decimal(float x) { return x - static_cast<int>(x); }
+    // Like decimal, but returns a positive number instead
+    constexpr float fract(float x) { return x - std::floor(x); }
+    // https://stackoverflow.com/questions/1903954/: -1, 0, or 1
+    constexpr int sgn(float val) { return (0.0f < val) - (val < 0.0f); }
+    constexpr bool is_pow2(int n) { return n == 0 || (n & (n - 1)) == 0; }
 
-// This implements importance sampling.
-// u1 and u2 are random uniform variables w/ range [0, 1)
-inline glm::vec3 cosineSampleHemisphere(float u1, float u2) 
-{   // thank you rory
-    const float r = sqrt(u1);
-    const float theta = 2 * CONSTANTS::PI * u2;
-    const float x = r*cos(theta);
-    const float y = r*sin(theta);
-    // Modification: assume u1 can never go above 1.0f
-    return glm::vec3(x, y, sqrt(1.0f - u1));
-}
+    // orthonormal basis (TBN matrix)
+    inline void assignONBvec3s(const glm::vec3& n, glm::vec3& b1, glm::vec3& b2) 
+    {   // thank you Duff et al
+        const float sign = copysignf(1.0f, n.z); // sign should be 1 even when n.z == 0
+        const float a = -1.0f / (sign + n.z);
+        const float b = n.x * n.y * a;
+        b1 = glm::vec3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x);
+        b2 = glm::vec3(b, sign + n.y * n.y * a, -n.y);
+    }
 
-// https://stackoverflow.com/questions/42537957/fast-accurate-atan-arctan-approximation-algorithm
-static constexpr float atan_jw(float x) {
-  return 8 * x / (3 + std::sqrt(25 + 80.0f / 3.0f * x * x));
-}
+    // This implements importance sampling.
+    // u1 and u2 are random uniform variables w/ range [0, 1)
+    inline glm::vec3 cosineSampleHemisphere(float u1, float u2) 
+    {   // thank you rory
+        const float r = sqrt(u1);
+        const float theta = 2 * CONSTANTS::PI * u2;
+        const float x = r*cos(theta);
+        const float y = r*sin(theta);
+        // Modification: assume u1 can never go above 1.0f
+        return glm::vec3(x, y, sqrt(1.0f - u1));
+    }
 
-// https://mazzo.li/posts/vectorized-atan2.html (auto 4)
-constexpr float f_atan2(float y, float x) {
-    using namespace CONSTANTS;
-    const bool swap = std::fabs(x) < std::fabs(y);
-    const float atan_inp = (swap ? x : y) / (swap ? y : x);
-    float res = atan_jw(atan_inp);
-    res = swap ? sgn(atan_inp)*.5f*PI - res : res;
-    if (x < 0.f) res += sgn(y)*PI; // adjust res based on input quadrant
-    return res;
-}
+    // https://stackoverflow.com/questions/42537957/fast-accurate-atan-arctan-approximation-algorithm
+    static constexpr float atan_jw(float x) {
+    return 8 * x / (3 + std::sqrt(25 + 80.0f / 3.0f * x * x));
+    }
 
-// Uses an identity of atan
-constexpr float f_asin(float x) {
-    return atan_jw(x / std::sqrt(1.f - x*x));
-}
+    // https://mazzo.li/posts/vectorized-atan2.html (auto 4)
+    constexpr float f_atan2(float y, float x) {
+        using namespace CONSTANTS;
+        const bool swap = std::fabs(x) < std::fabs(y);
+        const float atan_inp = (swap ? x : y) / (swap ? y : x);
+        float res = atan_jw(atan_inp);
+        res = swap ? sgn(atan_inp)*.5f*PI - res : res;
+        if (x < 0.f) res += sgn(y)*PI; // adjust res based on input quadrant
+        return res;
+    }
 
-// https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
-constexpr glm::vec2 sphereMap(const glm::vec3 &p) {
-    using namespace CONSTANTS;
-    const float u = 0.5f + f_atan2(p.z, p.x)*R_PI*0.5f;
-    const float v = 0.5f + f_asin(p.y)*R_PI;
-    return glm::vec2(u, v);
-}
+    // Uses an identity of atan
+    constexpr float f_asin(float x) {
+        return atan_jw(x / std::sqrt(1.f - x*x));
+    }
 
-// https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/christian.htm
-// Thank you Christian from the euclideanspace.com forums. My speed is (almost) back!
-constexpr glm::quat f_toQuat(const glm::mat4 &m) {
-    glm::quat Q(1.f, 0.f, 0.f, 0.f);
-    Q.w = std::sqrt( std::max( 0.f, 1 + m[0][0] + m[1][1] + m[2][2] ) ) * .5f;
-    Q.x = std::sqrt( std::max( 0.f, 1 + m[0][0] - m[1][1] - m[2][2] ) ) * .5f;
-    Q.y = std::sqrt( std::max( 0.f, 1 - m[0][0] + m[1][1] - m[2][2] ) ) * .5f;
-    Q.z = std::sqrt( std::max( 0.f, 1 - m[0][0] - m[1][1] + m[2][2] ) ) * .5f;
-    Q.x = std::copysignf( Q.x, m[1][2] - m[2][1] );
-    Q.y = std::copysignf( Q.y, m[2][0] - m[0][2] );
-    Q.z = std::copysignf( Q.z, m[0][1] - m[1][0] );
-    return Q;
+    // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
+    constexpr glm::vec2 sphereMap(const glm::vec3 &p) {
+        using namespace CONSTANTS;
+        const float u = 0.5f + f_atan2(p.z, p.x)*R_PI*0.5f;
+        const float v = 0.5f + f_asin(p.y)*R_PI;
+        return glm::vec2(u, v);
+    }
+
+    // https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/christian.htm
+    // Thank you Christian from the euclideanspace.com forums. My speed is (almost) back!
+    constexpr glm::quat f_toQuat(const glm::mat4 &m) {
+        glm::quat Q(1.f, 0.f, 0.f, 0.f);
+        Q.w = std::sqrt( std::max( 0.f, 1 + m[0][0] + m[1][1] + m[2][2] ) ) * .5f;
+        Q.x = std::sqrt( std::max( 0.f, 1 + m[0][0] - m[1][1] - m[2][2] ) ) * .5f;
+        Q.y = std::sqrt( std::max( 0.f, 1 - m[0][0] + m[1][1] - m[2][2] ) ) * .5f;
+        Q.z = std::sqrt( std::max( 0.f, 1 - m[0][0] - m[1][1] + m[2][2] ) ) * .5f;
+        Q.x = std::copysignf( Q.x, m[1][2] - m[2][1] );
+        Q.y = std::copysignf( Q.y, m[2][0] - m[0][2] );
+        Q.z = std::copysignf( Q.z, m[0][1] - m[1][0] );
+        return Q;
+    }
+
+    // 5AM tomfoolery; phi function for weighting contributions
+    // float `a` is an adjustment constant: higher `a` -> sqrt-like
+    // certain values of x below 0 can cause NaN's b/c asymptotes
+    constexpr float phiWeight(float a, float x) {
+        const float df = ((a+1)/(2*a))*(-2.f/(1.f+a*x)+2.f);
+        return df*df;
+    }
 }
 
 #endif
