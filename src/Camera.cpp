@@ -43,11 +43,12 @@ bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& clo
 bool hit(ShapesVector shapes, const Ray& ray, 
          const Interval& interval, HitArray& allHits);
 
+/*
 // True if currClr*(i+1) equals culmClr within sampBreak threshold; should be called
 // after currClr is added to culmClr.
 bool has_no_change(uint i, uint break_i, const vec3 &culmClr, 
     const vec3 &currClr, float sampBreak = SAMP_DIFF_EPSILION);
-
+*/
 void Camera::applyProjection(MatrixStack& MS) {
     MS.mult(glm::perspective(fovy, aspectRatio, znear, zfar));
 }
@@ -110,6 +111,7 @@ Ray Camera::castSecondaryRay(const Ray &pray) const {
     return dray;
 }
 
+/*
 bool has_no_change(const uint i, const uint min_i, const vec3 &culmClr, 
     const vec3 &currClr, const float sampBreak)
 {
@@ -120,6 +122,7 @@ bool has_no_change(const uint i, const uint min_i, const vec3 &culmClr,
     const auto eqCmp = glm::epsilonEqual(culmClr, extCurrClr, sampBreak);
     return eqCmp.r && eqCmp.g && eqCmp.b;
 }
+*/
 
 void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, uint y) 
 {
@@ -275,7 +278,7 @@ vec3 Camera::getSkyColor(const Ray& ray) const
     case (Camera::SkyType::Haze):
         return .5f*ray.getDir() + .5f;
     case (Camera::SkyType::SphereMap):
-        uv = sphereMap(ray.getDir());
+        uv = umath::sphereMap(ray.getDir());
         return skyTexture->value(uv);
     case (Camera::SkyType::Ambient): 
         return this->globalAmbient;
@@ -482,11 +485,11 @@ float Camera::occlusionDiffuseFactor(IntParams args, vec3 &diffuseFac, float tim
     auto &scene = args.scene;
     auto &interval = args.interval;
 
-    float lightAbsorption = 0.f;
+    VarianceCounter<float> lightAbsorptionCounter;
     vec3 diffuseAbsorption(0.f);
 
     vec3 T, B;
-    assignONBvec3s(args.rec.n, T, B);
+    umath::assignONBvec3s(args.rec.n, T, B);
     vec3 aorayPos = rec.x + (float)interval.min*rec.n;
 
     // Reuse the ray object, yes?
@@ -496,48 +499,51 @@ float Camera::occlusionDiffuseFactor(IntParams args, vec3 &diffuseFac, float tim
 
     const uint minConvergSamp = std::max(occlusionSamples / 4, 8U);
     const float r_tmax = 1.f / (float)interval.max;
-
-    float currSamplesDone = static_cast<float>(occlusionSamples); 
+    
     for (uint i = 0; i < occlusionSamples; ++i) {
         const float u1 = unifRandGen.rand();
         const float u2 = unifRandGen.rand();
-        vec3 rDir = cosineSampleHemisphere(u1, u2);
+        vec3 rDir = umath::cosineSampleHemisphere(u1, u2);
         // Transform the sampled vector from tangent to world space
-        rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);        
-        aoray.setDir(normalize(rDir));
+        rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);  
+        rDir = normalize(rDir);      
+        aoray.setDir(rDir);
 
         Hit aoHit;
         const bool occluded = hit(scene->getShapes(), aoray, interval, aoHit);
-        vec3 rayAbsorbed = vec3(0.f);
-
-        // 5AM tomfoolery; phi function for weighting contributions
-        // float `a` is an adjustment constant: higher `a` -> sqrt-like
-        // certain values of x below 0 can cause NaN's b/c asymptotes
-        constexpr auto p = [](float a, float x) {
-            const float df = ((a+1)/(2*a))*(-2.f/(1.f+a*x)+2.f);
-            return df*df;
-        };
+        vec3 rayClrAbsorbed = vec3(0.f);
+        float rayLightAbsorbed = 0.f;
 
         // For a red clr, green and blue are absorbed, but reflections and refractions
         // also need consideration. however, recursively calling getRayColor is expensive
         if (occluded && aoHit.m) {
-            const float d = glm::clamp(aoHit.t * r_tmax, 0.f, 1.f);
+            const float dist = glm::clamp(aoHit.t * r_tmax, 0.f, 1.f);
             // Very crude approximation of color blending from diffuse reflection
-            const float dCoeff = (1.f - rec.m->reflCoeff) * (1.f - rec.m->transparency);
-            const vec3 kd = aoHit.diffuse() * dCoeff;
+            const float ureflCoeff = 1.f - rec.m->reflCoeff;
+            const float opacity = 1.f - rec.m->transparency;
+            const vec3 kd = aoHit.diffuse() * ureflCoeff * opacity;
             const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, rDir));
-            rayAbsorbed = vec3(1.f) - diff_cont * p(.6f, d);
+
             // Transparent objects occlude less light. well, i think
-            // the closer the occluding, the less that light reaches
-            lightAbsorption += (1.f - d) * (1.f - rec.m->transparency);
+            // the closer the occluding, the less that light reaches,
+            // so more light should be absorbed; crude approximations
+            rayClrAbsorbed = (1.f - diff_cont) * umath::phiWeight(.6f, 1.f - dist);
+            rayLightAbsorbed = (1.f - dist) * opacity;
         }
-        diffuseAbsorption += rayAbsorbed;
-        const bool cond = has_no_change(i, minConvergSamp, diffuseAbsorption, rayAbsorbed);
+
+        diffuseAbsorption += rayClrAbsorbed;
+        const bool lowVari = lightAbsorptionCounter.add(rayLightAbsorbed);
+
+        // const bool cond = has_no_change(i, minConvergSamp, diffuseAbsorption, rayAbsorbed);
         // crazy, over 2x speedup with no visible changes in quality
-        if (cond) { currSamplesDone = static_cast<float>(i + 1); break; }
+        // if (cond) { currSamplesDone = static_cast<float>(i + 1); break; }
+        if (lowVari && i >= minConvergSamp) { break; }
     }
+
+    // const float currSamplesDone = static_cast<float>(occlusionSamples);
+    const float currSamplesDone = lightAbsorptionCounter.getSamplesDone();
     const float r_samplesDone = 1.f / currSamplesDone;
-    const float occlusionCoeff = 1.f - lightAbsorption*r_samplesDone;
+    const float occlusionCoeff = 1.f - lightAbsorptionCounter.getMean();
     diffuseFac = vec3(1.f) - (diffuseAbsorption*r_samplesDone);
     // sqrt is a hack that make the color blends look nicer with the subtle occlusion
     // also multiply by sign to preserve stability with sqrt
@@ -577,7 +583,7 @@ public:
         // const float radj = max(std::sqrt(r), r);
         // falloff = 1.f - std::max(0.f, 1.f - radj/dz_len);
 
-        assignONBvec3s(dz, dx, dy);
+        umath::assignONBvec3s(dz, dx, dy);
     }
     inline glm::vec3 operator()() const
     {

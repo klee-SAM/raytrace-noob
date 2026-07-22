@@ -65,7 +65,7 @@ mat4 Shape::modelMatLerp(const float time) const {
 	const mat3 rM = mat3(this->modelMat[0] / scales.x,
 						 this->modelMat[1] / scales.y,
 						 this->modelMat[2] / scales.z);
-	const quat rotations = f_toQuat(rM);
+	const quat rotations = umath::f_toQuat(rM);
 	
 	// Rotations.
 	mat4 model = glm::mat4_cast(glm::fastMix(rotations, m_rotation, time));
