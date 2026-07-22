@@ -1,6 +1,7 @@
 #include "../stn.hpp"
 #include "SphereTracer.hpp"
 #include "../Ray.hpp"
+#include "../util/counter.hpp"
 
 #include <iostream>
 #include <vector>
@@ -86,10 +87,60 @@ void processRows(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &im
 
 }
 
-void setRow(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image, uint y);
+Ray SphereTracer::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) const {
+    // https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/
+    const float ndc_y = 2.f*((float)idy + offset.y)/((float)height) - 1.f;
+    const float ndc_x = 2.f*((float)idx + offset.x)/((float)width) - 1.f;
 
+    const glm::vec4 rayClip(ndc_x, ndc_y, -1.0f, 1.0f);
+    glm::vec4 rayEye = invP*rayClip;
+    rayEye.w = 0.0f; // The ray is a direction, so set w to 0 to ignore translations
 
+    Ray cray; 
+    cray.pos = cameraPos;
+    cray.dir = glm::normalize(C*rayEye);
+    
+    // Using the uniform distribution was too regular
+    // const vec2 rndVec = diskRandGen.rand();
+    // cray.time = std::fmod(dot(rndVec, rndVec), 1.f);
 
+    return cray;
+}
+
+void SphereTracer::setRow(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image, uint y)
+{
+    for (uint x = 0; x < width; ++x) {
+        vec3 color = vec3(0.0f);
+
+        Ray cray = castPrimaryRay(x, y);
+        color = getRayColor(scene, cray);
+        
+        // breakpoints have experimentally OK magic numbers
+        // const uint breakpoint = 8U;
+
+        VarianceCounter<vec3> s_counter;
+        s_counter.add(color, CounterCmps::vec3_cmp);
+        
+        // for (uint i = 1; i < AAsamples; ++i) {
+        //     const vec2 offset = 0.5f*diskRandGen.rand(i) + 0.5f;
+        //     cray = castPrimaryRay(x, y, offset);
+
+        //     const bool useSecRay = focalRadius > Camera::EPSILION;
+        //     Ray dray = useSecRay ? castSecondaryRay(cray) : cray;
+
+        //     const vec3 rayColor = getRayColor(scene, dray);
+        //     bool lowVari = s_counter.add(rayColor, CounterCmps::vec3_cmp);
+            
+        //     // Stop sampling this pixel if the contribution
+        //     // of the new sample is < epsilion values for all comps
+        //     if (lowVari && i > breakpoint) break;
+        // }
+
+        color = s_counter.getMean();
+        
+        image->setPixel(x, y, color);
+    }
+}
 
 
 float dist_to_sphere(vec3 p, vec3 center, float radius)
@@ -97,7 +148,6 @@ float dist_to_sphere(vec3 p, vec3 center, float radius)
     return glm::length(p - center) - radius;
 }
 
-constexpr int MAX_STEPS = 10;
 vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, 
                  const Interval &interval = Interval(EPSILION, MAX_DIST)) 
 {

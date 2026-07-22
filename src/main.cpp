@@ -13,6 +13,8 @@
 #include <chrono>
 #include <iostream>
 
+#include "tracers/SphereTracer.hpp"
+
 using std::string;
 using std::unique_ptr, std::shared_ptr;
 using std::make_shared, std::make_unique;
@@ -26,9 +28,18 @@ int main(int argc, char** argv) {
     string filename, outputname;
     uint width = 256U, height = 256U;
 
-    if (argc < 3) {
+    if (argc < 2) {
         std::clog << "Usage: ./prog sceneFile outputFile\n";
         return 0;
+    } else if (argc == 2) {
+        filename = argv[1];
+        if (filename == "strace") {
+            // ... code to test spheretracer here pls
+            // TODO: temporary get rid of scene arg for sphere tracer
+        } else {
+            std::clog << "Usage: ./prog sceneFile outputFile\n";
+            return 0;
+        }
     } else if (argc >= 3) {
         filename = argv[1];
         outputname = argv[2];

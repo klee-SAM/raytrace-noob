@@ -27,6 +27,8 @@ private:
     glm::mat4 invP;      // inverse of projection mat
     glm::vec4 dof_u;     // right cam basis vec
     glm::vec4 dof_v;     // up cam basis vec
+
+    Ray castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset = glm::vec3(.5f)) const;
 };
 
 #endif
