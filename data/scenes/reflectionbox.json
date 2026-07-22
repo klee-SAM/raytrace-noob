@@ -52,6 +52,15 @@
             "diffuse" : [0.8, 0.8, 0.8],
             "specular" : [1.0, 1.0, 0.5],
             "exponent" : 100.0
+        },
+        "checker" : {
+            "ambient" : [0.1, 0.1, 0.1],
+            "diffuse" : {
+                "even" : [0.8, 0.8, 0.8],
+                "odd" : [0.7, 0.7, 0.7]
+            },
+            "specular" : [1.0, 1.0, 0.5],
+            "exponent" : 100.0
         }
     },
     "lights" : [
@@ -123,7 +132,7 @@
         {
             "shape" : "plane",
             "position" : [0.0, -2.0, 0.0],
-            "material" : "white"
+            "material" : "checker"
         },
         {
             "shape" : "plane",
