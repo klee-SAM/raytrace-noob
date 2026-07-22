@@ -8,7 +8,7 @@ using glm::mat4;
 
 // https://en.wikipedia.org/wiki/UV_mapping#Finding_UV_on_a_sphere
 vec2 Sphere::computeUV(const vec3& p) const {
-    return sphereMap(p);
+    return umath::sphereMap(p);
 }
 
 vec4 Sphere::computeNormal(const glm::vec3& x) const { 

@@ -13,7 +13,7 @@ vec4 Cylinder::computeNormal(const vec3& x0) const {
 }
 
 vec2 Cylinder::computeUV(const vec3& p) const {
-	const float u = 0.5f + f_atan2(p.z, p.x)*R_PI*0.5f;
+	const float u = 0.5f + umath::f_atan2(p.z, p.x)*R_PI*0.5f;
 	const float &v = p.y;
 	return vec2(u, v);
 } 

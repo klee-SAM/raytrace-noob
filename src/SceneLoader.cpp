@@ -2,6 +2,7 @@
 
 #include "Scene.hpp"
 
+#include "util/ModelMatConstr.hpp"
 #include "util/umath.hpp"
 // #include "util/optional.hpp"
 #include <optional>
