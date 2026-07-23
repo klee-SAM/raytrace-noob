@@ -125,7 +125,7 @@ private:
 
     double aspectRatio;
     double fovy;                // radians; determines how much camera sees
-    double znear = 1.0f;        // focal length
+    double znear = 1.0f;        
     double zfar = 1000.0f;
     float focusLength = 5.f;    // dist where everything is in focus
     float focalRadius = 0.f;    // > 0.f for DoF effect
