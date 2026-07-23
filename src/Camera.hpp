@@ -33,13 +33,14 @@ public:
 
     Camera() 
     : translation(0.f), rotation(0.f),
-      position(0.f), lookAtPos(0.f), camUpVec{0.f, 1.f, 0.f},
+      position(0.f), lookAtPos{0.f, 0.f, -1.f}, 
+      camUpVec{0.f, 1.f, 0.f},
       aspectRatio(1.0), fovy(glm::radians(45.0)), 
       width(1), height(1) { }
 
     Camera(uint w, uint h) 
     : translation(0.f), rotation(0.f),
-      position(0.f), lookAtPos(0.f), 
+      position(0.f), lookAtPos{0.f, 0.f, -1.f}, 
       camUpVec{0.f, 1.f, 0.f},
       aspectRatio((double)w / (double)h), 
       fovy(glm::radians(45.0)), 
@@ -47,8 +48,8 @@ public:
 
     // fov is in degrees
     Camera(uint w, uint h, degree_t fov)
-    : translation(0.f), rotation(0.f),
-      position(0.f), lookAtPos(0.f), 
+    : translation(0.f), rotation(0.f), 
+      position(0.f), lookAtPos{0.f, 0.f, -1.f}, 
       camUpVec{0.f, 1.f, 0.f},
       aspectRatio((double)w / (double)h), 
       fovy(glm::radians(fov)), 

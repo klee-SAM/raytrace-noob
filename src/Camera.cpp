@@ -72,8 +72,16 @@ void Camera::applyView(MatrixStack& MS) {
     upVec = cameraMat * vec4(camUpVec, 0.f);
 
     lookAtMat = glm::lookAt(eye, center, upVec);
-    MS.pop();
 
+    // Check for NaNs in the lookAt matrix
+    for (int i = 0; i < lookAtMat.length(); ++i) {
+        if (glm::any(glm::isnan(lookAtMat[i]))) {
+            std::cerr << "NaNs detected in lookAtMat; lookAtMat not applied.\n";
+            return; 
+        }
+    }
+
+    MS.pop();
     MS.mult(lookAtMat);
 }
 
