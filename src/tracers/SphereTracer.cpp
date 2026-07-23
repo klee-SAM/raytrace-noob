@@ -161,7 +161,9 @@ float dist_to_sphere(vec3 p, vec3 center, float radius)
 }
 
 float sceneSDF(vec3 p) {
-    float sphere0 = dist_to_sphere(p, vec3(0.f, 0.f, 2.25f), 1.f);
+    // why does this shrink to zero as dist from
+    // camera approach 3?
+    float sphere0 = dist_to_sphere(p, vec3(0.f, 0.f, 0.25f), 1.f);
 
     return sphere0;
 }
@@ -179,7 +181,9 @@ vec3 sceneNormal(vec3 p) {
     float gY = sceneSDF(p + stepY) - sceneSDF(p - stepY);
     float gZ = sceneSDF(p + stepZ) - sceneSDF(p - stepZ);
 
-    return glm::normalize(vec3(gX, gY, gZ));
+
+    // negate b/c conventions???? image flipping why?
+    return glm::normalize(vec3(-gX, gY, -gZ));
 }
 
 vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval &interval) 
@@ -200,21 +204,23 @@ vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval 
             // inside
             vec3 normal = sceneNormal(curr_pos);
 
-            vec3 light_position = vec3(2.0, -5.0, 3.0);
+            vec3 light_position = vec3(2.0, 5.0, 3.0);
 
             // Calculate the unit direction vector that points from
             // the point of intersection to the light source
-            vec3 direction_to_light = glm::normalize(curr_pos - light_position);
+            vec3 direction_to_light = glm::normalize(light_position - curr_pos);
 
-            float diffuse_intensity = std::max(0.f, glm::dot(normal, direction_to_light));
+            const vec3 h = normalize(direction_to_light - ray.getDir());
+            float dI = std::max(0.f, glm::dot(normal, direction_to_light));
+            float sI = std::pow(std::max(0.0f, glm::dot(normal, h)), 100.f);
 
-            return vec3(0.0, 1.0, 0.0) * diffuse_intensity;
+            return vec3(0.1) + vec3(0.0, 1.0, 0.0)*dI + vec3(1.0f)*sI;
 
         }
         if (total_dist > MAXIMUM_TRACE_DIST) 
         {
             // miss
-            break;
+            return vec3(0.f);
         }
 
         total_dist += dist_to_sdf;
