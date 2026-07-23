@@ -91,7 +91,7 @@ void MeshBuffer::loadMesh(const std::string& meshName,
 					norBuf.push_back(norm.y);
 					norBuf.push_back(norm.z);
 				}
-			} else {
+			} else if (attrib.normals.empty()) {
 				// Push some bogus instead
 				for (int i = 0; i < fv; ++i) {
 					vec3 norm = vec3(0.577);
