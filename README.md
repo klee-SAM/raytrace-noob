@@ -112,6 +112,7 @@ Instructions primarily for Linux. Other platforms may have slightly different bu
 - The Ray Tracer Challenge: (https://pragprog.com/titles/jbtracer/the-ray-tracer-challenge/)
 - Physically Based Rendering: (https://pbr-book.org/4ed/contents)
 - Scratchapixel lessons: (https://www.scratchapixel.com/index.html) 
+- Inigo Quilez's articles: (https://iquilezles.org/articles/)
 
 ## Other links:
 
@@ -165,7 +166,7 @@ See [Texture Mapping](#texture-mapping) for (some) image sources.
 - https://github.com/jtsiomb/csgray
 
 ### Tori
-- http://cosinekitty.com/raytrace/chapter13_torus.html (Unsecure)
+- http://cosinekitty.com/raytrace/chapter13_torus.html (Not secure)
 - https://www.shadertoy.com/view/3XdyRj
 - https://iquilezles.org/articles/intersectors/
 
@@ -173,6 +174,11 @@ See [Texture Mapping](#texture-mapping) for (some) image sources.
 - http://raytracerchallenge.com/bonus/texture-mapping.html (Not secure)
 - Images 1: https://texturify.com/stock-photo/above-the-city-in-winter-10588.html
 - Images 2: https://polyhaven.com/hdris
+
+### SDFs
+- https://michaelwalczyk.com/blog-ray-marching.html
+- https://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/
+- https://github.com/pedrotrschneider/shader-fractals
 
 ### BVH and GPU Acceleration
 - https://github.com/AdaptiveCpp/AdaptiveCpp
