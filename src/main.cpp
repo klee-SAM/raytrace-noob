@@ -10,6 +10,7 @@
 #include "SceneLoader.hpp"
 #include "Texture.hpp"
 
+#include <cstdlib>
 #include <chrono>
 #include <iostream>
 
@@ -36,9 +37,21 @@ int main(int argc, char** argv) {
         if (filename == "strace") {
             // ... code to test spheretracer here pls
             // TODO: temporary get rid of scene arg for sphere tracer
+            unique_ptr<Scene> tmp_scene = make_unique<Scene>();
+            unique_ptr<Camera> camera = make_unique<Camera>(width, height, 45.f);
+            camera->setInitDistance(5.f);
+            unique_ptr<SphereTracer> stracer = make_unique<SphereTracer>(width, height);
+            MatrixStack P = MatrixStack();
+            MatrixStack MV = MatrixStack();
+            camera->applyProjection(P);
+            camera->applyView(MV);
+            unique_ptr<Image> image = stracer->render(tmp_scene, P.top(), MV.top());
+            image->setFilename("sphereTraceTest.png");
+            image->write();
+            return EXIT_SUCCESS;
         } else {
             std::clog << "Usage: ./prog sceneFile outputFile\n";
-            return 0;
+            return EXIT_FAILURE;
         }
     } else if (argc >= 3) {
         filename = argv[1];
@@ -81,5 +94,5 @@ int main(int argc, char** argv) {
     image->setFilename(outputname);
     image->write();
 
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -20,6 +20,9 @@ using std::vector;
 
 // // TODO: copy the render(), setRow(), processRows(), and alldat
 
+vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, 
+                 const Interval &interval = Interval(CONSTANTS::EPSILION, MAX_DIST));
+
 unique_ptr<Image> SphereTracer::render(unique_ptr<Scene>& scene, const mat4& P, const mat4& V) 
 {
     // Precompute as much as possible before loops
@@ -27,6 +30,8 @@ unique_ptr<Image> SphereTracer::render(unique_ptr<Scene>& scene, const mat4& P, 
     invP = glm::inverse(P);
     cameraPos = C[3]; 
     cameraPos.w = 1.0f;
+
+    // V matrix is nans for some reason, need to debug camera->applyView
 
     // Camera basis vectors in world space
     dof_u = C[0]; // right
@@ -82,9 +87,14 @@ unique_ptr<Image> SphereTracer::render(unique_ptr<Scene>& scene, const mat4& P, 
     return image;
 }
 
-void processRows(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image) 
+void SphereTracer::processRows(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image) 
 {
-
+    while (!r_queue.empty()) {
+        RowQueue::extract_pair pair = r_queue.pop();
+        if (!pair.success) return;
+        setRow(scene, image, pair.row);
+        r_queue.rowsProcessed++;
+    }
 }
 
 Ray SphereTracer::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) const {
@@ -99,6 +109,8 @@ Ray SphereTracer::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) co
     Ray cray; 
     cray.pos = cameraPos;
     cray.dir = glm::normalize(C*rayEye);
+    // cray.pos = glm::vec4(0.f, 0.f, -2.f, 1.f);
+    // cray.dir = glm::vec4(ndc_x, ndc_y, 1.f, 0.f);
     
     // Using the uniform distribution was too regular
     // const vec2 rndVec = diskRandGen.rand();
@@ -148,26 +160,60 @@ float dist_to_sphere(vec3 p, vec3 center, float radius)
     return glm::length(p - center) - radius;
 }
 
-vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, 
-                 const Interval &interval = Interval(EPSILION, MAX_DIST)) 
+float sceneSDF(vec3 p) {
+    float sphere0 = dist_to_sphere(p, vec3(0.f, 0.f, 2.25f), 1.f);
+
+    return sphere0;
+}
+
+vec3 sceneNormal(vec3 p) {
+    // Observe how the SDF output changes to get the normal;
+    // also known as calculating the gradient
+
+    constexpr float SMALL_STEP = 0.01f;
+    constexpr vec3 stepX = vec3(SMALL_STEP, 0.f, 0.f);
+    constexpr vec3 stepY = vec3(0.f, SMALL_STEP, 0.f);
+    constexpr vec3 stepZ = vec3(0.f, 0.f, SMALL_STEP);
+
+    float gX = sceneSDF(p + stepX) - sceneSDF(p - stepX);
+    float gY = sceneSDF(p + stepY) - sceneSDF(p - stepY);
+    float gZ = sceneSDF(p + stepZ) - sceneSDF(p - stepZ);
+
+    return glm::normalize(vec3(gX, gY, gZ));
+}
+
+vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval &interval) 
 {
     float total_dist = 0.0f;
     const int MAX_STEPS = 32;
     const float MIN_HIT_DIST = interval.min;
-    const float MAXIMUM_TRACE_DISTANCE = interval.max;
+    const float MAXIMUM_TRACE_DIST = interval.max;
 
     for (int i = 0; i < MAX_STEPS; ++i) 
     {
         vec3 curr_pos = ray.getPos() + (i * total_dist) * ray.getDir();
 
-        float dist_to_sdf = dist_to_sphere(curr_pos, vec3(0.f), 1.f);
+        float dist_to_sdf = sceneSDF(curr_pos);
 
         if (dist_to_sdf < MIN_HIT_DIST) 
         {
-            return vec3(0.f, 1.f, 0.f);
+            // inside
+            vec3 normal = sceneNormal(curr_pos);
+
+            vec3 light_position = vec3(2.0, -5.0, 3.0);
+
+            // Calculate the unit direction vector that points from
+            // the point of intersection to the light source
+            vec3 direction_to_light = glm::normalize(curr_pos - light_position);
+
+            float diffuse_intensity = std::max(0.f, glm::dot(normal, direction_to_light));
+
+            return vec3(0.0, 1.0, 0.0) * diffuse_intensity;
+
         }
-        if (total_dist > MAXIMUM_TRACE_DISTANCE) 
+        if (total_dist > MAXIMUM_TRACE_DIST) 
         {
+            // miss
             break;
         }
 

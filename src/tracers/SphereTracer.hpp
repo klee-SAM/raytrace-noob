@@ -10,6 +10,7 @@
 
 class SphereTracer {
 public:
+    SphereTracer(uint w, uint h) : width(w), height(h) { }
 
     std::unique_ptr<Image> render(std::unique_ptr<Scene>&, const glm::mat4& P, const glm::mat4& V);
     void processRows(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image);
