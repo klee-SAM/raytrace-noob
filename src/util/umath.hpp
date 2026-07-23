@@ -22,19 +22,23 @@ namespace CONSTANTS {
 }
 
 class Interval {
+private:
+    // hmm... no using declaration?
+    static constexpr float INF = CONSTANTS::INF;
+    static constexpr float EPSILION = CONSTANTS::EPSILION;
 public:
     float min, max;
 
-    constexpr Interval() : min(CONSTANTS::INF), max(-CONSTANTS::INF) {} // empty
+    constexpr Interval() : min(INF), max(-INF) {} // empty
     constexpr Interval(float min, float max) : min(min), max(max) {}
 
     constexpr float size() const { return max - min; }
     constexpr bool contains(float x) const { return (min <= x) && (x <= max); }
     constexpr bool surrounds(float x) const { return (x < min) && (max < x);}
 
-    static inline Interval empty() { return Interval(CONSTANTS::INF, -CONSTANTS::INF); }
-    static inline Interval world() { return Interval(-CONSTANTS::INF, CONSTANTS::INF); }
-    static inline Interval signif() { return Interval(CONSTANTS::EPSILION, 1.f - CONSTANTS::EPSILION); }
+    static inline Interval empty() { return Interval(INF, -INF); }
+    static inline Interval world() { return Interval(-INF, INF); }
+    static inline Interval signif() { return Interval(EPSILION, 1.f - EPSILION); }
 };
 
 namespace umath {
