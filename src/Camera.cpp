@@ -721,8 +721,8 @@ vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
         // duplicate, also present in non-area light case above
         const vec3 kd = rec.diffuse(), ks = rec.specular();
         const float s = rec.m->exponent;
-        const vec3 h = normalize(lv + ev);
-        const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
+        const vec3 h = normalize(new_lv + ev);
+        const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, new_lv));
         const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
         lightingSum += (diff_cont*diffuseAtt + spec_cont);
 
