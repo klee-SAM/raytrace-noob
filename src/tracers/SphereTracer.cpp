@@ -6,6 +6,8 @@
 #include <iostream>
 #include <vector>
 
+#include <glm/gtc/noise.hpp>
+
 using glm::vec3, glm::mat4;
 
 using CONSTANTS::EPSILION;
@@ -14,14 +16,39 @@ constexpr float MAX_DIST = 1000.f;
 using std::unique_ptr;
 using std::vector;
 
-// // ...Basic working example for raymarcher here
+// ...Basic working example for raymarcher here
 
-// // ????
+// ????
 
-// // TODO: copy the render(), setRow(), processRows(), and alldat
+/*
+The only difference between RecursiveTracer and SphereTracer
+is the getRayColor() function, so share the multithreading/task
+delegation code by putting them in Raytracer.hpp
+
+- inheritance by overriding only getRayColor()
+- make scene and camera be members of Raytracer.hpp
+- compute P and V matrices inside render(), using a bound camera object 
+
+- there should be checks to ensure that a camera and
+scene object are bound when render() is called
+
+- the sky should belong in Scene.hpp,
+- camera settings should become public
+
+- random number gens should be held as public static members
+
+// make variables computed in render() as
+// private variables here, because only getRayColor()
+// needs to be overridden
+
+// TODO: for cast secondary ray, need to copy some members of camera
+// as the raytracer's members so that castSecondary ray can be used;
+// want to minimize the overhead for this 
+
+*/
 
 vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, 
-                 const Interval &interval = Interval(0.001f, MAX_DIST));
+                 const Interval &interval = Interval(0.005f, MAX_DIST));
 
 unique_ptr<Image> SphereTracer::render(unique_ptr<Scene>& scene, const mat4& P, const mat4& V) 
 {
@@ -30,8 +57,6 @@ unique_ptr<Image> SphereTracer::render(unique_ptr<Scene>& scene, const mat4& P, 
     invP = glm::inverse(P);
     cameraPos = C[3]; 
     cameraPos.w = 1.0f;
-
-    // V matrix is nans for some reason, need to debug camera->applyView
 
     // Camera basis vectors in world space
     dof_u = C[0]; // right
@@ -160,12 +185,25 @@ float dist_to_sphere(vec3 p, vec3 center, float radius)
     return glm::length(p - center) - radius;
 }
 
+// good to do
+// Multiple shapes
+// CSG operations (unions, intersections, subtractions, etc.)
+// Fractal SDFs
+// Shadows and/or ambient occlusion
+
 float sceneSDF(vec3 p) {
     // why does this shrink to zero as dist from
     // camera approach 3?
+    // answer: i multipled by i, and it just did that for some reason
+    float s = 2.5f;
+    p.x = p.x - s*std::round(p.x/s);
+    p.y = p.y - s*std::round(p.y/s);
     float sphere0 = dist_to_sphere(p, vec3(0.f, 0.f, 0.f), 1.f);
-
-    return sphere0;
+    float k = 4.f;
+    float displacement = cos(k*p.x) * cos(k*p.y) * sin(k*p.z) * .25f;
+    // float dP = glm::perlin(p);
+    
+    return sphere0 + displacement;
 }
 
 vec3 sceneNormal(vec3 p) {
@@ -181,15 +219,13 @@ vec3 sceneNormal(vec3 p) {
     float gY = sceneSDF(p + stepY) - sceneSDF(p - stepY);
     float gZ = sceneSDF(p + stepZ) - sceneSDF(p - stepZ);
 
-
-    // negate b/c conventions???? image flipping why?
     return glm::normalize(vec3(gX, gY, gZ));
 }
 
 vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval &interval) 
 {
     float total_dist = 0.0f;
-    const int MAX_STEPS = 32;
+    const int MAX_STEPS = 64;
     const float MIN_HIT_DIST = interval.min;
     const float MAXIMUM_TRACE_DIST = interval.max;
 
@@ -204,6 +240,7 @@ vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval 
             // inside
             vec3 normal = sceneNormal(curr_pos);
 
+            // handedness is consistent actually; +x goes to the right
             vec3 light_position = vec3(2.0, 5.0, 3.0);
 
             // Calculate the unit direction vector that points from
@@ -214,7 +251,9 @@ vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval 
             float dI = std::max(0.f, glm::dot(normal, direction_to_light));
             float sI = std::pow(std::max(0.0f, glm::dot(normal, h)), 100.f);
 
-            return vec3(0.1) + vec3(0.0, 1.0, 0.0)*dI + vec3(1.0f)*sI;
+            const vec3 Kd = vec3(0.0078, 0.6745, 0.8392);
+
+            return vec3(0.1) + Kd*dI + vec3(1.0f)*sI;
             // return vec3(0.f, 1.f, 0.f);
         }
         if (total_dist > MAXIMUM_TRACE_DIST) 

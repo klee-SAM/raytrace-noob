@@ -27,39 +27,14 @@ public:
     Raytracer() {};
     virtual ~Raytracer() = default;
 
-    // todo:
-    // perhaps this takes a struct as an argument which contains the 
-    // P and MV matrices, scene, and camera...
-    // or perhaps the camera holds the P and MV matrices
     std::unique_ptr<Image> render(std::unique_ptr<Scene>&, CMatrix &P, CMatrix &MV) const;
     void processRows(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image);
     virtual void setRow(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image, uint y) = 0;
-
-    // TODO: for cast secondary ray, need to copy some members of camera
-    // as the raytracer's members so that castSecondary ray can be used;
-    // want to minimize the overhead for this 
 
     // Might move all these methods to private, and just have getRayColor be the function that
     // actually needs to be overridden. 
     Ray castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset = glm::vec2(.5f)) const;
     Ray castSecondaryRay(const Ray &primaryRay) const;
-
-    // the sky should belong in Scene.hpp,
-    // camera settings should become public
-    // make variables computed in render() as
-    // protected variables here, because I
-    // am not going to bother defining a whole
-    // set of getters and setters for them
-
-
-
-    // !!!!!!!!!!!!!!!!!!!
-    // WAIT UNTIL A BASIC WORKING SPHERE TRACER IMPLEMENTATION
-    // IS DONE (and basic path tracer too) BEFORE actually
-    // committing to restructuring
-    // don't know what is actually shared and what is 
-    // specific to analytic rays
-    // !!!!!!!!!!!!!!!!!
     
 protected:
     RowQueue r_queue;
