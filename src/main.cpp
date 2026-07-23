@@ -38,9 +38,8 @@ int main(int argc, char** argv) {
             // ... code to test spheretracer here pls
             // TODO: temporary get rid of scene arg for sphere tracer
             unique_ptr<Scene> tmp_scene = make_unique<Scene>();
-            unique_ptr<Camera> camera = make_unique<Camera>(width, height, 25.f);
-            
-            camera->setInitDistance(3.f);
+            unique_ptr<Camera> camera = make_unique<Camera>(width, height, 45.f);
+            camera->setInitDistance(5.f);
             unique_ptr<SphereTracer> stracer = make_unique<SphereTracer>(width, height);
             MatrixStack P = MatrixStack();
             MatrixStack MV = MatrixStack();

@@ -21,7 +21,7 @@ using std::vector;
 // // TODO: copy the render(), setRow(), processRows(), and alldat
 
 vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, 
-                 const Interval &interval = Interval(CONSTANTS::EPSILION, MAX_DIST));
+                 const Interval &interval = Interval(0.001f, MAX_DIST));
 
 unique_ptr<Image> SphereTracer::render(unique_ptr<Scene>& scene, const mat4& P, const mat4& V) 
 {
@@ -163,7 +163,7 @@ float dist_to_sphere(vec3 p, vec3 center, float radius)
 float sceneSDF(vec3 p) {
     // why does this shrink to zero as dist from
     // camera approach 3?
-    float sphere0 = dist_to_sphere(p, vec3(0.f, 0.f, 0.25f), 1.f);
+    float sphere0 = dist_to_sphere(p, vec3(0.f, 0.f, 0.f), 1.f);
 
     return sphere0;
 }
@@ -183,7 +183,7 @@ vec3 sceneNormal(vec3 p) {
 
 
     // negate b/c conventions???? image flipping why?
-    return glm::normalize(vec3(-gX, gY, -gZ));
+    return glm::normalize(vec3(gX, gY, gZ));
 }
 
 vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval &interval) 
@@ -195,7 +195,7 @@ vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval 
 
     for (int i = 0; i < MAX_STEPS; ++i) 
     {
-        vec3 curr_pos = ray.getPos() + (i * total_dist) * ray.getDir();
+        vec3 curr_pos = ray.getPos() + total_dist * ray.getDir();
 
         float dist_to_sdf = sceneSDF(curr_pos);
 
@@ -215,18 +215,18 @@ vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval 
             float sI = std::pow(std::max(0.0f, glm::dot(normal, h)), 100.f);
 
             return vec3(0.1) + vec3(0.0, 1.0, 0.0)*dI + vec3(1.0f)*sI;
-
+            // return vec3(0.f, 1.f, 0.f);
         }
         if (total_dist > MAXIMUM_TRACE_DIST) 
         {
             // miss
-            return vec3(0.f);
+            break;
         }
 
         total_dist += dist_to_sdf;
     }
 
-    return vec3(0.1f);
+    return vec3(0.3f, 0.4f, 0.6f);
 }
 
 
