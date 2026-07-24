@@ -35,9 +35,7 @@ resources on raytracing.
 - [ ] GPU acceleration (triangles)
 
 #### special
-- [ ] SDF and sphere tracing <!!!>
-    - create a fractal
-    - SphereTracer.hpp
+- [X] SDF and sphere tracing
 - [ ] Monte Carlo path tracing
     - Pathtracer.hpp
 
@@ -49,6 +47,7 @@ resources on raytracing.
 - [ ] better adaptive depth control 
     - carry over the reflective coefficients
     - terminate reflection/refraction via threshold
+    - struct {uint bounces; float culmVisibility; } control; 
 
 - [ ] scene format documentation (json)
 - [ ] support .mtl conventions for scene files

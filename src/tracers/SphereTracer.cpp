@@ -8,9 +8,12 @@
 
 #include <glm/gtc/noise.hpp>
 
-using glm::vec3, glm::mat4;
+#include "../util/prand.hpp"
+
+using glm::vec3, glm::vec4, glm::mat4;
 
 using CONSTANTS::EPSILION;
+constexpr float MIN_DIST = 0.005f;
 constexpr float MAX_DIST = 1000.f;
 
 using std::unique_ptr;
@@ -48,7 +51,7 @@ scene object are bound when render() is called
 */
 
 vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, 
-                 const Interval &interval = Interval(0.005f, MAX_DIST));
+                 const Interval &interval = Interval(MIN_DIST, MAX_DIST));
 
 unique_ptr<Image> SphereTracer::render(unique_ptr<Scene>& scene, const mat4& P, const mat4& V) 
 {
@@ -144,6 +147,8 @@ Ray SphereTracer::castPrimaryRay(uint idx, uint idy, const glm::vec2 &offset) co
     return cray;
 }
 
+static prand::diskRand diskRandGen; // I tell myself that this is temporary
+
 void SphereTracer::setRow(const std::unique_ptr<Scene> &scene, std::unique_ptr<Image> &image, uint y)
 {
     for (uint x = 0; x < width; ++x) {
@@ -153,25 +158,28 @@ void SphereTracer::setRow(const std::unique_ptr<Scene> &scene, std::unique_ptr<I
         color = getRayColor(scene, cray);
         
         // breakpoints have experimentally OK magic numbers
-        // const uint breakpoint = 8U;
+        const uint breakpoint = 8U;
 
         VarianceCounter<vec3> s_counter;
         s_counter.add(color, CounterCmps::vec3_cmp);
-        
-        // for (uint i = 1; i < AAsamples; ++i) {
-        //     const vec2 offset = 0.5f*diskRandGen.rand(i) + 0.5f;
-        //     cray = castPrimaryRay(x, y, offset);
 
-        //     const bool useSecRay = focalRadius > Camera::EPSILION;
-        //     Ray dray = useSecRay ? castSecondaryRay(cray) : cray;
+        const uint AAsamples = 16U;
 
-        //     const vec3 rayColor = getRayColor(scene, dray);
-        //     bool lowVari = s_counter.add(rayColor, CounterCmps::vec3_cmp);
+        for (uint i = 1; i < AAsamples; ++i) {
+            const glm::vec2 offset = 0.5f*diskRandGen.rand(i) + 0.5f;
+            cray = castPrimaryRay(x, y, offset);
+
+            // const bool useSecRay = focalRadius > Camera::EPSILION;
+            // Ray dray = useSecRay ? castSecondaryRay(cray) : cray;
+
+            // const vec3 rayColor = getRayColor(scene, dray);
+            const vec3 rayColor = getRayColor(scene, cray);
+            bool lowVari = s_counter.add(rayColor, CounterCmps::vec3_cmp);
             
-        //     // Stop sampling this pixel if the contribution
-        //     // of the new sample is < epsilion values for all comps
-        //     if (lowVari && i > breakpoint) break;
-        // }
+            // Stop sampling this pixel if the contribution
+            // of the new sample is < epsilion values for all comps
+            if (lowVari && i > breakpoint) break;
+        }
 
         color = s_counter.getMean();
         
@@ -191,19 +199,65 @@ float dist_to_sphere(vec3 p, vec3 center, float radius)
 // Fractal SDFs
 // Shadows and/or ambient occlusion
 
+// https://raw.githubusercontent.com/pedrotrschneider/shader-fractals/refs/heads/main/3D/Mandelbox.glsl
+// Some of the following SDF code was ripped from the above source, with some
+// modifications. I really liked this.
+
+// Converts a color from the HSV colorspace to RGB
+vec3 hsv2rgb (vec3 c) {
+  vec4 K = vec4 (1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+  vec3 hue_comp = vec3(c.x);
+  vec3 p = glm::abs((glm::fract(hue_comp + vec3(K)) * 6.f) - K.w);
+  return c.z * glm::mix(vec3(K.x), glm::clamp(p - vec3(K.x), 0.f, 1.f), c.y);
+}
+
+// SDF FUNCTIONS //
+vec4 sphere(vec4 z) {
+  float r2 = glm::dot(vec3(z), vec3(z));
+  if (r2 < 2.0)
+    z *= (1.0 / r2);
+  else z *= 0.5;
+
+  return z;
+}
+
+vec3 box(vec3 z) {
+  return glm::clamp(z, vec3(-1.0), vec3(1.0)) * 2.f - z;
+}
+
+// mandelbox
+float DE2 (vec3 pos) {
+  vec3 params = vec3(0.5f);
+  vec4 scale = vec4(-20.f * 0.272321);
+  vec4 p = vec4(pos, 1.f);
+  vec4 c = vec4(params, 0.5f) - 0.5f; // param = 0..1
+
+  for (float i = 0.0; i < 10.0; i++) {
+    vec3 b = box(vec3(p));
+    p.x = b.x;
+    p.y = b.y;
+    p.z = b.z;
+    p = sphere(p);
+    p = p * scale + c;
+  }
+
+  return glm::length(vec3(p)) / p.w;
+}
+
 float sceneSDF(vec3 p) {
     // why does this shrink to zero as dist from
     // camera approach 3?
     // answer: i multipled by i, and it just did that for some reason
-    float s = 2.5f;
-    p.x = p.x - s*std::round(p.x/s);
-    p.y = p.y - s*std::round(p.y/s);
-    float sphere0 = dist_to_sphere(p, vec3(0.f, 0.f, 0.f), 1.f);
-    float k = 4.f;
-    float displacement = cos(k*p.x) * cos(k*p.y) * sin(k*p.z) * .25f;
+    // float s = 2.5f;
+    // p.x = p.x - s*std::round(p.x/s);
+    // p.y = p.y - s*std::round(p.y/s);
+    // float sphere0 = dist_to_sphere(p, vec3(0.f, 0.f, 0.f), 1.f);
+    // float k = 4.f;
+    // float displacement = cos(k*p.x) * cos(k*p.y) * sin(k*p.z) * .25f;
     // float dP = glm::perlin(p);
     
-    return sphere0 + displacement;
+    // return sphere0 + displacement;
+    return DE2(p);
 }
 
 vec3 sceneNormal(vec3 p) {
@@ -225,15 +279,23 @@ vec3 sceneNormal(vec3 p) {
 vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval &interval) 
 {
     float total_dist = 0.0f;
-    const int MAX_STEPS = 64;
+    const int MAX_STEPS = 128;
     const float MIN_HIT_DIST = interval.min;
     const float MAXIMUM_TRACE_DIST = interval.max;
+
+    float min_dist_to_sdf = CONSTANTS::INF;
+    vec3 min_dist_to_sdf_pos = ray.getPos();
 
     for (int i = 0; i < MAX_STEPS; ++i) 
     {
         vec3 curr_pos = ray.getPos() + total_dist * ray.getDir();
 
         float dist_to_sdf = sceneSDF(curr_pos);
+
+        if (min_dist_to_sdf > dist_to_sdf) {
+            min_dist_to_sdf = dist_to_sdf;
+            min_dist_to_sdf_pos = curr_pos;
+        }
 
         if (dist_to_sdf < MIN_HIT_DIST) 
         {
@@ -251,9 +313,19 @@ vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval 
             float dI = std::max(0.f, glm::dot(normal, direction_to_light));
             float sI = std::pow(std::max(0.0f, glm::dot(normal, h)), 100.f);
 
-            const vec3 Kd = vec3(0.0078, 0.6745, 0.8392);
+            vec3 Kd = vec3(0.0078, 0.6745, 0.8392);
 
-            return vec3(0.1) + Kd*dI + vec3(1.0f)*sI;
+            const float hF = 10.0, sat = 1.0, val = 0.8;
+            const vec3 hsvClr = vec3(0.8 + (glm::length(curr_pos) / hF), sat, val);
+            Kd = glm::mix(Kd, hsv2rgb(hsvClr), .35f);
+
+            vec3 clr = vec3(0.1) + Kd*dI + vec3(1.0f)*sI;
+
+            clr /= i * 0.08; // Ambient occlusion
+            clr /= glm::distance(ray.getPos(), min_dist_to_sdf_pos);
+            clr *= 2.0;            
+
+            return clr;
             // return vec3(0.f, 1.f, 0.f);
         }
         if (total_dist > MAXIMUM_TRACE_DIST) 
@@ -265,7 +337,7 @@ vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval 
         total_dist += dist_to_sdf;
     }
 
-    return vec3(0.3f, 0.4f, 0.6f);
+    return vec3(0.3f, 0.4f, 0.6f) * 0.5f;
 }
 
 
