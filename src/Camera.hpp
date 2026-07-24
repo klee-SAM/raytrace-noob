@@ -20,7 +20,7 @@ public:
     using sample_t = unsigned int;
 
     // I could make these modifible via json files
-    static constexpr float EPSILION = 5E-3f; // having a low epsilion value does not bode well with meshes
+    static constexpr float EPSILION = 5E-4f; // 5E-3f was prev val
     static constexpr float MAX_DIST = std::numeric_limits<float>::max();
     static constexpr sample_t MAX_RECURSIONS = 7U;
     static constexpr float MINIMUM_COEFF = 0.005f;
