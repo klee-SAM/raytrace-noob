@@ -339,32 +339,3 @@ vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, const Interval 
 
     return vec3(0.3f, 0.4f, 0.6f) * 0.5f;
 }
-
-
-// float march() {
-//     float start = 0.f; 
-//     float MAX_MARCHING_STEPS = 20.f;
-//     float eye, depth, viewRayDirection;
-
-//     float sceneSDF(float x);
-//     float EPSILON = 0.005f;
-
-//     float depth = start;
-//     float end;
-
-//     for (int i = 0; i < MAX_MARCHING_STEPS; i++) {
-//         float dist = sceneSDF(eye + depth * viewRayDirection);
-//         if (dist < EPSILON) {
-//             // We're inside the scene surface!
-//             return depth;
-//         }
-//         // Move along the view ray
-//         depth += dist;
-
-//         if (depth >= end) {
-//             // Gone too far; give up
-//             return end;
-//         }
-//     }
-//     return end;
-// }
