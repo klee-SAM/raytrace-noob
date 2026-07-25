@@ -16,9 +16,8 @@ public:
     float time;
 
     // Ensures ray invariants
-    Ray(const glm::vec4 &pos, const glm::vec4 &dir, float tm) noexcept
-    : pos{pos}, dir{dir}, time(tm) {
-        this->pos.w = 1.0f; this->dir.w = 0.0f; }
+    Ray(const glm::vec4 &pos, const glm::vec4 &dir, float tm = 0.f) noexcept
+    : pos{pos}, dir{dir}, time(tm) { this->pos.w = 1.0f; this->dir.w = 0.0f; }
 
     Ray(const glm::vec3 &pos, const glm::vec3 &dir, float tm = 0.f) noexcept
     : Ray(glm::vec4(pos, 1.f), glm::vec4(dir, 0.f), tm) {}
