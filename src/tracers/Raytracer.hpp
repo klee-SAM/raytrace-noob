@@ -5,11 +5,13 @@
 #include "../stn.hpp"
 #include "../util/umath.hpp"
 #include "../util/RowQueue.hpp"
+#include "../util/prand.hpp"
 #include "../Ray.hpp"
 #include "../Texture.hpp"
 
 class Scene;
 class Light;
+class Camera;
 
 // Common functionality for all raytracers.
 
@@ -63,11 +65,14 @@ public:
     const uint MAX_RECURSIONS = 7;
     const float MINIMUM_COEFF = 0.005f;
 
-    void bindScene(std::unique_ptr<Scene>&& scene);
-    // void bindCamera(std::unique_ptr<Camera>&& cam);
+    static prand::diskRand diskRandGen;
+    static prand::uniformRand unifRandGen;
 
-    std::unique_ptr<Image> render() const;
-    // glm::vec3 getRayColor(...) const;
+    void bindScene(std::unique_ptr<Scene>&& scene);
+    void bindCamera(std::unique_ptr<Camera>&& cam);
+
+    std::unique_ptr<Image> render();
+    glm::vec3 getRayColor(const Ray&) const { };
 
     // Contains common info used for BRDF calculations
     struct IntParams {
@@ -75,9 +80,14 @@ public:
         const Hit &rec;
     };
 
+protected:
+    // Guarantee that fields in these objects cannot be changed
+    const std::unique_ptr<Scene>& getScene() const { return scene; }
+    const std::unique_ptr<Camera>& getCamera() const { return camera; }
+
 private:
     std::unique_ptr<Scene> scene;
-    // std::unique_ptr<Camera> camera;
+    std::unique_ptr<Camera> camera;
 
     RowQueue r_queue; // Multithreading by row slices
     void processRows(std::unique_ptr<Image> &image);

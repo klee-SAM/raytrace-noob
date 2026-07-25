@@ -48,6 +48,8 @@ scene object are bound when render() is called
 // as the raytracer's members so that castSecondary ray can be used;
 // want to minimize the overhead for this 
 
+// TODO: invariants must be maintained at the accessor level
+
 */
 
 vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, 
