@@ -8,8 +8,7 @@
 #include <array>
 // #include <vector>
 
-class Ray {    
-public:
+struct Ray {    
     glm::vec4 pos;
     glm::vec4 dir;
     // glm::vec4 clr; // Stores the color from a previous computation
@@ -35,8 +34,7 @@ public:
     inline void setDir(const glm::vec3& d) { dir = glm::vec4(d, 0.0f); }  
 };
 
-class Hit {
-public:
+struct Hit {
     glm::vec3 x;            // hit location
     glm::vec3 n;            // hit normal
     glm::vec2 uv;           // texture uv coord
