@@ -19,39 +19,6 @@ constexpr float MAX_DIST = 1000.f;
 using std::unique_ptr;
 using std::vector;
 
-// ...Basic working example for raymarcher here
-
-// ????
-
-/*
-The only difference between RecursiveTracer and SphereTracer
-is the getRayColor() function, so share the multithreading/task
-delegation code by putting them in Raytracer.hpp
-
-- inheritance by overriding only getRayColor()
-- make scene and camera be members of Raytracer.hpp
-- compute P and V matrices inside render(), using a bound camera object 
-
-- there should be checks to ensure that a camera and
-scene object are bound when render() is called
-
-- the sky should belong in Scene.hpp,
-- camera settings should become public
-
-- random number gens should be held as public static members
-
-// make variables computed in render() as
-// private variables here, because only getRayColor()
-// needs to be overridden
-
-// TODO: for cast secondary ray, need to copy some members of camera
-// as the raytracer's members so that castSecondary ray can be used;
-// want to minimize the overhead for this 
-
-// TODO: invariants must be maintained at the accessor level
-
-*/
-
 vec3 getRayColor(const unique_ptr<Scene> &scene, const Ray &ray, 
                  const Interval &interval = Interval(MIN_DIST, MAX_DIST));
 

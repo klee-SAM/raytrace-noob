@@ -5,6 +5,7 @@
 #include "../Camera.hpp"
 
 #include "../util/counter.hpp"
+#include "../util/prand.hpp"
 
 #include <exception>
 #include <iostream>
@@ -15,6 +16,80 @@
 using std::unique_ptr;
 using std::vector;
 
+/*
+The only difference between RecursiveTracer and SphereTracer
+is the getRayColor() function, so share the multithreading/task
+delegation code by putting them in Raytracer.hpp
+
+- inheritance by overriding only getRayColor()
+-x make scene and camera be members of Raytracer.hpp
+-x compute P and V matrices inside render(), using a bound camera object 
+
+-x there should be checks to ensure that a camera and
+scene object are bound when render() is called
+
+- the sky should belong in Scene.hpp,
+-x camera settings should become public
+
+-x random number gens should be held as public static members
+
+// make variables computed in render() as
+// private variables here, because only getRayColor()
+// needs to be overridden
+
+// TODO: for cast secondary ray, need to copy some members of camera
+// as the raytracer's members so that castSecondary ray can be used;
+// want to minimize the overhead for this 
+
+// TODO: invariants must be maintained at the accessor level
+
+// TODO: TScene class, then try to derive into SphereTracer
+*/
+
+constexpr glm::vec3 NOT_IMPL_CLR = glm::vec3(1.f, 0.f, 1.f);
+
+prand::diskRand Raytracer::diskRandGen;
+prand::uniformRand Raytracer::unifRandGen;
+
+void Raytracer::applyProjection(MatrixStack& MS) 
+{
+    auto& cam = this->camera;
+    MS.mult(glm::perspective(cam->fovy, cam->aspectRatio, cam->znear, cam->zfar));
+}
+void Raytracer::applyView(MatrixStack& MS) 
+{
+    auto& cam = this->camera;
+
+    MS.push();
+    MS.translate(cam->translation);
+    // yaw, pitch, then roll
+    MS.rotate(cam->rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+    MS.rotate(cam->rotation.y, glm::vec3(1.0f, 0.0f, 0.0f));
+    MS.rotate(cam->rotation.x, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    // inverse of view matrix so that the 
+    // center, eye, and up vectors are 
+    // specified wrt old transforms
+    const auto cameraMat = glm::inverse(MS.top());
+
+    glm::vec3 center = cam->getLookAtPos(), 
+    eye = cameraMat * glm::vec4(cam->getCameraPos(), 1.f), 
+    up  = cameraMat * glm::vec4(cam->getUpDir(), 0.f);
+
+    glm::mat4 lookAtMat = glm::lookAt(eye, center, up);
+
+    // Check for NaNs in the lookAt matrix
+    for (int i = 0; i < lookAtMat.length(); ++i) {
+        if (glm::any(glm::isnan(lookAtMat[i]))) {
+            std::cerr << "NaNs detected in lookAtMat; lookAtMat not applied.\n";
+            return; 
+        }
+    }
+
+    MS.pop();
+    MS.mult(lookAtMat);
+}
+
 unique_ptr<Image> Raytracer::render() 
 {
     if (!scene || !camera) 
@@ -22,17 +97,16 @@ unique_ptr<Image> Raytracer::render()
 
     MatrixStack matStk;
     matStk.push();
-    camera->applyProjection(matStk);
+    this->applyProjection(matStk);
     glm::mat4 P = matStk.top();
     matStk.pop();
     matStk.push();
-    camera->applyView(matStk);
+    this->applyView(matStk);
     glm::mat4 V = matStk.top();
     matStk.pop();
-    
-                                                    uint width = 1, height = 1;
 
     // Precompute as much as possible before loops
+    uint width = camera->width, height = camera->height;
     C = glm::inverse(V);
     invP = glm::inverse(P);
     cameraPos = C[3]; 
@@ -43,8 +117,6 @@ unique_ptr<Image> Raytracer::render()
     // Camera basis vectors in world space
     dof_u = C[0]; // right
     dof_v = C[1]; // up
-
-    uint totalCasts = height*width;
 
     unique_ptr<Image> image = std::make_unique<Image>(width, height);
 
@@ -65,6 +137,7 @@ unique_ptr<Image> Raytracer::render()
     }
 
     uint jobsFinished = 0;
+    uint totalCasts = height * width;
     // horrific; +1 thread than cores works b/c it's i/o bound (sleep)
     auto countScans = [this, jobsFinished](uint totalCasts, uint numThreads) 
     {
@@ -141,19 +214,19 @@ void Raytracer::setRow(unique_ptr<Image>& image, uint y)
 {
     // for (uint x = 0; x < width; ++x) 
     {
-        glm::vec3 color = glm::vec3(0.0f);
+        // glm::vec3 color = glm::vec3(0.0f);
 
         // Pixel pxl{x, y};
     //     Ray cray = castPrimaryRay(pxl, glm::vec2(.5f));
     //     color = getRayColor(cray);
         
     //     // breakpoints have experimentally OK magic numbers
-    //     const uint breakpoint = std::max(AAsamples / 4, 8U);
+    //     const uint breakpoint = std::max(samplesPerPixel / 4, 8U);
 
     //     VarianceCounter<glm::vec3> s_counter;
     //     s_counter.add(color, CounterCmps::vec3_cmp);
         
-    //     for (uint i = 1; i < AAsamples; ++i) 
+    //     for (uint i = 1; i < samplesPerPixel; ++i) 
     //     {
     //         const glm::vec2 offset = 0.5f*diskRandGen.rand(i) + 0.5f;
     //         cray = castPrimaryRay(pxl, offset);
@@ -173,4 +246,9 @@ void Raytracer::setRow(unique_ptr<Image>& image, uint y)
         
         // image->setPixel(x, y, color);
     }
+}
+
+glm::vec3 Raytracer::getRayColor(const Ray&) const 
+{ 
+    return NOT_IMPL_CLR; 
 }
