@@ -1,7 +1,7 @@
 #include "Raytracer.hpp"
 
 #include "../stn.hpp"
-#include "../Scene.hpp"
+// #include "../Scene.hpp"
 // #include "../Camera.hpp"
 
 #include "../util/counter.hpp"
@@ -28,7 +28,7 @@ delegation code by putting them in Raytracer.hpp
 -x there should be checks to ensure that a camera and
 scene object are bound when render() is called
 
-- the sky should belong in Scene.hpp,
+-x the sky should belong in Scene.hpp,
 -x camera settings should become public
 
 -x random number gens should be held as public static members
@@ -51,11 +51,11 @@ constexpr glm::vec3 NOT_IMPL_CLR = glm::vec3(1.f, 0.f, 1.f);
 prand::diskRand Raytracer::diskRandGen;
 prand::uniformRand Raytracer::unifRandGen;
 
-void Raytracer::bindScene(unique_ptr<Scene>&& scene) {
+void Raytracer::setScene(unique_ptr<Scene>&& scene) {
     this->scene = std::move(scene);
 }
 
-void Raytracer::bindCamera(unique_ptr<Camera>&& camera) {
+void Raytracer::setCamera(unique_ptr<Camera>&& camera) {
     this->camera = std::move(camera);
     this->camera->validateLookAtVectors();
 }

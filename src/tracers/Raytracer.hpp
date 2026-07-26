@@ -11,7 +11,73 @@
 #include "../Ray.hpp"
 #include "../Texture.hpp"
 
-class Scene;
+// temp!
+#include <unordered_map>
+#include "../MeshBuffer.hpp"
+#include "../Shape.hpp"
+#include "../Light.hpp"
+class TScene {
+public:
+    using shapes_vec = std::vector<std::shared_ptr<Shape>>;
+    using lights_vec = std::vector<std::shared_ptr<Light>>;
+    using meshbuf_map = std::unordered_map<std::string, std::shared_ptr<MeshBuffer>>;
+    using material_map = std::unordered_map<std::string, std::shared_ptr<Material>>;
+
+    const shapes_vec& getShapes() { return shapes; }
+    const lights_vec& getLights() { return lights; }
+
+    // When shapes are pushed, they are finalized (precomputation from transforms)
+    void pushShape(std::shared_ptr<Shape> s) { 
+        s->initialize();
+        shapes.push_back(s);
+    }
+
+    void pushLight(std::shared_ptr<Light> l) { lights.push_back(l); }
+
+    void writeMaterial(const std::string& name, std::shared_ptr<Material> m) {
+        // have to modify the object pointed to, rather than the pointer itself
+        auto placed = materials.emplace(name, m);
+        if (!placed.second) {
+            // this is bad. need to emulate a copy constructor somehow
+            std::shared_ptr<Material> oth = placed.first->second;
+            oth->copy(*m);
+        }
+    } 
+    // Creates a new default material with the given name if it does not 
+    // exist beforehand (i.e, when parsing shapes data before material data)
+    std::shared_ptr<Material>& getMaterial(const std::string& name) {
+        auto placed = materials.try_emplace(name, std::make_shared<Material>());
+        return placed.first->second; // return the material from the key-value pair
+    }
+
+    // add a new mesh if its name doesnt exist in map 
+    void writeMeshBuf(const std::string& name, std::shared_ptr<MeshBuffer> mesh) {
+        meshes.emplace(name, mesh); 
+    }
+
+    // may return an empty ptr if mesh not found
+    std::shared_ptr<MeshBuffer> getMeshBuf(const std::string& name) {
+        auto b = meshes.find(name);
+        if (b != meshes.end()) return b->second;
+        else return std::shared_ptr<MeshBuffer>(nullptr);
+    }
+
+    enum class SkyType {Void, Haze, SphereMap, Ambient};
+    void setSky(SkyType s) { sky = s; }
+    void setSkyTexture(std::unique_ptr<ImageTexture>&& texture) { 
+      skyTexture = std::move(texture); 
+    }
+    
+private:
+    shapes_vec shapes;
+    lights_vec lights;
+    meshbuf_map meshes;
+    material_map materials;
+
+    SkyType sky = SkyType::Void;
+    // used only if the skytype is SphereMap
+    std::unique_ptr<ImageTexture> skyTexture;  
+};
 
 struct TCamera {
     using radian_t = double;
@@ -120,6 +186,7 @@ struct TCamera {
 
 // Common functionality for all raytracers.
 using Camera = TCamera; // temporary!
+using Scene = TScene;   // also temp!
 class Raytracer {
 public:
     // Contains common info used for BRDF calculations
@@ -139,11 +206,11 @@ public:
     bool FULL_SHADOWS = false;
     bool SHOW_NORMALS = false;
 
-    void bindScene(std::unique_ptr<Scene>&& scene);
-    void bindCamera(std::unique_ptr<Camera>&& cam);
+    void setScene(std::unique_ptr<Scene>&& scene);
+    void setCamera(std::unique_ptr<Camera>&& cam);
 
     std::unique_ptr<Image> render();
-    glm::vec3 getRayColor(const Ray&) const; // override this
+    glm::vec3 getRayColor(const Ray&) const; // override this in derived
 
 protected:
     // Guarantee that fields in these objects cannot be changed
