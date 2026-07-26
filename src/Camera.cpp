@@ -144,7 +144,7 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
         const uint breakpoint = std::max(AAsamples / 4, 8U);
 
         VarianceCounter<vec3> s_counter;
-        s_counter.add(color, CounterCmps::vec3_cmp);
+        s_counter.add(color);
         
         for (uint i = 1; i < AAsamples; ++i) {
             const vec2 offset = 0.5f*diskRandGen.rand(i) + 0.5f;
@@ -154,7 +154,7 @@ void Camera::setRow(const unique_ptr<Scene>& scene, unique_ptr<Image>& image, ui
             Ray dray = useSecRay ? castSecondaryRay(cray) : cray;
 
             const vec3 rayColor = getRayColor(scene, dray);
-            bool lowVari = s_counter.add(rayColor, CounterCmps::vec3_cmp);
+            bool lowVari = s_counter.add(rayColor);
             
             // Stop sampling this pixel if the contribution
             // of the new sample is < epsilion values for all comps
@@ -681,8 +681,6 @@ vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
     sray.setDir(lv);
     sray.time = ray.time;
 
-
-
     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { 
         // The cost of a function call is so great that I get a ~33% increase in 
         // speed if I paste the contents of the BP shading calculations
@@ -707,7 +705,7 @@ vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
     // shadow implementation (prev. method did not give good results)
     VarianceCounter<vec3> s_counter;
     vec3 lightingSum = vec3(0.f);
-    constexpr Interval litThreshold(CONSTANTS::EPSILION, 1.f - CONSTANTS::EPSILION);
+    constexpr Interval litThreshold = Interval::signif();
 
     for (uint i = 0; i < max_i; ++i) {
         // A large enough light radius increases noise of the entire image 
@@ -718,7 +716,7 @@ vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
         sray.setDir(new_lv);
         
         const vec3 contrib = getShadowContrib(sray, scene, Interval(interval.min, tmax));
-        bool lowVari = s_counter.add(contrib, CounterCmps::vec3_cmp);
+        bool lowVari = s_counter.add(contrib);
 
         // duplicate, also present in non-area light case above
         const vec3 kd = rec.diffuse(), ks = rec.specular();
@@ -729,10 +727,7 @@ vec3 Camera::lightingFactor(const Ray &ray, IntParams args,
         lightingSum += (diff_cont*diffuseAtt + spec_cont);
 
         if (i < min_i) continue;  
-        // use dot product to avoid comparing 3 components (convenience),
-        const float dotMean = dot(s_counter.getMean(), s_counter.getMean());
-        const float currVis = dotMean / (3.f*s_counter.getSamplesDone());
-        const bool fullOrNoLit = litThreshold.surrounds(currVis);
+        const bool fullOrNoLit = litThreshold.surrounds(s_counter.getMean());
         if (lowVari || fullOrNoLit) { break; }         
     }
 

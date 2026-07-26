@@ -1,13 +1,6 @@
 #pragma once
 #include "../stn.hpp"
 
-namespace CounterCmps {
-    // I like when VSCode freaks out on templates, lol
-    static constexpr auto vec3_cmp = [](const glm::vec3& a, const glm::vec3& b) {
-        return a.x < b.x && a.y < b.y && a.z < b.z;
-    };
-};
-
 // For early-exit termination; accumulates a running average
 // and variance. https://stackoverflow.com/questions/5147378/
 template <typename T>
@@ -15,25 +8,38 @@ class VarianceCounter {
 private:
     T mean, m2;
     float samplesDone;
-public:
-    T EPSI2 = T(0.05f);
 
-    VarianceCounter() noexcept : mean(T(0)), m2(T(0)), samplesDone(0.f) {}
-    inline T getMean() const { return mean; }
-    inline float getSamplesDone() const {return samplesDone; }
+    // I like when VSCode freaks out on templates, lol
+    static constexpr auto vec3_cmp = [](const glm::vec3& a, const glm::vec3& b) {
+        return glm::all(glm::lessThan(a, b));
+    };
 
-    // Adds contrib to the mean counter and returns whether the
-    // variance is less than the threshold EPSI2.
-    // Use CounterCmps::vec3_cmp for glm::vec3
-    template <typename Func = std::function<bool(const T&, const T&)> >
-    inline bool add(T contrib, Func cmp = [](const T& a, const T& b) { return a < b; }) {
+    constexpr const T common_add_vari(T contrib) {
         samplesDone++;
         const float r_sampDone = 1.f / samplesDone;
         const T prev_mean = mean;
         mean += (contrib - prev_mean) * r_sampDone;
         m2 += (contrib - prev_mean) * (contrib - mean);
+        return m2 * r_sampDone;
+    }
 
-        const T vari = m2 * r_sampDone;
+public:
+    T EPSI2 = T(0.05f);
+
+    VarianceCounter() noexcept : mean(T(0)), m2(T(0)), samplesDone(0.f) {}
+    T getMean() const { return mean; }
+    float getSamplesDone() const {return samplesDone; }
+
+    // Adds contrib to the mean counter and returns whether the
+    // variance is less than the threshold EPSI2.
+    // Use CounterCmps::vec3_cmp for glm::vec3
+    template <typename Func = std::function<bool(const T&, const T&)> >
+    constexpr bool add(T contrib, Func cmp = [](const T& a, const T& b) { return a < b; }) {
+        const T vari = common_add_vari(contrib);
         return cmp(vari, EPSI2);
+    }
+
+    constexpr bool add(const glm::vec3 &contrib) {
+        return vec3_cmp(common_add_vari(contrib), EPSI2);
     }
 };

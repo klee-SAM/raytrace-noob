@@ -36,9 +36,15 @@ public:
     constexpr bool contains(float x) const { return (min <= x) && (x <= max); }
     constexpr bool surrounds(float x) const { return (x < min) && (max < x);}
 
-    static inline Interval empty() { return Interval(INF, -INF); }
-    static inline Interval world() { return Interval(-INF, INF); }
-    static inline Interval signif() { return Interval(EPSILION, 1.f - EPSILION); }
+    constexpr bool surrounds(const glm::vec3 &x) const {
+        const auto lessThanMin = glm::lessThan(x, glm::vec3(min));
+        const auto greaterThanMax = glm::greaterThan(x, glm::vec3(max));
+        return glm::all(lessThanMin && greaterThanMax);
+    }
+
+    static constexpr Interval empty() { return Interval(INF, -INF); }
+    static constexpr Interval world() { return Interval(-INF, INF); }
+    static constexpr Interval signif() { return Interval(EPSILION, 1.f - EPSILION); }
 };
 
 namespace umath {

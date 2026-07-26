@@ -130,7 +130,7 @@ void SphereTracer::setRow(const std::unique_ptr<Scene> &scene, std::unique_ptr<I
         const uint breakpoint = 8U;
 
         VarianceCounter<vec3> s_counter;
-        s_counter.add(color, CounterCmps::vec3_cmp);
+        s_counter.add(color);
 
         const uint AAsamples = 16U;
 
@@ -143,7 +143,7 @@ void SphereTracer::setRow(const std::unique_ptr<Scene> &scene, std::unique_ptr<I
 
             // const vec3 rayColor = getRayColor(scene, dray);
             const vec3 rayColor = getRayColor(scene, cray);
-            bool lowVari = s_counter.add(rayColor, CounterCmps::vec3_cmp);
+            bool lowVari = s_counter.add(rayColor);
             
             // Stop sampling this pixel if the contribution
             // of the new sample is < epsilion values for all comps
