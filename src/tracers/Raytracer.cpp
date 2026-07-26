@@ -2,7 +2,7 @@
 
 #include "../stn.hpp"
 #include "../Scene.hpp"
-#include "../Camera.hpp"
+// #include "../Camera.hpp"
 
 #include "../util/counter.hpp"
 #include "../util/prand.hpp"
@@ -51,6 +51,15 @@ constexpr glm::vec3 NOT_IMPL_CLR = glm::vec3(1.f, 0.f, 1.f);
 prand::diskRand Raytracer::diskRandGen;
 prand::uniformRand Raytracer::unifRandGen;
 
+void Raytracer::bindScene(unique_ptr<Scene>&& scene) {
+    this->scene = std::move(scene);
+}
+
+void Raytracer::bindCamera(unique_ptr<Camera>&& camera) {
+    this->camera = std::move(camera);
+    this->camera->validateLookAtVectors();
+}
+
 void Raytracer::applyProjection(MatrixStack& MS) 
 {
     auto& cam = this->camera;
@@ -72,9 +81,9 @@ void Raytracer::applyView(MatrixStack& MS)
     // specified wrt old transforms
     const auto cameraMat = glm::inverse(MS.top());
 
-    glm::vec3 center = cam->getLookAtPos(), 
-    eye = cameraMat * glm::vec4(cam->getCameraPos(), 1.f), 
-    up  = cameraMat * glm::vec4(cam->getUpDir(), 0.f);
+    glm::vec3 center = cam->lookAtPos, 
+    eye = cameraMat * glm::vec4(cam->position, 1.f), 
+    up  = cameraMat * glm::vec4(cam->camUpVec, 0.f);
 
     glm::mat4 lookAtMat = glm::lookAt(eye, center, up);
 
@@ -197,54 +206,54 @@ Ray Raytracer::castPrimaryRay(Pixel p, const glm::vec2 &offset) const {
 }
 
 Ray Raytracer::castSecondaryRay(const Ray &pray) const {
-    // glm::vec4 focalPoint = pray.pos + camera->focusLength*pray.dir;
-    // focalPoint.w = 1.f;
+    glm::vec4 focalPoint = pray.pos + camera->focusLength*pray.dir;
+    focalPoint.w = 1.f;
 
-    // const glm::vec2 samp = camera->focalRadius * diskRandGen.rand();
-    // const glm::vec4 wld_offset = vec4(dof_u*samp.x + dof_v*samp.y);
+    const glm::vec2 samp = camera->focalRadius * diskRandGen.rand();
+    const glm::vec4 wld_offset = glm::vec4(dof_u*samp.x + dof_v*samp.y);
 
     Ray dray;
-    // dray.pos = pray.pos + wld_offset; 
-    // dray.pos.w = 1.f; // to correct for wld_offset having a w =/= 1
-    // dray.dir = glm::normalize(focalPoint - dray.pos);
+    dray.pos = pray.pos + wld_offset; 
+    dray.pos.w = 1.f; // to correct for wld_offset having a w =/= 1
+    dray.dir = glm::normalize(focalPoint - dray.pos);
     return dray;
 }
 
 void Raytracer::setRow(unique_ptr<Image>& image, uint y) 
 {
-    // for (uint x = 0; x < width; ++x) 
+    for (uint x = 0; x < camera->width; ++x) 
     {
-        // glm::vec3 color = glm::vec3(0.0f);
+        glm::vec3 color = glm::vec3(0.0f);
 
-        // Pixel pxl{x, y};
-    //     Ray cray = castPrimaryRay(pxl, glm::vec2(.5f));
-    //     color = getRayColor(cray);
+        Pixel pxl{x, y};
+        Ray cray = castPrimaryRay(pxl, glm::vec2(.5f));
+        color = getRayColor(cray);
         
-    //     // breakpoints have experimentally OK magic numbers
-    //     const uint breakpoint = std::max(samplesPerPixel / 4, 8U);
+        // breakpoints have experimentally OK magic numbers
+        const uint breakpoint = std::max(camera->samplesPerPixel / 4, 8U);
 
-    //     VarianceCounter<glm::vec3> s_counter;
-    //     s_counter.add(color, CounterCmps::vec3_cmp);
+        VarianceCounter<glm::vec3> s_counter;
+        s_counter.add(color);
         
-    //     for (uint i = 1; i < samplesPerPixel; ++i) 
-    //     {
-    //         const glm::vec2 offset = 0.5f*diskRandGen.rand(i) + 0.5f;
-    //         cray = castPrimaryRay(pxl, offset);
+        for (uint i = 1; i < camera->samplesPerPixel; ++i) 
+        {
+            const glm::vec2 offset = 0.5f*diskRandGen.rand(i) + 0.5f;
+            cray = castPrimaryRay(pxl, offset);
 
-    //         const bool useSecRay = camera->focalRadius > Camera::EPSILION;
-    //         Ray dray = useSecRay ? castSecondaryRay(cray) : cray;
+            const bool useSecRay = camera->focalRadius > Raytracer::EPSILION;
+            Ray dray = useSecRay ? castSecondaryRay(cray) : cray;
 
-    //         const glm::vec3 rayColor = getRayColor(scene, dray);
-    //         bool lowVari = s_counter.add(rayColor, CounterCmps::vec3_cmp);
+            const glm::vec3 rayColor = getRayColor(dray);
+            bool lowVari = s_counter.add(rayColor);
             
-    //         // Stop sampling this pixel if the contribution
-    //         // of the new sample is < epsilion values for all comps
-    //         if (lowVari && i > breakpoint) break;
-    //     }
+            // Stop sampling this pixel if the contribution
+            // of the new sample is < epsilion values for all comps
+            if (lowVari && i > breakpoint) break;
+        }
 
-    //     color = s_counter.getMean();
+        color = s_counter.getMean();
         
-        // image->setPixel(x, y, color);
+        image->setPixel(x, y, color);
     }
 }
 
