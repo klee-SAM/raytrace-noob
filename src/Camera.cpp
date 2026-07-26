@@ -487,6 +487,8 @@ vec3 Camera::getRayColor(const unique_ptr<Scene>& scene, const Ray& ray,
 }
 
 // Uses monte carlo integration, and is far from physically based
+// Ambient occlusion samples are taken for every color ray, including
+// anti-aliasing rays; recommended to reduce AO samples if increasing AA rays
 float Camera::occlusionDiffuseFactor(IntParams args, vec3 &diffuseFac, float time) const
 {
     auto &rec = args.rec;
