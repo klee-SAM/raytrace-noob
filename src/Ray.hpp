@@ -56,7 +56,7 @@ class HitArray {
 private:
     static constexpr size_t N = 32UL; // hardcoded capacity
     std::array<Hit, N> arr;           // "raw" data
-    size_t indEnd = 0UL;              // size; index to last non-default hit
+    size_t indEnd = 0UL;              // size; index after last non-default hit
 public:
     constexpr const Hit& at(size_t i) const noexcept { return arr[i % N]; }
     constexpr const Hit& operator[](size_t i) const { return arr[i]; }
@@ -65,8 +65,7 @@ public:
     constexpr Hit* end() noexcept { return arr.begin() + indEnd; }
     constexpr size_t max_size() const noexcept { return N; }
     constexpr size_t size() const noexcept { return indEnd; }
-    constexpr bool empty() const noexcept {return indEnd == 0; }
-    constexpr void clear() noexcept { indEnd = 0; }
+    constexpr bool empty() const noexcept { return indEnd == 0; }
 
     // Does nothing if the array is already full.
     constexpr void push_back(const Hit& a) { 
@@ -74,7 +73,7 @@ public:
         arr.at(indEnd++) = a;
     }
 
-    inline void sort() {
+    void sort() {
         static constexpr auto cmp = [](const Hit& a, const Hit& b) { return a.t < b.t; };
         std::sort(begin(), end(), cmp); 
     }
