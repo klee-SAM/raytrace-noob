@@ -48,6 +48,10 @@ resources on raytracing.
     - carry over the reflective coefficients
     - terminate reflection/refraction via threshold
     - struct {uint bounces; float culmVisibility; } control; 
+- [ ] try an override of the shape->intersect function 
+    - this returns a single Hit object instead of a vector
+    - determine if storing hit position is redundent
+    - shared calculations for shapes becomes constexpr func
 
 - [ ] scene format documentation (json)
 - [ ] support .mtl conventions for scene files
@@ -88,12 +92,12 @@ resources on raytracing.
 
 ## Required Dependencies
 - GLM (OpenGL Mathematics): https://github.com/g-truc/glm
-- CMake: (https://cmake.org/download/)
+- CMake: https://cmake.org/download/
 
 ## Building
-This requires that you set the environment variable `GLM_INCLUDE_DIR` to a copy of the GLM library on your system. 
+This requires that you set the environment variable `GLM_INCLUDE_DIR` to your copy of the GLM source code.
 
-Instructions primarily for Linux. Other platforms may have slightly different build instructions.
+Instructions primarily for Linux. Other platforms may have different build instructions.
 
 1. Create a new `build` folder inside the project folder (which contains CMakeLists.txt)
 2. Do `cmake ..` inside the build folder to create the Makefile for debug mode.
