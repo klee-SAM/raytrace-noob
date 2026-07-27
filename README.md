@@ -50,7 +50,8 @@ resources on raytracing.
     - struct {uint bounces; float culmVisibility; } control; 
 - [ ] try an override of the shape->intersect function 
     - this returns a single Hit object instead of a vector
-    - determine if storing hit position is redundent
+    - material comp getters need to take a new argument
+    - need to explicitly calculate pos(t) for reflRay, color
     - shared calculations for shapes becomes constexpr func
 
 - [ ] scene format documentation (json)

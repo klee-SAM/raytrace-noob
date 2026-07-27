@@ -29,6 +29,8 @@ struct Ray {
     constexpr glm::vec3 getPos() const { return glm::vec3(pos); }
     constexpr glm::vec3 getDir() const { return glm::vec3(dir); }
 
+    // constexpr glm::vec3 getPos(float t) const { return glm::vec3(pos + t * dir); }
+
     // Setter function for vec3 to vec4
     inline void setPos(const glm::vec3& p) { pos = glm::vec4(p, 1.0f); }
     inline void setDir(const glm::vec3& d) { dir = glm::vec4(d, 0.0f); }  
