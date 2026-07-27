@@ -37,16 +37,23 @@ int main(int argc, char** argv) {
         if (filename == "strace") {
             // ... code to test spheretracer here pls
             // TODO: temporary get rid of scene arg for sphere tracer
-            unique_ptr<Scene> tmp_scene = make_unique<Scene>();
+            // unique_ptr<Scene> tmp_scene = make_unique<Scene>();
             width = 1024U; height = 1024U;
-            unique_ptr<Camera> camera = make_unique<Camera>(width, height, 45.f);
+            // unique_ptr<Camera> camera = make_unique<Camera>(width, height, 45.f);
+            // camera->setInitDistance(5.f);
+            // unique_ptr<SphereTracer> stracer = make_unique<SphereTracer>(width, height);
+            // MatrixStack P = MatrixStack();
+            // MatrixStack MV = MatrixStack();
+            // camera->applyProjection(P);
+            // camera->applyView(MV);
+            // unique_ptr<Image> image = stracer->render(tmp_scene, P.top(), MV.top());
+            unique_ptr<Raytracer> stracer = make_unique<Raytracer>();
+            unique_ptr<TCamera> camera = make_unique<TCamera>(width, height, 45.f);
             camera->setInitDistance(5.f);
-            unique_ptr<SphereTracer> stracer = make_unique<SphereTracer>(width, height);
-            MatrixStack P = MatrixStack();
-            MatrixStack MV = MatrixStack();
-            camera->applyProjection(P);
-            camera->applyView(MV);
-            unique_ptr<Image> image = stracer->render(tmp_scene, P.top(), MV.top());
+            unique_ptr<TScene> tmp_scene = make_unique<TScene>();
+            stracer->setCamera(std::move(camera));
+            stracer->setScene(std::move(tmp_scene));
+            unique_ptr<Image> image = stracer->render();
             image->setFilename("sphereTraceTest.png");
             image->write();
             return EXIT_SUCCESS;

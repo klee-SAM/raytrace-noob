@@ -62,7 +62,7 @@ public:
         else return std::shared_ptr<MeshBuffer>(nullptr);
     }
 
-    enum class SkyType {Void, Haze, SphereMap, Ambient};
+    enum class SkyType {Void, Haze, SphereMap, Ambient, Flat};
     void setSky(SkyType s) { sky = s; }
     void setSkyTexture(std::unique_ptr<ImageTexture>&& texture) { 
       skyTexture = std::move(texture); 
@@ -184,16 +184,13 @@ struct TCamera {
     }
 };
 
+enum class RenderMode { Unknown, Whitted, Raymarch, Pathtrace };
+
 // Common functionality for all raytracers.
-using Camera = TCamera; // temporary!
-using Scene = TScene;   // also temp!
 class Raytracer {
 public:
-    // Contains common info used for BRDF calculations
-    struct IntParams {
-        const Interval &interval;
-        const Hit &rec;
-    };
+    using Camera = TCamera; // temporary!
+    using Scene = TScene;   // also temp!
 
     static prand::diskRand diskRandGen;
     static prand::uniformRand unifRandGen;
@@ -210,7 +207,6 @@ public:
     void setCamera(std::unique_ptr<Camera>&& cam);
 
     std::unique_ptr<Image> render();
-    glm::vec3 getRayColor(const Ray&) const; // override this in derived
 
 protected:
     // Guarantee that fields in these objects cannot be changed
@@ -240,6 +236,17 @@ private:
     struct Pixel { uint x, y; };
     Ray castPrimaryRay(Pixel id, const glm::vec2 &offset) const;
     Ray castSecondaryRay(const Ray &primaryRay) const;
+
+    RenderMode mode = RenderMode::Unknown;
+    glm::vec3 getRayColor(const Ray&) const;
+
+    // Contains common info used for BRDF calculations
+    struct IntParams {
+        const Interval &interval;
+        const Hit &rec;
+    };
+
+    glm::vec3 rayMarch(const Ray &ray) const;
 };
 
 #endif

@@ -44,6 +44,11 @@ scene object are bound when render() is called
 // TODO: invariants must be maintained at the accessor level
 
 // TODO: TScene class, then try to derive into SphereTracer
+
+
+// NOTE: I would need to change many SceneLoader functions
+// also NOTE: this may be a good opportunity to rewrite
+// the entirety of sceneloader to be less of a mess
 */
 
 constexpr glm::vec3 NOT_IMPL_CLR = glm::vec3(1.f, 0.f, 1.f);
@@ -150,14 +155,14 @@ unique_ptr<Image> Raytracer::render()
     // horrific; +1 thread than cores works b/c it's i/o bound (sleep)
     auto countScans = [this, jobsFinished](uint totalCasts, uint numThreads) 
     {
-        // while (r_queue.rowsProcessed < height && jobsFinished < numThreads) 
-        // {
-        //     std::clog << '\r' << r_queue.rowsProcessed*width << '/' 
-        //             << totalCasts << " scans completed " << std::flush;
-        //     // Results in displayed times being larger than actual times
-        //     // for very simple and fast scenes, but less thread switching 
-        //     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        // }
+        while (r_queue.rowsProcessed < camera->height && jobsFinished < numThreads) 
+        {
+            std::clog << '\r' << r_queue.rowsProcessed*camera->width << '/' 
+                    << totalCasts << " scans completed " << std::flush;
+            // Results in displayed times being larger than actual times
+            // for very simple and fast scenes, but less thread switching 
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
     };
     std::thread counter(countScans, totalCasts, numThreads);
     for (auto& thread : threads) 
@@ -243,8 +248,8 @@ void Raytracer::setRow(unique_ptr<Image>& image, uint y)
             const bool useSecRay = camera->focalRadius > Raytracer::EPSILION;
             Ray dray = useSecRay ? castSecondaryRay(cray) : cray;
 
-            const glm::vec3 rayColor = getRayColor(dray);
-            bool lowVari = s_counter.add(rayColor);
+            glm::vec3 drayColor = getRayColor(cray);
+            bool lowVari = s_counter.add(drayColor);
             
             // Stop sampling this pixel if the contribution
             // of the new sample is < epsilion values for all comps
@@ -257,7 +262,13 @@ void Raytracer::setRow(unique_ptr<Image>& image, uint y)
     }
 }
 
-glm::vec3 Raytracer::getRayColor(const Ray&) const 
-{ 
-    return NOT_IMPL_CLR; 
+glm::vec3 Raytracer::getRayColor(const Ray& ray) const 
+{
+    switch(this->mode)
+    {
+        case RenderMode::Raymarch:
+            return rayMarch(ray);
+        default:
+            return NOT_IMPL_CLR;
+    }   
 }
