@@ -35,18 +35,8 @@ int main(int argc, char** argv) {
     } else if (argc == 2) {
         filename = argv[1];
         if (filename == "strace") {
-            // ... code to test spheretracer here pls
-            // TODO: temporary get rid of scene arg for sphere tracer
-            // unique_ptr<Scene> tmp_scene = make_unique<Scene>();
+            // TODO: temporary
             width = 1024U; height = 1024U;
-            // unique_ptr<Camera> camera = make_unique<Camera>(width, height, 45.f);
-            // camera->setInitDistance(5.f);
-            // unique_ptr<SphereTracer> stracer = make_unique<SphereTracer>(width, height);
-            // MatrixStack P = MatrixStack();
-            // MatrixStack MV = MatrixStack();
-            // camera->applyProjection(P);
-            // camera->applyView(MV);
-            // unique_ptr<Image> image = stracer->render(tmp_scene, P.top(), MV.top());
             unique_ptr<Raytracer> stracer = make_unique<Raytracer>();
             unique_ptr<TCamera> camera = make_unique<TCamera>(width, height, 45.f);
             camera->setInitDistance(5.f);
