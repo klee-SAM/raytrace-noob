@@ -50,9 +50,10 @@ resources on raytracing.
     - struct {uint bounces; float culmVisibility; } control; 
 - [ ] try an override of the shape->intersect function 
     - this returns a single Hit object instead of a vector
+    - shared calculations for shapes becomes constexpr func
+- [ ] try getting rid of hit::x (pos) for memory
     - material comp getters need to take a new argument
     - need to explicitly calculate pos(t) for reflRay, color
-    - shared calculations for shapes becomes constexpr func
 
 - [ ] scene format documentation (json)
 - [ ] support .mtl conventions for scene files
@@ -62,10 +63,6 @@ resources on raytracing.
 - [ ] Rewrite sceneloader to change scene after read all
     - requires intermediate data structure for holding
 
-- [x] get rid of stn.hpp, use proper #include practices
-    - ~~use forward declarations~~
-    - ~~include headers only where they are actually used~~
-    - this is incredibility bothersome and unfun
 - [ ] organize src files into folders <>
     - [x] need to split Shapes.cpp file, and 
     - [ ] split the camera class into a camera "struct" and Raytracer.hpp <>
