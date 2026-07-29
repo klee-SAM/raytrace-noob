@@ -54,6 +54,9 @@ resources on raytracing.
 - [ ] try getting rid of hit::x (pos) for memory
     - material comp getters need to take a new argument
     - need to explicitly calculate pos(t) for reflRay, color
+- [ ] backface culling for plane
+- [ ] option to apply lookAt matrix if any lookAt basis vectors are set
+- [ ] get a better solver for torus
 
 - [ ] scene format documentation (json)
 - [ ] support .mtl conventions for scene files
