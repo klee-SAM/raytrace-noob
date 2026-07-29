@@ -55,7 +55,6 @@ resources on raytracing.
     - material comp getters need to take a new argument
     - need to explicitly calculate pos(t) for reflRay, color
 - [ ] backface culling for plane
-- [ ] option to apply lookAt matrix if any lookAt basis vectors are set
 - [ ] get a better solver for torus
 
 - [ ] scene format documentation (json)
@@ -64,6 +63,7 @@ resources on raytracing.
 - [x] move mesh buffers to another object
 - [ ] mesh motion blur support, whenever BVH is done
 - [ ] Rewrite sceneloader to change scene after read all
+    - write a specification to reference for the rewrite
     - requires intermediate data structure for holding
 
 - [ ] organize src files into folders <>
