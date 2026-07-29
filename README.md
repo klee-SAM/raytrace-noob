@@ -50,6 +50,7 @@ resources on raytracing.
     - struct {uint bounces; float culmVisibility; } control; 
 - [x] backface culling for plane (trivial)
 - [ ] get a better solver for torus
+- ...
 
 - [ ] scene format documentation (json)
 - [ ] support .mtl conventions for scene files
