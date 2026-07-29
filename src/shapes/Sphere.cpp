@@ -15,22 +15,6 @@ vec4 Sphere::computeNormal(const glm::vec3& x) const {
 	return vec4(x, 0.0f); 
 };
 
-
-/*
-
-const vec3 wld_x = vec3(model*vec4(x, 1.0f));
-const vec3 wld_n = normalize(vec3(transpose(inv_model)*computeNormal(x)));
-const float wld_t = t/length(vx);
-
-Hit h; 
-h.x = wld_x; 
-h.n = wld_n; 
-h.t = wld_t;
-h.m = material.get();
-h.uv = computeUV(x);
-
-*/
-
 void Sphere::intersect(const Ray& ray, HitArray& hits) {
 	mat4 modelMat = this->getModelMatrix(ray.time);
 	mat4 inv_modelMat = inverse(modelMat);
