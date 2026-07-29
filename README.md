@@ -48,7 +48,7 @@ resources on raytracing.
     - carry over the reflective coefficients
     - terminate reflection/refraction via threshold
     - struct {uint bounces; float culmVisibility; } control; 
-- [ ] backface culling for plane
+- [x] backface culling for plane (trivial)
 - [ ] get a better solver for torus
 
 - [ ] scene format documentation (json)

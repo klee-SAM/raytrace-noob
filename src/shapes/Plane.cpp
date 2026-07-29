@@ -30,6 +30,9 @@ void Plane::intersect(const Ray& ray, HitArray& hits) {
 	float den = dot(n, ray.dir);
 	float t = num / den; 
 
+	// Backface culling
+	if (den > 0.f) return;
+
 	// and the position of intersection by
 	vec3 offset = t*ray.dir;
 	vec3 x = ray.getPos() + offset;
