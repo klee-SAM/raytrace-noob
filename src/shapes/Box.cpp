@@ -58,11 +58,13 @@ void Box::intersect(const Ray& ray, HitArray& hits) {
 
 	if (tmax < tmin) return;
 
+	mat4 invT_modelMat = glm::transpose(inv_modelMat);
+
 	vec3 x0 = pk + tmin*vk;
-	Hit h0 = toWorldSpaceHit(x0, vx, modelMat, inv_modelMat, tmin);
+	Hit h0 = toWorldSpaceHit(x0, vx, modelMat, invT_modelMat, tmin);
 	hits.push_back(h0);
 
 	vec3 x1 = pk + tmax*vk;
-	Hit h1 = toWorldSpaceHit(x1, vx, modelMat, inv_modelMat, tmax);
+	Hit h1 = toWorldSpaceHit(x1, vx, modelMat, invT_modelMat, tmax);
 	hits.push_back(h1);
 }

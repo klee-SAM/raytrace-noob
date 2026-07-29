@@ -51,14 +51,14 @@ void Sphere::intersect(const Ray& ray, HitArray& hits) {
 		float t0 = (-b - glm::sqrt(d))*den; 
 		float t1 = (-b + glm::sqrt(d))*den;
 
-		mat4 t_inv_mat = glm::transpose(inv_modelMat);
+		mat4 invT_modelMat = glm::transpose(inv_modelMat);
 
 		vec3 x0 = pk + t0*vk;
-        Hit h0 = toWorldSpaceHit(x0, vx, modelMat, t_inv_mat, t0);
+        Hit h0 = toWorldSpaceHit(x0, vx, modelMat, invT_modelMat, t0);
 		hits.push_back(h0);
 
 		vec3 x1 = pk + t1*vk;
-		Hit h1 = toWorldSpaceHit(x1, vx, modelMat, t_inv_mat, t1);
+		Hit h1 = toWorldSpaceHit(x1, vx, modelMat, invT_modelMat, t1);
 		hits.push_back(h1);
 	}
 }
