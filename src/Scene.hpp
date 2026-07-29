@@ -3,7 +3,7 @@
 #define SCENE_H
 
 #include "stn.hpp"
-#include "Shape.hpp"
+#include "shapes/Shape.hpp"
 #include "Material.hpp"
 #include "Light.hpp"
 #include "MeshBuffer.hpp"

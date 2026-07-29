@@ -1,8 +1,7 @@
-#include "stn.hpp"
+#include "../stn.hpp"
 
 #include <glm/gtx/quaternion.hpp>
 
-// #define BACKFACE_CULLING
 #include "Shape.hpp"
 
 using glm::vec2;
@@ -33,13 +32,13 @@ void Shape::setNextModelTransforms(const glm::vec3& trns,
 
 Hit Shape::toWorldSpaceHit(const vec3 &x, const vec3 &vx, 
 						   const mat4 &model,
-						   const mat4 &inv_model,
+						   const mat4 &t_inv_model,
 						   float t) const 
 {
 	const vec3 wld_x = vec3(model*vec4(x, 1.0f));
 	// Use the inverse transpose to ensure that the normals
 	// face the correct direction for nonuniform scales.
-	const vec3 wld_n = normalize(vec3(transpose(inv_model)*computeNormal(x)));
+	const vec3 wld_n = normalize(vec3(t_inv_model*computeNormal(x)));
 	const float wld_t = t/length(vx);
 
 	Hit h; 

@@ -1,4 +1,4 @@
-#include "../Shape.hpp"
+#include "Shape.hpp"
 
 using glm::vec2;
 using glm::vec3;
@@ -52,6 +52,8 @@ void Torus::intersect(const Ray& ray, HitArray& hits) {
         if (h < 0.0 || (n > 0.0 && r*r < m) ) return;
     }
 
+    mat4 t_inv_mat = glm::transpose(inv_modelMat);
+
     float k = (m + Ra2 - ra2)/2.0;
     float k3 = n;
     float k2 = n*n - Ra2*dot(vec2(rd),vec2(rd)) + k;
@@ -94,13 +96,13 @@ void Torus::intersect(const Ray& ray, HitArray& hits) {
 
         if( t1>0.0 ) {
 			vec3 x1 = pk + t1*vk;
-			Hit h1 = toWorldSpaceHit(x1, vx, modelMat, inv_modelMat, t1);
+			Hit h1 = toWorldSpaceHit(x1, vx, modelMat, t_inv_mat, t1);
 			hits.push_back(h1);
 		}
 
         if( t2>0.0 ) {
 			vec3 x2 = pk + t2*vk;
-			Hit h2 = toWorldSpaceHit(x2, vx, modelMat, inv_modelMat, t2);
+			Hit h2 = toWorldSpaceHit(x2, vx, modelMat, t_inv_mat, t2);
 			hits.push_back(h2);
 		}
 
@@ -122,7 +124,7 @@ void Torus::intersect(const Ray& ray, HitArray& hits) {
 		t[i] = (po<0.0)?2.0/t[i]:t[i];
 		if (t[i] < 0.f) continue;
 		vec3 x = pk + t[i]*vk;
-		Hit h = toWorldSpaceHit(x, vx, modelMat, inv_modelMat, t[i]);
+		Hit h = toWorldSpaceHit(x, vx, modelMat, t_inv_mat, t[i]);
 		hits.push_back(h);
 	}
 }

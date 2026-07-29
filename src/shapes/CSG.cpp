@@ -1,4 +1,4 @@
-#include "../Shape.hpp"
+#include "Shape.hpp"
 #include <vector>
 
 using glm::vec2;

@@ -1,7 +1,10 @@
-#include "../Shape.hpp"
+#include "Shape.hpp"
 
 // Comment this out to show the actual model
 // #define SHOW_BOUNDING_SPHERE
+// Whether or not backfacing triangles will be pushed to
+// the array of intersections
+// #define BACKFACE_CULLING
 
 using CONSTANTS::EPSILION;
 

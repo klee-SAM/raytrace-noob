@@ -3,7 +3,7 @@
 #define SCENELOADER_H
 
 #include "stn.hpp"
-#include "Shape.hpp"
+#include "shapes/Shape.hpp"
 #include "Camera.hpp"
 
 #include <iosfwd>

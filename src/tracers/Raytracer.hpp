@@ -14,7 +14,7 @@
 // temp!
 #include <unordered_map>
 #include "../MeshBuffer.hpp"
-#include "../Shape.hpp"
+#include "../shapes/Shape.hpp"
 #include "../Light.hpp"
 class TScene {
 public:

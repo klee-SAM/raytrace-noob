@@ -2,12 +2,12 @@
 #ifndef SHAPE_H
 #define SHAPE_H
 
-#include "stn.hpp"
-#include "Material.hpp"
-#include "Ray.hpp"
-#include "MeshBuffer.hpp"
+#include "../stn.hpp"
+#include "../Material.hpp"
+#include "../Ray.hpp"
+#include "../MeshBuffer.hpp"
 
-#include "util/umath.hpp"
+#include "../util/umath.hpp"
 
 #include <glm/gtc/quaternion.hpp>
 
@@ -16,6 +16,7 @@ public:
 	Geometry() {}
 	virtual ~Geometry() = default;
 	virtual void initialize() {}
+	virtual void intersect(const Ray&, Hit& hit) = 0;
 	virtual void intersect(const Ray&, HitArray& hits) = 0;
 };
 
@@ -39,6 +40,7 @@ public:
 	glm::mat4 getModelMatrix(float tm) const;
 	void setMaterial(const std::shared_ptr<Material>& mat) { material = mat; }
 
+	void intersect(const Ray&, Hit& hit) {}
 	void intersect(const Ray& ray, HitArray& hits) {}
 	
 protected:
@@ -72,10 +74,10 @@ protected:
 	// 	float t) const;
 
 	Hit toWorldSpaceHit(
-		const glm::vec3 &x, // hit position
-		const glm::vec3 &vx, // unnormalized ray dir
-		const glm::mat4 &model,
-		const glm::mat4 &invMod,
+		const glm::vec3 &x, 	  // hit position
+		const glm::vec3 &vx, 	  // unnormalized ray dir
+		const glm::mat4 &model,   // model matrix
+		const glm::mat4 &tinvMod, // transposed inverse mat
 		float t) const;
 
 	glm::mat4 modelMatLerp(const float time) const;

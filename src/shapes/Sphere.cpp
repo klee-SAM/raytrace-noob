@@ -1,4 +1,4 @@
-#include "../Shape.hpp"
+#include "Shape.hpp"
 
 using glm::vec2;
 using glm::vec3;
@@ -14,6 +14,22 @@ vec2 Sphere::computeUV(const vec3& p) const {
 vec4 Sphere::computeNormal(const glm::vec3& x) const { 
 	return vec4(x, 0.0f); 
 };
+
+
+/*
+
+const vec3 wld_x = vec3(model*vec4(x, 1.0f));
+const vec3 wld_n = normalize(vec3(transpose(inv_model)*computeNormal(x)));
+const float wld_t = t/length(vx);
+
+Hit h; 
+h.x = wld_x; 
+h.n = wld_n; 
+h.t = wld_t;
+h.m = material.get();
+h.uv = computeUV(x);
+
+*/
 
 void Sphere::intersect(const Ray& ray, HitArray& hits) {
 	mat4 modelMat = this->getModelMatrix(ray.time);
@@ -35,12 +51,14 @@ void Sphere::intersect(const Ray& ray, HitArray& hits) {
 		float t0 = (-b - glm::sqrt(d))*den; 
 		float t1 = (-b + glm::sqrt(d))*den;
 
+		mat4 t_inv_mat = glm::transpose(inv_modelMat);
+
 		vec3 x0 = pk + t0*vk;
-        Hit h0 = toWorldSpaceHit(x0, vx, modelMat, inv_modelMat, t0);
+        Hit h0 = toWorldSpaceHit(x0, vx, modelMat, t_inv_mat, t0);
 		hits.push_back(h0);
 
 		vec3 x1 = pk + t1*vk;
-		Hit h1 = toWorldSpaceHit(x1, vx, modelMat, inv_modelMat, t1);
+		Hit h1 = toWorldSpaceHit(x1, vx, modelMat, t_inv_mat, t1);
 		hits.push_back(h1);
 	}
 }

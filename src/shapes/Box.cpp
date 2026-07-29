@@ -1,4 +1,4 @@
-#include "../Shape.hpp"
+#include "Shape.hpp"
 
 using glm::vec2;
 using glm::vec3;
@@ -22,14 +22,14 @@ vec2 Box::computeUV(const glm::vec3& p) const {
 	// For any hit on the box, at least one component has
 	// a value of 1, indicating the face that is hit. 
 	// The information of the other 2 components are used 
-	// to get the UV. this is temporary
+	// to get the UV. this is "temporary"
 	float maxc = std::max(std::max(abs(p.x), abs(p.y)), abs(p.z));
 	float u, v;
 	// flip on p.z for un-mirroring 
-	if (abs(p.x) == maxc) 	   u = -p.z, v = p.y;
+	if 		(abs(p.x) == maxc) u = -p.z, v = p.y;
 	else if (abs(p.y) == maxc) u =  p.x, v = p.z;
 	else 				  	   u =  p.x, v = p.y;
-	return vec2(0.5f*u-0.5f, 0.5f*v-0.5f);
+	return .5f * vec2(u, v) - 0.5f;
 };
 
 // Axis-aligned bounding box intersection
