@@ -3,6 +3,7 @@
         "distance" : 5.0,
         "antialias" : 256,
         "focalRadius" : 0.5,
+        "focusLength" : 6,
         "fov" : 75.0,
         "sky" : "Above the city in winter.jpg"
     },
