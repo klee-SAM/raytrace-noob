@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
         if (filename == "strace") {
             // TODO: temporary
             width = 1024U; height = 1024U;
-            unique_ptr<Raytracer> stracer = make_unique<Raytracer>();
+            unique_ptr<Raytracer<SphereTracer>> stracer = make_unique<Raytracer<SphereTracer>>();
             unique_ptr<TCamera> camera = make_unique<TCamera>(width, height, 45.f);
             camera->setInitDistance(5.f);
             unique_ptr<TScene> tmp_scene = make_unique<TScene>();

@@ -1,5 +1,7 @@
 #include "Raytracer.hpp"
 
+#include "SphereTracer.hpp"
+
 #include "../stn.hpp"
 // #include "../Scene.hpp"
 // #include "../Camera.hpp"
@@ -16,12 +18,25 @@
 using std::unique_ptr;
 using std::vector;
 
+// Prevent linker errors.
+template std::unique_ptr<Image> Raytracer<SphereTracer>::render();
+
 /*
 The only difference between RecursiveTracer and SphereTracer
 is the getRayColor() function, so share the multithreading/task
 delegation code by putting them in Raytracer.hpp
 
-- inheritance by overriding only getRayColor()
+-x inheritance by overriding only getRayColor()
+Note: this turned out to be very complicated.
+The previous solution, using a switch statement to determine
+which function to call at runtime, worked fine, but it meant
+that every time I needed to have a new function for any of
+the tracers, I would need to put it in the same class definition
+file, probably resulting in a dozen functions needing to be prefixed
+with a name and polluting the overall space
+the runtime cost, at least for the test scene, isn't noticable, but
+the solution wasn't very elegant
+
 -x make scene and camera be members of Raytracer.hpp
 -x compute P and V matrices inside render(), using a bound camera object 
 
@@ -53,24 +68,24 @@ scene object are bound when render() is called
 
 constexpr glm::vec3 NOT_IMPL_CLR = glm::vec3(1.f, 0.f, 1.f);
 
-prand::diskRand Raytracer::diskRandGen;
-prand::uniformRand Raytracer::unifRandGen;
+prand::diskRand RaytracerData::diskRandGen;
+prand::uniformRand RaytracerData::unifRandGen;
 
-void Raytracer::setScene(unique_ptr<Scene>&& scene) {
+void RaytracerData::setScene(unique_ptr<Scene>&& scene) {
     this->scene = std::move(scene);
 }
 
-void Raytracer::setCamera(unique_ptr<Camera>&& camera) {
+void RaytracerData::setCamera(unique_ptr<Camera>&& camera) {
     this->camera = std::move(camera);
     this->camera->validateLookAtVectors();
 }
 
-void Raytracer::applyProjection(MatrixStack& MS) 
+void RaytracerData::applyProjection(MatrixStack& MS) const
 {
     auto& cam = this->camera;
     MS.mult(glm::perspective(cam->fovy, cam->aspectRatio, cam->znear, cam->zfar));
 }
-void Raytracer::applyView(MatrixStack& MS) 
+void RaytracerData::applyView(MatrixStack& MS) const
 {
     auto& cam = this->camera;
 
@@ -104,8 +119,12 @@ void Raytracer::applyView(MatrixStack& MS)
     MS.mult(lookAtMat);
 }
 
-unique_ptr<Image> Raytracer::render() 
+template <typename T>
+unique_ptr<Image> Raytracer<T>::render() 
 {
+    const auto &scene = getScene();
+    const auto &camera = getCamera();
+
     if (!scene || !camera) 
         throw std::logic_error("scene or camera not bound");
 
@@ -153,7 +172,7 @@ unique_ptr<Image> Raytracer::render()
     uint jobsFinished = 0;
     uint totalCasts = height * width;
     // horrific; +1 thread than cores works b/c it's i/o bound (sleep)
-    auto countScans = [this, jobsFinished](uint totalCasts, uint numThreads) 
+    auto countScans = [this, jobsFinished, &camera](uint totalCasts, uint numThreads) 
     {
         while (r_queue.rowsProcessed < camera->height && jobsFinished < numThreads) 
         {
@@ -178,7 +197,8 @@ unique_ptr<Image> Raytracer::render()
     return image;
 };
 
-void Raytracer::processRows(unique_ptr<Image> &image) 
+template <typename T>
+void Raytracer<T>::processRows(unique_ptr<Image> &image) 
 {
     while (!r_queue.empty()) 
     {
@@ -190,8 +210,8 @@ void Raytracer::processRows(unique_ptr<Image> &image)
 }
 
 
-
-Ray Raytracer::castPrimaryRay(Pixel p, const glm::vec2 &offset) const {
+template<typename T>
+Ray Raytracer<T>::castPrimaryRay(Pixel p, const glm::vec2 &offset) const {
     const float ndc_y = 2.f*((float)p.y + offset.y)/(f_height) - 1.f;
     const float ndc_x = 2.f*((float)p.x + offset.x)/(f_width) - 1.f;
 
@@ -210,7 +230,10 @@ Ray Raytracer::castPrimaryRay(Pixel p, const glm::vec2 &offset) const {
     return cray;
 }
 
-Ray Raytracer::castSecondaryRay(const Ray &pray) const {
+template<typename T>
+Ray Raytracer<T>::castSecondaryRay(const Ray &pray) const {
+    const auto &camera = getCamera();
+
     glm::vec4 focalPoint = pray.pos + camera->focusLength*pray.dir;
     focalPoint.w = 1.f;
 
@@ -224,8 +247,11 @@ Ray Raytracer::castSecondaryRay(const Ray &pray) const {
     return dray;
 }
 
-void Raytracer::setRow(unique_ptr<Image>& image, uint y) 
+template <typename T>
+void Raytracer<T>::setRow(unique_ptr<Image>& image, uint y) 
 {
+    const auto &camera = getCamera();
+
     for (uint x = 0; x < camera->width; ++x) 
     {
         glm::vec3 color = glm::vec3(0.0f);
@@ -262,13 +288,33 @@ void Raytracer::setRow(unique_ptr<Image>& image, uint y)
     }
 }
 
-glm::vec3 Raytracer::getRayColor(const Ray& ray) const 
+// template <typename T>
+// glm::vec3 Raytracer<T>::getRayColor(const Ray& ray) const 
+// {
+//     switch(this->mode)
+//     {
+//         case RenderMode::Raymarch:
+//             return rayMarch(ray);
+//         default:
+//             return NOT_IMPL_CLR;
+//     }   
+// }
+
+glm::vec3 RaytracerData::getSkyColor(const Ray& ray) const 
 {
-    switch(this->mode)
-    {
-        case RenderMode::Raymarch:
-            return rayMarch(ray);
-        default:
-            return NOT_IMPL_CLR;
-    }   
+    glm::vec2 uv;
+    switch(scene->sky) {
+    case (Scene::SkyType::Haze):
+        return .5f*ray.getDir() + .5f;
+    case (Scene::SkyType::SphereMap):
+        uv = umath::sphereMap(ray.getDir());
+        return scene->skyTexture->value(uv);
+    case (Scene::SkyType::Ambient): 
+        return scene->globalAmbient;
+    case (Scene::SkyType::Void):
+    default:
+        return glm::vec3(0.0f);
+        break;
+    }
+    return glm::vec3(1.f, 1.f, 0.0f);
 }

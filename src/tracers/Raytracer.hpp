@@ -63,20 +63,16 @@ public:
     }
 
     enum class SkyType {Void, Haze, SphereMap, Ambient, Flat};
-    void setSky(SkyType s) { sky = s; }
-    void setSkyTexture(std::unique_ptr<ImageTexture>&& texture) { 
-      skyTexture = std::move(texture); 
-    }
-    
+    SkyType sky = SkyType::Void;
+    // used only if the skytype is SphereMap
+    std::unique_ptr<ImageTexture> skyTexture;  
+    glm::vec3 globalAmbient;
+
 private:
     shapes_vec shapes;
     lights_vec lights;
     meshbuf_map meshes;
     material_map materials;
-
-    SkyType sky = SkyType::Void;
-    // used only if the skytype is SphereMap
-    std::unique_ptr<ImageTexture> skyTexture;  
 };
 
 struct TCamera {
@@ -184,10 +180,10 @@ struct TCamera {
     }
 };
 
-enum class RenderMode { Unknown, Whitted, Raymarch, Pathtrace };
+// enum class RenderMode { Unknown, Whitted, Raymarch, Pathtrace };
 
 // Common functionality for all raytracers.
-class Raytracer {
+class RaytracerData {
 public:
     using Camera = TCamera; // temporary!
     using Scene = TScene;   // also temp!
@@ -204,41 +200,21 @@ public:
     bool SHOW_NORMALS = false;
 
     void setScene(std::unique_ptr<Scene>&& scene);
-    void setCamera(std::unique_ptr<Camera>&& cam);
+    void setCamera(std::unique_ptr<Camera>&& cam); 
 
-    std::unique_ptr<Image> render();
-
-protected:
     // Guarantee that fields in these objects cannot be changed
     const std::unique_ptr<Scene>& getScene() const { return scene; }
-    const std::unique_ptr<Camera>& getCamera() const { return camera; }
+    const std::unique_ptr<Camera>& getCamera() const { return camera; }   
+
+    void applyProjection(MatrixStack&) const;
+    void applyView(MatrixStack&) const;
 
 private:
     std::unique_ptr<Scene> scene;
     std::unique_ptr<Camera> camera;
 
-    RowQueue r_queue; // Multithreading by row slices
-    void processRows(std::unique_ptr<Image> &image);
-    void setRow(std::unique_ptr<Image> &image, uint y);
-
-    // variables computed in render()
-    glm::vec4 cameraPos; // contains world-space position of camera
-    glm::mat4 C;         // Camera Matrix, inverse of View Matrix
-    glm::mat4 invP;      // inverse of projection mat
-    glm::vec4 dof_u;     // right cam basis vec
-    glm::vec4 dof_v;     // up cam basis vec
-
-    float f_width, f_height;
-
-    void applyProjection(MatrixStack&);
-    void applyView(MatrixStack&);
-
-    struct Pixel { uint x, y; };
-    Ray castPrimaryRay(Pixel id, const glm::vec2 &offset) const;
-    Ray castSecondaryRay(const Ray &primaryRay) const;
-
-    RenderMode mode = RenderMode::Unknown;
-    glm::vec3 getRayColor(const Ray&) const;
+    // RenderMode mode = RenderMode::Unknown;
+    // glm::vec3 getRayColor(const Ray&) const;
 
     // Contains common info used for BRDF calculations
     struct IntParams {
@@ -246,7 +222,49 @@ private:
         const Hit &rec;
     };
 
-    glm::vec3 rayMarch(const Ray &ray) const;
+    glm::vec3 getSkyColor(const Ray& ray) const;
+
+    // glm::vec3 rayMarch(const Ray &ray) const;
+
+    // class sampleCone;
+    // glm::vec3 rec_raytrace(const Ray &ray, const Interval&, uint bounces) const;
+    // glm::vec3 rec_getReflectedColor(const Ray &ray, IntParams args, 
+    //                                 uint recursions) const;
+    // glm::vec3 rec_getRefractedColor(const Ray &ray, IntParams args,
+    //                                 uint recursions, bool back_face) const;
+    // float occlusionDiffuseFactor(IntParams args, vec3 &diffuseFac, float time) const;
+    // vec3 getShadowContrib(const Ray &sray, const Interval &t_int) const;
+    // vec3 lightingFactor(const Ray &ray, IntParams args,
+    //                     const std::shared_ptr<Light> &light,
+    //                     const glm::vec3 &diffuseAtt,
+    //                     bool sampleArea = true) const;
+
+};
+
+template <typename T>
+class Raytracer : public RaytracerData {
+public:
+    std::unique_ptr<Image> render();
+    glm::vec3 getRayColor(const Ray& ray) {
+        return static_cast<T*>(this)->getRayColorImpl(ray);;
+    };
+
+private:
+    RowQueue r_queue; // Multithreading by row slices
+    void processRows(std::unique_ptr<Image> &image);
+    void setRow(std::unique_ptr<Image> &image, uint y);
+
+    struct Pixel { uint x, y; };
+    Ray castPrimaryRay(Pixel id, const glm::vec2 &offset) const;
+    Ray castSecondaryRay(const Ray &primaryRay) const;
+
+    // variables computed in render()
+    glm::vec4 cameraPos; // contains world-space position of camera
+    glm::mat4 C;         // Camera Matrix, inverse of View Matrix
+    glm::mat4 invP;      // inverse of projection mat
+    glm::vec4 dof_u;     // right cam basis vec
+    glm::vec4 dof_v;     // up cam basis vec
+    float f_width, f_height;
 };
 
 #endif

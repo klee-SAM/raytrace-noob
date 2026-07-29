@@ -1,5 +1,5 @@
 #include "../stn.hpp"
-#include "Raytracer.hpp"
+#include "SphereTracer.hpp"
 
 #include "../Ray.hpp"
 #include "../util/umath.hpp"
@@ -88,7 +88,7 @@ vec3 sceneNormal(vec3 p) {
 
 const Interval interval(MIN_DIST, MAX_DIST);
 
-vec3 Raytracer::rayMarch(const Ray &ray) const
+vec3 SphereTracer::getRayColorImpl(const Ray &ray) const
 {
     float total_dist = 0.0f;
     const int MAX_STEPS = 128;

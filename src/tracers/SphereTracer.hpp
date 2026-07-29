@@ -5,13 +5,9 @@
 #include "../stn.hpp"
 #include "Raytracer.hpp"
 
-class SphereTracer : public Raytracer 
+struct SphereTracer : public Raytracer<SphereTracer>
 {
-public:
-    // glm::vec3 getRayColor(const Ray&) const;
-
-private:
-    // ...
+    glm::vec3 getRayColorImpl(const Ray&) const;
 };
 
 #endif
