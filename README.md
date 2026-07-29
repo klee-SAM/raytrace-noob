@@ -48,12 +48,6 @@ resources on raytracing.
     - carry over the reflective coefficients
     - terminate reflection/refraction via threshold
     - struct {uint bounces; float culmVisibility; } control; 
-- [ ] try an override of the shape->intersect function 
-    - this returns a single Hit object instead of a vector
-    - shared calculations for shapes becomes constexpr func
-- [ ] try getting rid of hit::x (pos) for memory
-    - material comp getters need to take a new argument
-    - need to explicitly calculate pos(t) for reflRay, color
 - [ ] backface culling for plane
 - [ ] get a better solver for torus
 
