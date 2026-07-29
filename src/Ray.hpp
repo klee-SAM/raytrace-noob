@@ -43,6 +43,10 @@ struct Hit {
     Material* m = nullptr;  // material of hit surface
     float t;                // dist from origin to hit
 
+    // Useful in code where default-constructing Hits can lead
+    // to segfaults, but is not needed currently 
+    // Hit() noexcept : x(0.f), n(0.f), uv(0.f), m(nullptr), t(0.f) {}
+
     // Define getters for lighting components here instead of 
     // in the material class to avoid needing extra parameters
     // However, these can segfault if m isn't checked for nullptr
