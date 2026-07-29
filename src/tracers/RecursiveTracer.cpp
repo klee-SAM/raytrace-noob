@@ -1,0 +1,507 @@
+// #include "../stn.hpp"
+// #include "Raytracer.hpp"
+
+// #include "../Scene.hpp"
+// #include "../Light.hpp"
+
+// #include <iostream>
+// #include <vector>
+
+// #include <glm/exponential.hpp>
+// #include <glm/gtc/type_ptr.hpp>
+
+// #include "util/prand.hpp"
+// #include "util/counter.hpp"
+
+// // #define SHOW_NORMALS
+
+// using std::vector;
+// using std::shared_ptr;
+// using std::unique_ptr;
+
+// using glm::vec2;
+// using glm::vec3;
+// using glm::vec4;
+// using glm::mat3;
+// using glm::mat4;
+
+// using CONSTANTS::INF, CONSTANTS::EPSILION, 
+//       CONSTANTS::PI, CONSTANTS::R_PI;
+
+// typedef const vector<shared_ptr<Shape>>& ShapesVector;
+
+// // Returns the closest intersection in the interval.
+// bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& closestHit);
+
+// // Returns a sorted list of intersections in the interval.
+// bool hit(ShapesVector shapes, const Ray& ray, 
+//          const Interval& interval, HitArray& allHits);
+
+
+// bool hit(ShapesVector shapes, const Ray& ray, const Interval& interval, Hit& closestHit) 
+// {
+//     float minDist = interval.max;
+//     bool intersected_any = false;
+
+//     for (const shared_ptr<Shape>& shape : shapes) {
+//         HitArray temp_hits; // maintain a list of hits for csg
+//         shape->intersect(ray, temp_hits);
+//         for (Hit& hit : temp_hits) {
+//             if (!interval.contains(hit.t)) continue;
+//             intersected_any = true;
+            
+//             if (minDist > hit.t) {
+//                 minDist = hit.t;
+//                 closestHit = hit;
+//             }
+//         }
+//     }
+//     return intersected_any;
+// }
+
+// // Like the above, except this is used
+// // for cases where all sorted hits for a ray are needed
+// bool hit(ShapesVector shapes, const Ray& ray, 
+//          const Interval& interval, HitArray& allHits) 
+// {
+//     bool intersected_any = false;
+//     for (const shared_ptr<Shape>& shape : shapes) {
+//         HitArray temp_hits;
+//         shape->intersect(ray, temp_hits);
+//         for (Hit& hit : temp_hits) {
+//             if (!interval.contains(hit.t)) continue;
+//             intersected_any = true;
+//             allHits.push_back(hit);
+//         }
+//     }
+//     allHits.sort();
+//     return intersected_any;
+// }
+
+// // Whitted-style ray-tracing, but amalmagated
+// vec3 Raytracer::rec_raytrace(const Ray& ray, const Interval& interval, uint recursiveDepth) const
+// {
+//     Hit rec;
+//     vec3 clr = vec3(0.0f);
+//     if (!hit(scene->getShapes(), ray, interval, rec)) return getSkyColor(ray);
+
+//     // Required for reflection and refraction; prevent possible
+//     // infinite recursion of raytracing (which leads to segfaults)
+//     if (recursiveDepth >= MAX_RECURSIONS) return clr;
+
+//     // (possible) command-line option
+//     if (SHOW_NORMALS) return .5f*rec.n + .5f;
+
+//     vec3 reflectClr = vec3(0.0f);
+//     vec3 refractClr = vec3(0.0f);
+//     vec3 absorbClr = vec3(1.0f); // Reduce nothing by default; this is max value
+
+//     // If the material is not refractive, keep any reflections
+//     float reflectance = reflectanceFromIncidentRay(ray, rec);
+//     reflectance = rec.m->reflCoeff + (1.f - rec.m->reflCoeff)*reflectance;
+//     const bool reflective = rec.m->reflCoeff > MINIMUM_COEFF;
+//     const bool transparent = rec.m->transparency > MINIMUM_COEFF;
+//     // For Fresnel's reflectance on transparent objects 
+//     const bool inReflThres = reflectance > CONSTANTS::EPSILION;
+//     const bool inRefrThres = reflectance < 1.f - CONSTANTS::EPSILION;
+
+//     // Determine if the ray is inside or outside the object,
+//     // only to handle the case of lighting for CSG.
+//     // Doing this means that refraction must account for
+//     // this possibility via parameter
+//     const bool back_face = dot(ray.getDir(), rec.n) > 0.0f; // true if inside
+
+//     const IntParams intInfo{interval, rec};
+
+//     // Avoid casting additional glossy reflection rays if inside the object, this
+//     // avoids massively expensive and unnecessary computation (3x increase)
+//     // TIR reflections are done in elseif (Fresnel)
+//     if ((reflective || (transparent && inReflThres)) && !back_face) { 
+//         reflectClr = rec_getReflectedColor(ray, intInfo, recursiveDepth+1);
+//     } else if (transparent && !inRefrThres) {
+//         // However, do (non-glossy) reflection if TIR inside the object
+//         Ray reflRay = reflectRay(ray, rec);
+//         reflectClr = rec_raytrace(reflRay, interval, recursiveDepth+1);
+//     }
+
+//     // Objects must be transparent in order to refract light.
+//     if (transparent && inRefrThres) {
+//         // flip the normal for refraction, if inside
+//         // this must be done since *every* following calculation needs to
+//         // compute the color as if the normal of the surface faced towards
+//         // the incident ray; otherwise, strange glints are caused by an
+//         // invisible surface. If back_face check not nested in this if statement,
+//         // bright specks may appear on meshes w/ backface culling enabled.
+//         if (back_face) { 
+//             rec.n = -rec.n;
+//             absorbClr = glm::exp(-rec.absorb() * rec.m->absorbCoeff * rec.t);
+//         }
+//         refractClr = rec_getRefractedColor(ray, intInfo, recursiveDepth+1, back_face);
+//     }
+
+//     // Another term, ia, could be multiplied with the ambient and determined based on the 
+//     // distribution and number of lights throughout the scene automatically.
+//     // Not that important though.
+//     vec3 localClr = rec.ambient()*scene->globalAmbient;
+//     vec3 diffuseFac = vec3(1.f); // for color-blending
+//     const bool occlusionEnabled = camera->occlusionSamples > 0 && 
+//                                   camera->occludingRadius > MINIMUM_COEFF;
+//     if (occlusionEnabled && recursiveDepth < 2) {
+//         // the maximum is arbitrarily user-defined, but it should be small 
+//         // so that faraway objects are not considered
+//         const auto occlArea = Interval(interval.min, camera->occludingRadius);
+//         const IntParams occlArgs{occlArea, rec};
+//         const float occlFac = occlusionDiffuseFactor(occlArgs, diffuseFac, ray.time);
+//         localClr *= occlFac;
+//     }
+
+//     #ifndef NDEBUG
+//     // Debugging code for NaNs
+//     auto isnan = glm::all(glm::isnan(localClr));
+//     if (isnan) return vec3(1, 0, 1);
+//     #endif
+
+//     for (auto& light : scene->getLights()) {
+//         // Construct shadow rays for each light and do Phong shading using world coordinates
+//         // Boolean parameter to naively cull the number of neglible rays casted for shadows
+//         const bool recurse = recursiveDepth < 3 && !back_face; 
+//         const vec3 clrFromLight = lightingFactor(ray, intInfo, light, diffuseFac, recurse);
+
+//         localClr += clrFromLight;
+//     }
+
+//     // ki = 1 - refl*kr - (1-refl)*kt
+//     const float reflMult = reflectance*rec.m->fresnelCoeff;
+//     const float refrMult = (1.f - reflectance)*rec.m->transparency;
+//     const float localCoeff = 1.f - reflMult - refrMult;
+//     const vec3 f_refractClr = refractClr*absorbClr*refrMult;
+//     clr += localCoeff*localClr + reflectClr*reflMult + f_refractClr;
+//     clr += rec.emissive();
+
+//     return clr;
+// }
+
+// Ray reflectRay(const Ray &ray, const Hit &rec) 
+// {
+//     Ray reflRay; 
+//     // ray.dir - 2.0f * dot(rec.n, ray.dir) * rec.n
+//     reflRay.setDir(glm::reflect(ray.getDir(), rec.n));
+//     reflRay.setPos(rec.x + reflRay.getDir()*EPSILION);
+//     reflRay.time = ray.time;
+//     return reflRay;
+// }
+
+// // Creates a new ray with a direction dependent on the material's IoR
+// // Returns a ray with dir = vec3(0.f) if TIR
+// Ray refractRay(const Ray &ray, const Hit &rec, float eta) {
+//     const vec3 &norm = rec.n;
+//     float cosI = -dot(normalize(ray.getDir()), norm);
+//     cosI = std::clamp(cosI, -1.f, 1.f);
+//     const float sinT2 = eta*eta*(1.0f-cosI*cosI);
+//     if (sinT2 > 1.f) return Ray(vec3(0.f), vec3(0.f), 0.f);
+//     const float cosT = std::sqrt(1.f - sinT2);
+//     const vec3 rayDir = eta*ray.getDir()+norm*(eta*cosI-cosT);
+//     const vec3 rayPos = rec.x + rayDir*EPSILION;
+//     return Ray(rayPos, normalize(rayDir), ray.time);
+// }
+
+// // Uses Schlick's approximation of Fresnel's equations for refraction.
+// // https://computergraphics.stackexchange.com/questions/4573/
+// float reflectanceFromIncidentRay(const Ray &ray, const Hit &rec) {
+//     float eta, n1, n2; 
+//     vec3 norm = rec.n;
+//     float cosX = -dot(norm, ray.getDir());
+//     cosX = std::clamp(cosX, -1.f, 1.f); // jus clamp lmao
+//     if (cosX < 0.f) { /*true if backfacing*/
+//         n1 = rec.m->refrIndex; 
+//         n2 = 1.f;
+//         cosX = -cosX;
+//     } else {
+//         n1 = 1.f; 
+//         n2 = rec.m->refrIndex;
+//         norm = -norm;
+//     }
+//     if (n1 > n2) {
+//         eta = n1 / n2;
+//         const float sin2T = eta*eta*(1.0f-cosX*cosX);
+//         if (sin2T > 1.0f) { return 1.f; } // TIR
+//         cosX = sqrt(1.f - sin2T);
+//     }
+//     const float x = 1.0f - cosX;
+//     float r0 = (n1 - n2)/(n1 + n2); r0 *= r0;
+//     return r0 + (1.0f-r0)*(x*x*x*x*x);
+// }
+
+// // this does not increment `recursions` when it recursively calls
+// // check to make sure that the recursion count is incremented when calling this
+// vec3 Raytracer::rec_getReflectedColor(const Ray &ray, IntParams args, uint recursions) const
+// {
+//     auto &rec = args.rec;
+//     auto &interval = args.interval;
+
+//     vec3 reflClr = rec_raytrace(reflectRay(ray, rec), interval, recursions);
+//     for (uint r = 1; r < args.rec.m->reflSamples; ++r) {
+//         Ray nearRay = ray;
+//         nearRay.setDir(glm::normalize(ray.getDir() + glm::sphericalRand(rec.m->fuzz)));
+//         reflClr += rec_raytrace(reflectRay(nearRay, rec), interval, recursions);
+//     }
+//     // reflSamples must be at least 1.
+//     reflClr /= rec.m->reflSamples;
+//     return reflClr;
+// }
+
+// // similar to getReflectionColor(), but can return vec3(0.f) b/c TIR
+// vec3 Raytracer::rec_getRefractedColor(const Ray &ray, IntParams args,
+//                                uint recursions, bool back_face) const
+// {
+//     float n1, n2;
+//     if (back_face) { n1 = args.rec.m->refrIndex; n2 = 1.f;} 
+//     else { n1 = 1.f; n2 = args.rec.m->refrIndex; }
+//     const Ray refrRay = refractRay(ray, args.rec, n1/n2);
+//     vec3 refrClr = vec3(0.f);
+//     if (vec3(0.f) != ray.getDir()) {
+//         refrClr = rec_raytrace(refrRay, args.interval, recursions);
+//     } // otherwise, no refracted clr b/c TIR, modify reflected instead
+//     return refrClr;
+// }
+
+// // Uses monte carlo integration, and is far from physically based
+// // Ambient occlusion samples are taken for every color ray, including
+// // anti-aliasing rays; recommended to reduce AO samples if increasing AA rays
+// float Raytracer::occlusionDiffuseFactor(IntParams args, vec3 &diffuseFac, float time) const
+// {
+//     auto &rec = args.rec;
+//     auto &interval = args.interval;
+
+//     VarianceCounter<float> lightAbsorptionCounter;
+//     vec3 diffuseAbsorption(0.f);
+
+//     vec3 T, B;
+//     umath::assignONBvec3s(args.rec.n, T, B);
+//     vec3 aorayPos = rec.x + (float)interval.min*rec.n;
+
+//     Ray aoray;
+//     aoray.setPos(aorayPos);
+//     aoray.time = time;
+
+//     const uint minConvergSamp = std::max(camera->occlusionSamples / 4, 8U);
+//     const float r_tmax = 1.f / (float)interval.max;
+    
+//     for (uint i = 0; i < camera->occlusionSamples; ++i) {
+//         const float u1 = unifRandGen.rand();
+//         const float u2 = unifRandGen.rand();
+//         vec3 rDir = umath::cosineSampleHemisphere(u1, u2);
+//         // Transform the sampled vector from tangent to world space
+//         rDir = vec3(rDir.x*T + rDir.y*B + rDir.z*rec.n);  
+//         rDir = normalize(rDir);      
+//         aoray.setDir(rDir);
+
+//         Hit aoHit;
+//         const bool occluded = hit(scene->getShapes(), aoray, interval, aoHit);
+//         vec3 rayClrAbsorbed = vec3(0.f);
+//         float rayLightAbsorbed = 0.f;
+
+//         // For a red clr, green and blue are absorbed, but reflections and refractions
+//         // also need consideration. however, recursively calling getRayColor is expensive
+//         if (occluded && aoHit.m) {
+//             const float dist = glm::clamp(aoHit.t * r_tmax, 0.f, 1.f);
+//             // Very crude approximation of color blending from diffuse reflection
+//             const float ureflCoeff = 1.f - rec.m->reflCoeff;
+//             const float opacity = 1.f - rec.m->transparency;
+//             const vec3 kd = aoHit.diffuse() * ureflCoeff * opacity;
+//             const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, rDir));
+
+//             // Transparent objects occlude less light. well, i think
+//             // the closer the occluding, the less that light reaches,
+//             // so more light should be absorbed; crude approximations
+//             rayClrAbsorbed = (1.f - diff_cont) * umath::phiWeight(.6f, 1.f - dist);
+//             rayLightAbsorbed = (1.f - dist) * opacity;
+//         }
+
+//         diffuseAbsorption += rayClrAbsorbed;
+//         const bool lowVari = lightAbsorptionCounter.add(rayLightAbsorbed);
+//         if (lowVari && i >= minConvergSamp) { break; }
+//     }
+
+//     const float currSamplesDone = lightAbsorptionCounter.getSamplesDone();
+//     const float r_samplesDone = 1.f / currSamplesDone;
+//     const float occlusionCoeff = 1.f - lightAbsorptionCounter.getMean();
+//     diffuseFac = vec3(1.f) - (diffuseAbsorption*r_samplesDone);
+//     // sqrt is a hack that make the color blends look nicer with the subtle occlusion
+//     // also multiply by sign to preserve stability with sqrt
+//     diffuseFac = glm::sqrt(diffuseFac*glm::sign(diffuseFac));
+    
+//     return occlusionCoeff;
+// }
+
+// // Used for sampling points on spherical area lights
+// // at a somewhat reasonable efficiency
+// class Raytracer::sampleCone {
+// private:
+//     glm::vec3 dx, dy;
+//     glm::vec3 dz;
+//     const float radius;
+
+//     float dz_len_2;
+//     float sin_theta_max_2;
+//     float sin_theta_max;
+//     float cos_theta_max;
+//     // float r_pdf = 1.f;
+
+// public:
+//     // Akalin's method, ty scratchapixel for saving me from this area light torment nexus
+//     sampleCone(const glm::vec3 &ld, float sampleRadius) 
+//     : radius(sampleRadius)
+//     { 
+//         dz = ld;
+//         dz_len_2 = glm::dot(dz, dz);
+//         const float dz_len = std::sqrt(dz_len_2);
+//         dz /= dz_len;
+//         sin_theta_max_2 = radius * radius / dz_len_2;
+//         sin_theta_max = std::sqrt(sin_theta_max_2);
+//         cos_theta_max = std::sqrt(std::max(0.f, 1.f - sin_theta_max_2));
+
+//         // final light attentuation
+//         // const float radj = max(std::sqrt(r), r);
+//         // falloff = 1.f - std::max(0.f, 1.f - radj/dz_len);
+
+//         umath::assignONBvec3s(dz, dx, dy);
+//     }
+//     inline glm::vec3 operator()() const
+//     {
+//         // Faster to generate less random variables
+//         const float r1 = unifRandGen.rand();
+//         const float r2 = unifRandGen.rand();
+
+//         const float cos_theta = 1.f + (cos_theta_max - 1.f) * r1;
+//         const float sin_theta_2 = 1.f - cos_theta * cos_theta;
+
+//         const float cos_alpha = (sin_theta_2 / sin_theta_max) + 
+//             cos_theta * std::sqrt(1.f - sin_theta_2 / sin_theta_max_2);
+//         const float sin_alpha = std::sqrt(1.f - cos_alpha * cos_alpha);
+//         const float phi = 2 * PI * r2;
+
+//         return std::cos(phi)*sin_alpha*dx + std::sin(phi)*sin_alpha*dy + cos_alpha*dz;
+//     }
+
+//     // PDFs are useful for path tracing, but not for this Whitted-hybrid tracer 
+//     // pdf = 1.f / (2.f*PI(1.f - cos_theta_max));
+//     // constexpr float getrPDF() const { return r_pdf; }
+// };
+
+// constexpr auto aboveZero = [](const vec3 &clr) { return clr.x > 0.f || clr.y > 0.f || clr.z > 0.f; };
+// vec3 Raytracer::getShadowContrib(const Ray &sray, const Interval &t_int) const 
+// {  
+//     if (FULL_SHADOWS) {
+//         Hit srec;
+//         const bool behindShape = hit(scene->getShapes(), sray, t_int, srec);
+//         const bool isEmiss = aboveZero(srec.emissive());
+//         return vec3(static_cast<float>(!behindShape || isEmiss));
+//     }
+
+//     HitArray srecs;
+//     // 1.0f is fully lit by default, which is when point has unobstructed path to light
+//     vec3 s_transparency(1.f); // if behind, return value from 0.0f to 1.0f
+//     float t_prev = 0.f;       // running difference of curr and last
+
+//     hit(scene->getShapes(), sray, t_int, srecs);
+//     for (const Hit& srec : srecs) {
+//         const bool isTrns = srec.m && srec.m->transparency > MINIMUM_COEFF;
+//         const bool isEmiss = aboveZero(srec.emissive());
+//         float trnsMult = (isTrns || !isEmiss)*srec.m->transparency;
+//         if (isEmiss) trnsMult = 1.f;
+//         const float cosI = dot(sray.getDir(), srec.n);
+
+//         constexpr float alpha = 0.5f; // concentration parameter for "dulled" shadows
+//         const bool bf = cosI > 0.0f;
+//         const float t_diff = srec.t - t_prev; // doesn't account for objects inside objects
+//         const vec3 absorb_cont = glm::exp(alpha * bf * -srec.absorb() * t_diff);
+
+//         const vec3 diff_cont = srec.diffuse()*std::max(0.0f, cosI);
+//         // weird behavior with spheres perhaps (the transparency being
+//         // very low but not zero, and the diffuse being strong)
+//         // could fix by trnsMult * sum, but darker shadows and weaker color
+//         s_transparency *= vec3(trnsMult*absorb_cont) + (1.f - trnsMult)*isTrns*diff_cont;
+//         t_prev = srec.t;
+//     }
+//     // srecs.clear();
+//     return s_transparency;      
+// };
+
+// // Randomly samples points on area lights depending on their radius.
+// vec3 Raytracer::lightingFactor(const Ray &ray, IntParams args,
+//                                const std::shared_ptr<Light> &light,
+//                                const glm::vec3 &diffuseAtt,
+//                                bool sampleArea) const
+// {
+//     auto &rec = args.rec;
+//     auto &interval = args.interval;
+
+//     const vec3 ld = light->pos - rec.x;
+//     const float tl = length(ld);
+//     const vec3 lv = ld / tl;
+
+//     // The eye vector does not point to the camera when reflecting/refracting
+//     const vec3 ev = -ray.dir;
+
+//     Ray sray;
+//     vec3 srayCPos = rec.x + (float)interval.min*rec.n;
+//     sray.setPos(srayCPos);
+//     sray.setDir(lv);
+//     sray.time = ray.time;
+
+//     if (!sampleArea || light->getRadius() < MINIMUM_COEFF) { 
+//         // The cost of a function call is so great that I get a ~33% increase in 
+//         // speed if I paste the contents of the BP shading calculations
+//         // in 2 different places instead. Lambdas and method calls are slow for this.
+//         const vec3 kd = rec.diffuse(), 
+//                    ks = rec.specular();
+//         const float s = rec.m->exponent;
+//         const vec3 h = normalize(lv + ev);
+//         const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, lv));
+//         const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
+
+//         const vec3 shade = getShadowContrib(sray, Interval(interval.min, tl));
+
+//         return shade * light->intensity * (diff_cont*diffuseAtt + spec_cont);
+//     }
+    
+//     const auto sampler = sampleCone(ld, light->getRadius());
+//     const uint min_i = std::max(camera->lightSamples / 4, 8U);
+//     const uint max_i = light->getSamples() <= 1 ? camera->lightSamples : light->getSamples();
+
+//     // Use this method instead of has_no_change() since it plays nicer with 
+//     // shadow implementation (prev. method did not give good results)
+//     VarianceCounter<vec3> s_counter;
+//     vec3 lightingSum = vec3(0.f);
+//     constexpr Interval litThreshold = Interval::signif();
+
+//     for (uint i = 0; i < max_i; ++i) {
+//         // A large enough light radius increases noise of the entire image 
+//         const vec3 sampLightPos = light->pos + sampler()*light->getRadius();
+//         const vec3 new_ld = sampLightPos - rec.x;
+//         const float tmax = length(new_ld);
+//         const vec3 new_lv = new_ld / tmax;
+//         sray.setDir(new_lv);
+        
+//         const vec3 contrib = getShadowContrib(sray, Interval(interval.min, tmax));
+//         bool lowVari = s_counter.add(contrib);
+
+//         // duplicate, also present in non-area light case above
+//         const vec3 kd = rec.diffuse(), ks = rec.specular();
+//         const float s = rec.m->exponent;
+//         const vec3 h = normalize(new_lv + ev);
+//         const vec3 diff_cont = kd*std::max(0.0f, glm::dot(rec.n, new_lv));
+//         const vec3 spec_cont = ks*std::pow(std::max(0.0f, glm::dot(rec.n, h)), s);
+//         lightingSum += (diff_cont*diffuseAtt + spec_cont);
+
+//         if (i < min_i) continue;  
+//         const bool fullOrNoLit = litThreshold.surrounds(s_counter.getMean());
+//         if (lowVari || fullOrNoLit) { break; }         
+//     }
+
+//     const vec3 lightVisibility = s_counter.getMean();
+//     const vec3 lightingFac = lightingSum / s_counter.getSamplesDone();
+
+//     return lightVisibility * light->intensity * lightingFac;
+// }
