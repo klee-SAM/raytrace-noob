@@ -50,7 +50,10 @@ resources on raytracing.
     - struct {uint bounces; float culmVisibility; } control; 
 - [x] backface culling for plane (trivial)
 - [ ] get a better solver for torus
-- ...
+- [ ] try removing hit::x (new branch) and replace w/ func
+    - can avoid a matrix vector mult when transforming ray
+    - less data that needs to be passed around
+    - need to modify recursive tracer
 
 - [ ] scene format documentation (json)
 - [ ] support .mtl conventions for scene files
