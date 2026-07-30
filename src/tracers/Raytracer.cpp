@@ -1,6 +1,7 @@
 #include "Raytracer.hpp"
 
 #include "SphereTracer.hpp"
+#include "RecursiveTracer.hpp"
 
 #include "../stn.hpp"
 // #include "../Scene.hpp"
@@ -20,6 +21,7 @@ using std::vector;
 
 // Prevent linker errors.
 template std::unique_ptr<Image> Raytracer<SphereTracer>::render();
+template std::unique_ptr<Image> Raytracer<DistriTracer>::render();
 
 /*
 The only difference between RecursiveTracer and SphereTracer
@@ -122,8 +124,8 @@ void RaytracerData::applyView(MatrixStack& MS) const
 template <typename T>
 unique_ptr<Image> Raytracer<T>::render() 
 {
-    const auto &scene = getScene();
-    const auto &camera = getCamera();
+    // const auto &scene = getScene();
+    // const auto &camera = getCamera();
 
     if (!scene || !camera) 
         throw std::logic_error("scene or camera not bound");
@@ -172,7 +174,7 @@ unique_ptr<Image> Raytracer<T>::render()
     uint jobsFinished = 0;
     uint totalCasts = height * width;
     // horrific; +1 thread than cores works b/c it's i/o bound (sleep)
-    auto countScans = [this, jobsFinished, &camera](uint totalCasts, uint numThreads) 
+    auto countScans = [this, jobsFinished](uint totalCasts, uint numThreads) 
     {
         while (r_queue.rowsProcessed < camera->height && jobsFinished < numThreads) 
         {
@@ -232,7 +234,7 @@ Ray Raytracer<T>::castPrimaryRay(Pixel p, const glm::vec2 &offset) const {
 
 template<typename T>
 Ray Raytracer<T>::castSecondaryRay(const Ray &pray) const {
-    const auto &camera = getCamera();
+    // const auto &camera = getCamera();
 
     glm::vec4 focalPoint = pray.pos + camera->focusLength*pray.dir;
     focalPoint.w = 1.f;
@@ -250,7 +252,7 @@ Ray Raytracer<T>::castSecondaryRay(const Ray &pray) const {
 template <typename T>
 void Raytracer<T>::setRow(unique_ptr<Image>& image, uint y) 
 {
-    const auto &camera = getCamera();
+    // const auto &camera = getCamera();
 
     for (uint x = 0; x < camera->width; ++x) 
     {

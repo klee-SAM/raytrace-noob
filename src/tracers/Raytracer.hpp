@@ -23,8 +23,8 @@ public:
     using meshbuf_map = std::unordered_map<std::string, std::shared_ptr<MeshBuffer>>;
     using material_map = std::unordered_map<std::string, std::shared_ptr<Material>>;
 
-    const shapes_vec& getShapes() { return shapes; }
-    const lights_vec& getLights() { return lights; }
+    const shapes_vec& getShapes() const { return shapes; }
+    const lights_vec& getLights() const { return lights; }
 
     // When shapes are pushed, they are finalized (precomputation from transforms)
     void pushShape(std::shared_ptr<Shape> s) { 
@@ -180,13 +180,17 @@ struct TCamera {
     }
 };
 
-// enum class RenderMode { Unknown, Whitted, Raymarch, Pathtrace };
-
 // Common functionality for all raytracers.
 class RaytracerData {
 public:
     using Camera = TCamera; // temporary!
     using Scene = TScene;   // also temp!
+
+    // Contains common info used for BRDF calculations
+    struct IntParams {
+        const Interval &interval;
+        const Hit &rec;
+    };
 
     static prand::diskRand diskRandGen;
     static prand::uniformRand unifRandGen;
@@ -199,46 +203,17 @@ public:
     bool FULL_SHADOWS = false;
     bool SHOW_NORMALS = false;
 
-    void setScene(std::unique_ptr<Scene>&& scene);
-    void setCamera(std::unique_ptr<Camera>&& cam); 
-
-    // Guarantee that fields in these objects cannot be changed
-    const std::unique_ptr<Scene>& getScene() const { return scene; }
-    const std::unique_ptr<Camera>& getCamera() const { return camera; }   
-
-    void applyProjection(MatrixStack&) const;
-    void applyView(MatrixStack&) const;
-
-private:
     std::unique_ptr<Scene> scene;
     std::unique_ptr<Camera> camera;
 
-    // RenderMode mode = RenderMode::Unknown;
-    // glm::vec3 getRayColor(const Ray&) const;
+    void setScene(std::unique_ptr<Scene>&& scene);
+    void setCamera(std::unique_ptr<Camera>&& cam);    
 
-    // Contains common info used for BRDF calculations
-    struct IntParams {
-        const Interval &interval;
-        const Hit &rec;
-    };
+protected:
+    void applyProjection(MatrixStack&) const;
+    void applyView(MatrixStack&) const;
 
     glm::vec3 getSkyColor(const Ray& ray) const;
-
-    // glm::vec3 rayMarch(const Ray &ray) const;
-
-    // class sampleCone;
-    // glm::vec3 rec_raytrace(const Ray &ray, const Interval&, uint bounces) const;
-    // glm::vec3 rec_getReflectedColor(const Ray &ray, IntParams args, 
-    //                                 uint recursions) const;
-    // glm::vec3 rec_getRefractedColor(const Ray &ray, IntParams args,
-    //                                 uint recursions, bool back_face) const;
-    // float occlusionDiffuseFactor(IntParams args, vec3 &diffuseFac, float time) const;
-    // vec3 getShadowContrib(const Ray &sray, const Interval &t_int) const;
-    // vec3 lightingFactor(const Ray &ray, IntParams args,
-    //                     const std::shared_ptr<Light> &light,
-    //                     const glm::vec3 &diffuseAtt,
-    //                     bool sampleArea = true) const;
-
 };
 
 template <typename T>
