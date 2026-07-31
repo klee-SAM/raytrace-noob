@@ -163,7 +163,7 @@ See [Texture Mapping](#texture-mapping) for (some) image sources.
 - https://justgood.dev/docs/740-paper.pdf
 
 ### CSG
-- The Ray Tracer Challenge Chapter 16: CSG
+- The Ray Tracer Challenge Chapter 16: CSG (link not available)
 - https://groups.csail.mit.edu/graphics/classes/6.838/F01/lectures/SmoothSurfaces/0the_s040.html
 - https://github.com/jtsiomb/csgray
 
@@ -177,15 +177,20 @@ See [Texture Mapping](#texture-mapping) for (some) image sources.
 - Images 1: https://texturify.com/stock-photo/above-the-city-in-winter-10588.html
 - Images 2: https://polyhaven.com/hdris
 
-### SDFs
+### Raymarching and SDFs
 - https://michaelwalczyk.com/blog-ray-marching.html
 - https://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/
 - https://github.com/pedrotrschneider/shader-fractals
+
+### Monte Carlo Pathtracing
+- https://www.kevinbeason.com/smallpt/
+
 
 ### BVH and GPU Acceleration
 - https://github.com/AdaptiveCpp/AdaptiveCpp
 - https://umm-csci.github.io/senior-seminar/seminars/fall2011/Martin.pdf
 - https://stackoverflow.com/questions/61222620/optimizing-bvh-traversal-in-ray-tracer
+- https://pbr-book.org/3ed-2018/Primitives_and_Intersection_Acceleration/Bounding_Volume_Hierarchies
 - https://computergraphics.stackexchange.com/questions/10098/is-bvh-faster-than-the-octree-kd-tree-for-raytracing-the-objects-on-a-gpu
 
 ### Sampling Methods
@@ -195,6 +200,7 @@ See [Texture Mapping](#texture-mapping) for (some) image sources.
 - https://stackoverflow.com/questions/5147378/
 
 ### Other Interesting Links
+- https://www.fileformat.info/format/material/
 - https://stackoverflow.com/questions/11227809
 - https://www.cs.umd.edu/users/mount/Indep/Alisa_Chen/caustics.html
 - https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md
