@@ -25,6 +25,93 @@ using glm::vec4;
 using glm::mat3;
 using glm::mat4;
 
+
+/* Thy recokoning thsi onw
+reworking scene loader:
+
+- deferring the instantiation of the actual objects
+until the entire file is read AND tokens are all read
+
+- file parsing: iterate through tokens and
+construct a top-level structure that organizes tokens
+into a hierarchy
+    - ignore irrelevant top-level objects
+    - throw a runtime error (or message) if
+    required top-level objects are not present
+    - print a warning message point to each unknown object
+
+- repeat a similar process for each of the above  
+
+- [ ] new class that reads tokens and outputs a recursive
+JSON object structure
+
+- [ ] ...need to understand current code
+
+- [ ] need to develop a way to accept different keys for writing
+to the same property
+
+// new inner class Frame that holds vector of shapes and lights
+// ofc, move the getters for shapes and lights to the frame class
+
+ Animated Scene JSON
+{
+// For defining common values to be used in transform and 
+// material properties:
+"defines" : { ... },    
+
+// Defining materials for one or more shapes each.
+"materials" : { ... },
+
+// Camera settings that are shared across multiple frames.
+"camera" : 
+{ 
+    "spp" : 0,
+    "spr" : 0,
+    "ao_spr" : 0,
+    "ao_radius" : 0.0,
+    "shd_spr" : 0,
+    "sky" : "../filepath"
+},
+"lights" : [ ... ],
+"shapes" : [ 
+    ...
+    {
+        ...
+        "transforms" : [ ... ],
+        "blur_transforms" : [],     // Can explicitly specify transforms to use for
+        "blur_next_frame" : true,   // motion blur, or just use next frame transforms
+                                    // for motion blur, if it is present
+        "id" : 1234,                // identifier for frame data
+        ...
+    }, 
+    ...
+],
+
+// optional; when any property is specified here, it persists
+// for subsequent frames until explicitly changed, and forces
+// the program to render # of frames as scenes 
+"frames" : [
+    ...
+    {
+        "camera" : [ ... ], // frame-specific settings
+        "next" : [ 
+            ...
+            {
+                "id" : 1234,
+                "transforms" : [ ... ], // new transforms for object of ID
+                "visible" : true,       // whether or not this object is constructed
+            },
+            ... 
+        ] // 
+    },
+    ...
+]
+}
+
+*/
+
+
+
 /*
  * TODO: documentation
  */
