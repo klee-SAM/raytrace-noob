@@ -55,6 +55,8 @@ to the Camera, Scene, and Raytracer objects should
 be unified in containing data for all of them (with appropriate
 substructs if needed)
 
+- ytggggg
+
 // new inner class Frame that holds vector of shapes and lights
 // ofc, move the getters for shapes and lights to the frame class
 
