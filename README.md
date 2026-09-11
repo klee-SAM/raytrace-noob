@@ -3,6 +3,14 @@ Simple raytracer developed primarily as a learning exercise.
 Uses C++17 and some libraries, along with aid from various other
 resources on raytracing.
 
+
+## gallery
+
+![bunny](graphics/testbunny.png)
+![occlusion-balls](graphics/testdef.png)
+![reflection-box](graphics/testgrf-250-x256AAx16AOx16S.png)
+![motion-blur](graphics/motionblurring.png)
+
 ## todo:
 
 ### features
@@ -102,7 +110,9 @@ Instructions primarily for Linux. Other platforms may have different build instr
 2. Do `cmake ..` inside the build folder to create the Makefile for debug mode.
     - Do `cmake -DCMAKE_BUILD_TYPE=Release ..` for release mode instead.
     - Do `cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..` if using a tool like Callgrind.
-3. Call `make` to build.
+3. Call `make` to build. This will create an executable named `P`, which you can run with
+the syntax `./P <path-to-scene-json> <name-of-output-file> <image-width> <image-height>`.
+`<image-height>` is optional.
 
 ## Other libraries used
 - stb_image.h and stb_image_write.h: https://github.com/nothings/stb
